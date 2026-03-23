@@ -1,0 +1,1038 @@
+<div class="dashboard-wrapper" (click)="showNotifPanel && (showNotifPanel = false)">
+
+  <!-- ══ Sidebar ══ -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sidebar-header">
+      <span class="logo-icon">👑</span>
+      <span class="logo-text" *ngIf="!sidebarCollapsed">GlowBook</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" [class.active]="activeTab==='overview'"      (click)="setTab('overview')">      <span class="nav-icon">◈</span>  <span class="nav-label" *ngIf="!sidebarCollapsed">Overview</span></a>
+      <a class="nav-item" [class.active]="activeTab==='bookings'"      (click)="setTab('bookings')">      <span class="nav-icon">📋</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Bookings</span></a>
+      <a class="nav-item" [class.active]="activeTab==='clients'"       (click)="setTab('clients')">       <span class="nav-icon">👤</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Clients</span></a>
+      <a class="nav-item" [class.active]="activeTab==='artists'"       (click)="setTab('artists')">       <span class="nav-icon">🎨</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Artists</span></a>
+      <a class="nav-item" [class.active]="activeTab==='services'"      (click)="setTab('services')">      <span class="nav-icon">💄</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Services</span></a>
+      <a class="nav-item" [class.active]="activeTab==='reports'"       (click)="setTab('reports')">       <span class="nav-icon">📊</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Reports</span></a>
+      <div class="nav-divider" *ngIf="!sidebarCollapsed"></div>
+      <a class="nav-item" [class.active]="activeTab==='reviews'"       (click)="setTab('reviews')">       <span class="nav-icon">⭐</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Reviews</span></a>
+      <a class="nav-item" [class.active]="activeTab==='notifications'" (click)="setTab('notifications')"> <span class="nav-icon">🔔</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Notifications</span><span class="nav-badge" *ngIf="unreadCount>0">{{unreadCount}}</span></a>
+      <a class="nav-item" [class.active]="activeTab==='settings'"      (click)="setTab('settings')">      <span class="nav-icon">⚙</span>  <span class="nav-label" *ngIf="!sidebarCollapsed">Settings</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-datetime" *ngIf="!sidebarCollapsed">
+        <span class="sidebar-clock">{{currentTime}}</span>
+        <span class="sidebar-date">{{currentDate}}</span>
+      </div>
+      <button class="collapse-btn" (click)="sidebarCollapsed=!sidebarCollapsed">{{sidebarCollapsed?'▶':'◀'}}</button>
+    </div>
+  </aside>
+
+  <!-- ══ Main ══ -->
+  <main class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">{{pageTitle}}</h1>
+        <p class="page-subtitle">{{pageSubtitle}}</p>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" placeholder="Search anything..." [(ngModel)]="searchQuery" />
+        </div>
+        <div class="notif-wrap" (click)="$event.stopPropagation()">
+          <button class="notif-btn" (click)="showNotifPanel=!showNotifPanel">
+            🔔<span class="notif-badge" *ngIf="unreadCount>0">{{unreadCount}}</span>
+          </button>
+          <div class="notif-panel" *ngIf="showNotifPanel">
+            <div class="notif-panel-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-btn" (click)="markAllRead()">Mark all read</button>
+            </div>
+            <div class="notif-list">
+              <div class="notif-item" *ngFor="let n of notifications" [class.unread]="!n.read" (click)="markRead(n)">
+                <span class="notif-dot" *ngIf="!n.read"></span>
+                <div class="notif-content">
+                  <p class="notif-msg">{{n.message}}</p>
+                  <p class="notif-time">{{n.time}}</p>
+                </div>
+              </div>
+            </div>
+            <div class="notif-footer"><button (click)="setTab('notifications')">View all →</button></div>
+          </div>
+        </div>
+        <div class="admin-avatar">
+          <span>👑</span>
+          <div class="avatar-info" *ngIf="!sidebarCollapsed">
+            <p class="avatar-name">Admin</p>
+            <p class="avatar-role">Super Admin</p>
+          </div>
+        </div>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════
+         OVERVIEW TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='overview'">
+
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let stat of stats">
+          <div class="stat-icon">{{stat.icon}}</div>
+          <div class="stat-info">
+            <p class="stat-label">{{stat.label}}</p>
+            <p class="stat-value">{{stat.value}}</p>
+            <p class="stat-change" [class.positive]="stat.positive" [class.negative]="!stat.positive">
+              {{stat.positive?'▲':'▼'}} {{stat.change}}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Bookings</h3>
+            <button class="view-all" (click)="setTab('bookings')">View all →</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Client</th><th>Service</th><th>Artist</th><th>Date</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let b of recentBookings">
+                <td>{{b.client}}</td><td>{{b.service}}</td><td>{{b.artist}}</td><td>{{b.date}}</td>
+                <td><span class="badge" [ngClass]="b.status">{{b.status}}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Top Artists</h3>
+            <button class="view-all" (click)="setTab('artists')">View all →</button>
+          </div>
+          <div class="artist-list">
+            <div class="artist-row" *ngFor="let a of topArtists; let i=index">
+              <span class="artist-rank">{{i+1}}</span>
+              <div class="artist-avatar">{{a.initials}}</div>
+              <div class="artist-info">
+                <p class="artist-name">{{a.name}}</p>
+                <p class="artist-specialty">{{a.specialty}}</p>
+              </div>
+              <div class="artist-stats">
+                <p class="artist-bookings">{{a.bookings}} bookings</p>
+                <p class="rating">⭐ {{a.rating}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Revenue Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Revenue Trend (2026)</h3>
+          <button class="view-all" (click)="setTab('reports')">Full Report →</button>
+        </div>
+        <div class="mini-bar-chart">
+          <div class="mini-bar-wrap" *ngFor="let m of monthlyData">
+            <div class="mini-bar" [style.height.%]="(m.revenue/maxRevenue)*100" [title]="'₱'+m.revenue">
+              <span class="mini-bar-tooltip">₱{{m.revenue | number}}</span>
+            </div>
+            <span class="mini-bar-label">{{m.month}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header"><h3>Quick Actions</h3></div>
+        <div class="quick-actions">
+          <button class="action-btn" (click)="openModal('addBooking')"><span>📋</span> New Booking</button>
+          <button class="action-btn" (click)="openModal('addArtist')"><span>🎨</span> Add Artist</button>
+          <button class="action-btn" (click)="openModal('addService')"><span>💄</span> Add Service</button>
+          <button class="action-btn" (click)="openModal('addClient')"><span>👤</span> Add Client</button>
+          <button class="action-btn" (click)="setTab('reports')"><span>📊</span> Reports</button>
+          <button class="action-btn" (click)="exportBookings()"><span>📤</span> Export CSV</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BOOKINGS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='bookings'">
+      <div class="card">
+        <div class="card-header">
+          <h3>All Bookings <span class="count-chip">{{filteredBookings.length}}</span></h3>
+          <div class="header-actions">
+            <!-- View Toggle -->
+            <div class="view-toggle">
+              <button [class.active]="bookingView==='table'"    (click)="bookingView='table'">   📋 Table</button>
+              <button [class.active]="bookingView==='calendar'" (click)="bookingView='calendar'">📅 Calendar</button>
+            </div>
+            <select class="filter-select" [(ngModel)]="bookingFilter">
+              <option value="all">All Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <button class="export-btn" (click)="exportBookings()">📤 Export CSV</button>
+            <button class="add-btn"    (click)="openModal('addBooking')">+ New Booking</button>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="booking-summary-bar">
+          <div class="bsb-item"><span class="bsb-dot confirmed"></span><span>Confirmed: {{countByStatus('confirmed')}}</span></div>
+          <div class="bsb-item"><span class="bsb-dot pending"></span>  <span>Pending: {{countByStatus('pending')}}</span></div>
+          <div class="bsb-item"><span class="bsb-dot cancelled"></span><span>Cancelled: {{countByStatus('cancelled')}}</span></div>
+          <div class="bsb-item bsb-total"><span>Total: {{allBookings.length}}</span></div>
+        </div>
+
+        <!-- TABLE VIEW -->
+        <div *ngIf="bookingView==='table'" class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>#</th><th>ID</th><th>Client</th><th>Service</th><th>Artist</th><th>Date & Time</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of filteredBookings; let i=index" class="clickable-row" (click)="viewBookingDetail(b)">
+                <td class="row-num">{{i+1}}</td>
+                <td class="booking-id">#{{b.id}}</td>
+                <td><div class="cell-stack"><span>{{b.client}}</span><span class="cell-sub">{{b.phone}}</span></div></td>
+                <td>{{b.service}}</td>
+                <td>{{b.artist}}</td>
+                <td>{{b.date}}</td>
+                <td class="amount">₱{{b.amount}}</td>
+                <td (click)="$event.stopPropagation()">
+                  <select class="status-select" [ngClass]="b.status" [(ngModel)]="b.status" (change)="updateBookingStatus(b,b.status)">
+                    <option value="confirmed">Confirmed</option>
+                    <option value="pending">Pending</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </td>
+                <td class="action-cell" (click)="$event.stopPropagation()">
+                  <button class="icon-btn view-btn"  (click)="viewBookingDetail(b)" title="View details">👁</button>
+                  <button class="icon-btn delete"     (click)="deleteBooking(b)"    title="Delete">🗑</button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredBookings.length===0"><td colspan="9" class="empty-row">No bookings found</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CALENDAR VIEW -->
+        <div *ngIf="bookingView==='calendar'" class="calendar-wrap">
+          <div class="calendar-header">
+            <span class="cal-month">{{calendarMonth}}</span>
+          </div>
+          <div class="calendar-grid">
+            <div class="cal-day-name" *ngFor="let d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']">{{d}}</div>
+            <div class="cal-cell"
+              *ngFor="let day of calendarDays"
+              [class.empty]="day.isEmpty"
+              [class.today]="day.isToday"
+              [class.has-bookings]="day.bookings.length>0"
+              [class.selected]="selectedCalDay?.day===day.day"
+              (click)="selectCalDay(day)">
+              <span class="cal-num" *ngIf="!day.isEmpty">{{day.day}}</span>
+              <div class="cal-dots" *ngIf="day.bookings.length>0">
+                <span class="cal-dot" *ngFor="let b of day.bookings.slice(0,3)" [ngClass]="b.status"></span>
+              </div>
+              <span class="cal-count" *ngIf="day.bookings.length>0">{{day.bookings.length}}</span>
+            </div>
+          </div>
+          <!-- Day Detail -->
+          <div class="cal-detail" *ngIf="selectedCalDay && selectedCalDay.bookings.length>0">
+            <h4>Mar {{selectedCalDay.day}} — {{selectedCalDay.bookings.length}} booking(s)</h4>
+            <div class="cal-booking-item" *ngFor="let b of selectedCalDay.bookings">
+              <span class="badge" [ngClass]="b.status">{{b.status}}</span>
+              <span>{{b.client}}</span>
+              <span class="muted">•</span>
+              <span>{{b.service}}</span>
+              <span class="muted">•</span>
+              <span>{{b.artist}}</span>
+              <span class="cal-amount">₱{{b.amount}}</span>
+            </div>
+          </div>
+          <div class="cal-detail cal-empty-day" *ngIf="selectedCalDay && selectedCalDay.bookings.length===0">
+            <p>No bookings on Mar {{selectedCalDay.day}}</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         CLIENTS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='clients'">
+      <div class="card">
+        <div class="card-header">
+          <h3>Client Management <span class="count-chip">{{filteredClients.length}}</span></h3>
+          <div class="header-actions">
+            <button class="export-btn" (click)="exportClients()">📤 Export CSV</button>
+            <button class="add-btn"    (click)="openModal('addClient')">+ Add Client</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Bookings</th><th>Total Spent</th><th>Last Visit</th><th>Fav. Service</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of filteredClients; let i=index" class="clickable-row" (click)="viewClientDetail(c)">
+                <td class="row-num">{{i+1}}</td>
+                <td>
+                  <div class="name-cell">
+                    <div class="name-avatar">{{c.name[0]}}</div>
+                    <div>
+                      <p class="client-name">{{c.name}}</p>
+                      <p class="cell-sub">Since {{c.joined}}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">{{c.email}}</td>
+                <td class="muted">{{c.phone}}</td>
+                <td class="center-td"><span class="pill">{{c.bookings}}</span></td>
+                <td class="amount">₱{{c.totalSpent}}</td>
+                <td class="muted">{{c.lastVisit}}</td>
+                <td class="muted">{{c.favoriteService}}</td>
+                <td>
+                  <span class="badge" [ngClass]="{'confirmed':c.status==='active','pending':c.status==='vip','cancelled':c.status==='inactive'}">{{c.status}}</span>
+                </td>
+                <td class="action-cell" (click)="$event.stopPropagation()">
+                  <button class="icon-btn view-btn" (click)="viewClientDetail(c)" title="View profile">👁</button>
+                  <button class="icon-btn delete"   (click)="deleteClient(c)"    title="Remove">🗑</button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredClients.length===0"><td colspan="10" class="empty-row">No clients found</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         ARTISTS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='artists'">
+      <div class="card">
+        <div class="card-header">
+          <h3>Artist Management <span class="count-chip">{{filteredArtists.length}}</span></h3>
+          <button class="add-btn" (click)="openModal('addArtist')">+ Add Artist</button>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>#</th><th>Artist</th><th>Specialty</th><th>Email</th><th>Bookings</th><th>Revenue</th><th>Rating</th><th>Completion</th><th>Availability</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of filteredArtists; let i=index" class="clickable-row" (click)="viewArtistDetail(a)">
+                <td class="row-num">{{i+1}}</td>
+                <td>
+                  <div class="artist-cell">
+                    <div class="artist-avatar-sm">{{a.initials}}</div>
+                    <div>
+                      <p>{{a.name}}</p>
+                      <p class="cell-sub">Since {{a.joinedDate}}</p>
+                    </div>
+                  </div>
+                </td>
+                <td>{{a.specialty}}</td>
+                <td class="muted">{{a.email}}</td>
+                <td class="center-td"><span class="pill">{{a.bookings}}</span></td>
+                <td class="amount">₱{{a.revenue}}</td>
+                <td>
+                  <div class="star-row">
+                    <span *ngFor="let s of getRatingStars(a.rating)" [class.filled]="s==='★'">{{s}}</span>
+                    <span class="rating-num">{{a.rating}}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="completion-bar-wrap">
+                    <div class="completion-bar" [style.width.%]="a.completionRate">{{a.completionRate}}%</div>
+                  </div>
+                </td>
+                <td>
+                  <span class="avail-badge" [ngClass]="{'avail-yes':a.availability==='Available','avail-busy':a.availability==='Busy','avail-off':a.availability==='On Leave'||a.availability==='Unavailable'}">{{a.availability}}</span>
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <button class="toggle-status-btn" [class.active]="a.status==='active'" (click)="toggleArtistStatus(a)">{{a.status}}</button>
+                </td>
+                <td class="action-cell" (click)="$event.stopPropagation()">
+                  <button class="icon-btn view-btn" (click)="viewArtistDetail(a)" title="View profile">👁</button>
+                  <button class="icon-btn delete"   (click)="deleteArtist(a)"    title="Remove">🗑</button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredArtists.length===0"><td colspan="11" class="empty-row">No artists found</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SERVICES TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='services'">
+      <div class="card">
+        <div class="card-header">
+          <h3>Services Management</h3>
+          <button class="add-btn" (click)="openModal('addService')">+ Add Service</button>
+        </div>
+        <div class="services-grid">
+          <div class="service-card" *ngFor="let s of services" [class.inactive-card]="s.status==='inactive'">
+            <div class="service-card-top">
+              <div class="service-icon">{{s.icon}}</div>
+              <span class="badge" [ngClass]="s.status==='active'?'confirmed':'cancelled'">{{s.status}}</span>
+            </div>
+            <h4>{{s.name}}</h4>
+            <p class="service-desc">{{s.desc}}</p>
+            <div class="service-meta">
+              <span class="service-duration">⏱ {{s.duration}}</span>
+              <span class="service-bookings-count">📋 {{s.bookings}}</span>
+            </div>
+            <p class="service-price">₱{{s.price}}</p>
+            <div class="service-actions">
+              <button class="svc-toggle-btn" (click)="toggleServiceStatus(s)">{{s.status==='active'?'⏸ Disable':'▶ Enable'}}</button>
+              <button class="icon-btn delete" (click)="deleteService(s)">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         REPORTS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='reports'">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" *ngFor="let k of reportKpis">
+          <span class="kpi-icon">{{k.icon}}</span>
+          <div class="kpi-info">
+            <p class="kpi-label">{{k.label}}</p>
+            <p class="kpi-value">{{k.value}}</p>
+            <p class="kpi-sub">{{k.sub}}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let stat of stats">
+          <div class="stat-icon">{{stat.icon}}</div>
+          <div class="stat-info">
+            <p class="stat-label">{{stat.label}}</p>
+            <p class="stat-value">{{stat.value}}</p>
+            <p class="stat-change" [class.positive]="stat.positive" [class.negative]="!stat.positive">{{stat.positive?'▲':'▼'}} {{stat.change}}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <h3>Monthly Revenue (2026)</h3>
+            <div class="report-totals">
+              <span class="rtotal">YTD: <strong>₱{{totalRevenueYTD | number}}</strong></span>
+              <span class="rtotal">Bookings: <strong>{{totalBookingsYTD}}</strong></span>
+            </div>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-row" *ngFor="let m of monthlyData">
+              <span class="bar-label">{{m.month}}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="(m.revenue/maxRevenue)*100">
+                  <span class="bar-value">₱{{m.revenue | number}}</span>
+                </div>
+              </div>
+              <span class="bar-bookings">{{m.bookings}}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Service Breakdown</h3></div>
+          <div class="breakdown-list">
+            <div class="breakdown-item" *ngFor="let s of serviceBreakdown">
+              <div class="breakdown-label">
+                <span class="breakdown-dot" [style.background]="s.color"></span>
+                <span>{{s.name}}</span>
+              </div>
+              <div class="breakdown-bar-wrap">
+                <div class="breakdown-bar" [style.width.%]="s.percent" [style.background]="s.color"></div>
+              </div>
+              <span class="breakdown-pct">{{s.percent}}%</span>
+            </div>
+          </div>
+
+          <div class="report-summary">
+            <div class="rs-item"><p class="rs-label">Total Revenue YTD</p><p class="rs-value">₱{{totalRevenueYTD | number}}</p></div>
+            <div class="rs-item"><p class="rs-label">Avg per Booking</p>  <p class="rs-value">₱2,100</p></div>
+            <div class="rs-item"><p class="rs-label">Best Month</p>       <p class="rs-value">December</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Artist Performance Table -->
+      <div class="card">
+        <div class="card-header"><h3>Artist Performance</h3></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Rank</th><th>Artist</th><th>Specialty</th><th>Bookings</th><th>Revenue</th><th>Rating</th><th>Completion</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let a of artistsList; let i=index">
+                <td><span class="rank-badge rank-{{i+1}}">{{i+1}}</span></td>
+                <td>
+                  <div class="artist-cell">
+                    <div class="artist-avatar-sm">{{a.initials}}</div>
+                    <span>{{a.name}}</span>
+                  </div>
+                </td>
+                <td>{{a.specialty}}</td>
+                <td class="center-td"><span class="pill">{{a.bookings}}</span></td>
+                <td class="amount">₱{{a.revenue}}</td>
+                <td>⭐ {{a.rating}}</td>
+                <td>
+                  <div class="completion-bar-wrap">
+                    <div class="completion-bar" [style.width.%]="a.completionRate">{{a.completionRate}}%</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         NOTIFICATIONS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='notifications'">
+      <div class="card">
+        <div class="card-header">
+          <h3>All Notifications <span class="count-chip">{{unreadCount}} unread</span></h3>
+          <button class="add-btn" (click)="markAllRead()">✓ Mark All Read</button>
+        </div>
+        <div class="full-notif-list">
+          <div class="full-notif-item" *ngFor="let n of notifications" [class.unread]="!n.read" (click)="markRead(n)">
+            <div class="fni-icon">
+              {{n.type==='booking'?'📋':n.type==='payment'?'💰':n.type==='artist'?'🎨':n.type==='cancel'?'❌':n.type==='review'?'⭐':'⚙'}}
+            </div>
+            <div class="fni-content">
+              <p class="fni-msg">{{n.message}}</p>
+              <p class="fni-time">{{n.time}}</p>
+            </div>
+            <span class="fni-unread-dot" *ngIf="!n.read"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SETTINGS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='settings'">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><h3>Account Settings</h3></div>
+          <div class="settings-form">
+            <div class="form-group"><label>Admin Name</label><input type="text" [(ngModel)]="settings.adminName" /></div>
+            <div class="form-group"><label>Email</label><input type="email" [(ngModel)]="settings.email" /></div>
+            <div class="form-group"><label>New Password</label><input type="password" placeholder="••••••••" [(ngModel)]="settings.password" /></div>
+            <button class="save-btn" (click)="saveSettings()">Save Changes</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>System Settings</h3></div>
+          <div class="settings-form">
+            <div class="form-group"><label>Business Name</label><input type="text" [(ngModel)]="settings.businessName" /></div>
+            <div class="form-group"><label>Booking Lead Time (hours)</label><input type="number" [(ngModel)]="settings.leadTime" /></div>
+            <div class="form-group"><label>Currency</label>
+              <select [(ngModel)]="settings.currency">
+                <option value="PHP">PHP (₱)</option>
+                <option value="USD">USD ($)</option>
+              </select>
+            </div>
+            <button class="save-btn" (click)="saveSettings()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Preferences & Notifications</h3></div>
+        <div class="toggle-list">
+          <div class="toggle-item">
+            <div class="toggle-info"><p class="toggle-label">Email Notifications</p><p class="toggle-desc">Receive booking alerts via email</p></div>
+            <label class="toggle-switch"><input type="checkbox" [(ngModel)]="settings.emailNotifs" /><span class="slider"></span></label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info"><p class="toggle-label">SMS Notifications</p><p class="toggle-desc">Get text alerts for new bookings</p></div>
+            <label class="toggle-switch"><input type="checkbox" [(ngModel)]="settings.smsNotifs" /><span class="slider"></span></label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info"><p class="toggle-label">Auto-Confirm Bookings</p><p class="toggle-desc">Automatically confirm new booking requests</p></div>
+            <label class="toggle-switch"><input type="checkbox" [(ngModel)]="settings.autoConfirm" /><span class="slider"></span></label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info"><p class="toggle-label">Dark Mode</p><p class="toggle-desc">Use dark theme across the dashboard</p></div>
+            <label class="toggle-switch"><input type="checkbox" [(ngModel)]="settings.darkMode" /><span class="slider"></span></label>
+          </div>
+          <div class="toggle-item">
+            <div class="toggle-info">
+              <p class="toggle-label" style="color:#e06060">Maintenance Mode</p>
+              <p class="toggle-desc">Temporarily disable client-facing booking</p>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" [(ngModel)]="settings.maintenanceMode" /><span class="slider slider-danger"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         REVIEWS TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='reviews'">
+
+      <div class="reviews-overview">
+        <div class="card review-avg-card">
+          <p class="review-avg-num">{{avgRating}}</p>
+          <div class="review-avg-stars">
+            <span *ngFor="let s of getRatingStarsArray(5); let i=index" [class.star-on]="i < +avgRating">★</span>
+          </div>
+          <p class="review-avg-sub">Based on {{reviews.length}} reviews</p>
+          <div class="rating-breakdown">
+            <div class="rbd-row" *ngFor="let star of [5,4,3,2,1]">
+              <span class="rbd-star">{{star}}★</span>
+              <div class="rbd-bar-wrap"><div class="rbd-bar" [style.width.%]="getRatingPercent(star)"></div></div>
+              <span class="rbd-count">{{getReviewCountByRating(star)}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="reviews-stats-col">
+          <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-info"><p class="stat-label">Avg Rating</p><p class="stat-value">{{avgRating}}/5</p><p class="stat-change positive">▲ 0.2 vs last month</p></div></div>
+          <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><p class="stat-label">Published</p><p class="stat-value">{{getReviewCountByStatus('published')}}</p><p class="stat-change positive">Visible to clients</p></div></div>
+          <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-info"><p class="stat-label">Pending</p><p class="stat-value">{{getReviewCountByStatus('pending')}}</p><p class="stat-change">Awaiting approval</p></div></div>
+          <div class="stat-card"><div class="stat-icon">🚩</div><div class="stat-info"><p class="stat-label">Flagged</p><p class="stat-value">{{getReviewCountByStatus('flagged')}}</p><p class="stat-change negative">Needs attention</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>All Reviews <span class="count-chip">{{filteredReviews.length}}</span></h3>
+          <div class="header-actions">
+            <div class="view-toggle">
+              <button [class.active]="reviewFilter==='all'"       (click)="reviewFilter='all'">All</button>
+              <button [class.active]="reviewFilter==='published'" (click)="reviewFilter='published'">Published</button>
+              <button [class.active]="reviewFilter==='pending'"   (click)="reviewFilter='pending'">Pending</button>
+              <button [class.active]="reviewFilter==='flagged'"   (click)="reviewFilter='flagged'">Flagged</button>
+            </div>
+          </div>
+        </div>
+        <div class="reviews-list">
+          <div class="review-card" *ngFor="let r of filteredReviews" [ngClass]="'rev-'+r.status">
+            <div class="rev-header">
+              <div class="rev-client-info">
+                <div class="rev-avatar">{{r.client[0]}}</div>
+                <div>
+                  <p class="rev-client-name">{{r.client}}</p>
+                  <p class="rev-meta">{{r.service}} with <strong>{{r.artist}}</strong> · {{r.date}}</p>
+                </div>
+              </div>
+              <div class="rev-right">
+                <div class="rev-stars">
+                  <span *ngFor="let s of getRatingStarsArray(5); let i=index" [class.star-on]="i < r.rating">★</span>
+                  <span class="rev-rating-num">{{r.rating}}.0</span>
+                </div>
+                <span class="badge" [ngClass]="{'confirmed':r.status==='published','pending':r.status==='pending','cancelled':r.status==='flagged'}">{{r.status}}</span>
+              </div>
+            </div>
+            <p class="rev-comment">"{{r.comment}}"</p>
+            <div class="rev-reply" *ngIf="r.reply">
+              <span class="rev-reply-label">👑 Admin Reply:</span>
+              <span class="rev-reply-text">{{r.reply}}</span>
+            </div>
+            <div class="rev-actions">
+              <button class="rev-action-btn reply-btn" (click)="openReviewReply(r)">{{r.reply ? '✏ Edit Reply' : '💬 Reply'}}</button>
+              <button class="rev-action-btn publish-btn" *ngIf="r.status !== 'published'" (click)="updateReviewStatus(r, 'published')">✅ Publish</button>
+              <button class="rev-action-btn flag-btn"    *ngIf="r.status !== 'flagged'"   (click)="updateReviewStatus(r, 'flagged')">🚩 Flag</button>
+              <button class="rev-action-btn pending-btn" *ngIf="r.status !== 'pending'"   (click)="updateReviewStatus(r, 'pending')">⏳ Pending</button>
+              <button class="icon-btn delete" (click)="deleteReview(r)" style="margin-left:auto">🗑</button>
+            </div>
+          </div>
+          <div class="empty-row" *ngIf="filteredReviews.length===0" style="padding:2rem;text-align:center">No reviews found</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()"
+    [class.modal-wide]="modalType==='viewBooking'||modalType==='viewClient'||modalType==='viewArtist'||modalType==='replyReview'"
+    [class.modal-xl]="modalType==='addBooking'">
+
+    <!-- VIEW BOOKING DETAIL -->
+    <ng-container *ngIf="modalType==='viewBooking' && selectedBooking">
+      <div class="modal-header">
+        <h3>Booking #{{selectedBooking.id}}</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge" [ngClass]="selectedBooking.status">{{selectedBooking.status}}</span>
+          <button class="modal-close" (click)="closeModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-body detail-grid">
+        <div class="detail-item"><label>Client</label><p>{{selectedBooking.client}}</p></div>
+        <div class="detail-item"><label>Phone</label><p>{{selectedBooking.phone || '—'}}</p></div>
+        <div class="detail-item"><label>Service</label><p>{{selectedBooking.service}}</p></div>
+        <div class="detail-item"><label>Artist</label><p>{{selectedBooking.artist}}</p></div>
+        <div class="detail-item"><label>Date & Time</label><p>{{selectedBooking.date}}</p></div>
+        <div class="detail-item"><label>Amount</label><p class="amount">₱{{selectedBooking.amount}}</p></div>
+        <div class="detail-item full-width"><label>Notes</label><p>{{selectedBooking.notes || 'No notes'}}</p></div>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeModal()">Close</button>
+      </div>
+    </ng-container>
+
+    <!-- VIEW CLIENT PROFILE -->
+    <ng-container *ngIf="modalType==='viewClient' && selectedClient">
+      <div class="modal-header">
+        <h3>Client Profile</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-hero">
+          <div class="profile-avatar-lg">{{selectedClient.name[0]}}</div>
+          <div>
+            <h4 class="profile-name">{{selectedClient.name}}</h4>
+            <p class="profile-sub">{{selectedClient.email}} • {{selectedClient.phone}}</p>
+            <span class="badge" [ngClass]="{'confirmed':selectedClient.status==='active','pending':selectedClient.status==='vip','cancelled':selectedClient.status==='inactive'}">{{selectedClient.status}}</span>
+          </div>
+        </div>
+        <div class="detail-grid" style="margin-top:1rem">
+          <div class="detail-item"><label>Total Bookings</label><p>{{selectedClient.bookings}}</p></div>
+          <div class="detail-item"><label>Total Spent</label><p class="amount">₱{{selectedClient.totalSpent}}</p></div>
+          <div class="detail-item"><label>Joined</label><p>{{selectedClient.joined}}</p></div>
+          <div class="detail-item"><label>Last Visit</label><p>{{selectedClient.lastVisit}}</p></div>
+          <div class="detail-item full-width"><label>Favorite Service</label><p>{{selectedClient.favoriteService}}</p></div>
+        </div>
+        <div style="margin-top:1rem">
+          <p class="section-label">Booking History</p>
+          <div class="mini-booking-list">
+            <div class="mini-booking" *ngFor="let b of getClientBookings(selectedClient.name)">
+              <span class="badge" [ngClass]="b.status">{{b.status}}</span>
+              <span>{{b.service}}</span>
+              <span class="muted">{{b.date}}</span>
+              <span class="amount">₱{{b.amount}}</span>
+            </div>
+            <p class="muted" *ngIf="getClientBookings(selectedClient.name).length===0">No bookings found in current data.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="cancel-btn" (click)="closeModal()">Close</button></div>
+    </ng-container>
+
+    <!-- VIEW ARTIST PROFILE -->
+    <ng-container *ngIf="modalType==='viewArtist' && selectedArtist">
+      <div class="modal-header">
+        <h3>Artist Profile</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-hero">
+          <div class="profile-avatar-lg artist-av">{{selectedArtist.initials}}</div>
+          <div>
+            <h4 class="profile-name">{{selectedArtist.name}}</h4>
+            <p class="profile-sub">{{selectedArtist.specialty}}</p>
+            <p class="profile-sub">{{selectedArtist.email}} • {{selectedArtist.phone}}</p>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <span class="avail-badge" [ngClass]="{'avail-yes':selectedArtist.availability==='Available','avail-busy':selectedArtist.availability==='Busy','avail-off':selectedArtist.availability==='On Leave'||selectedArtist.availability==='Unavailable'}">{{selectedArtist.availability}}</span>
+              <span class="badge" [ngClass]="selectedArtist.status==='active'?'confirmed':'cancelled'">{{selectedArtist.status}}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-grid" style="margin-top:1rem">
+          <div class="detail-item"><label>Total Bookings</label><p>{{selectedArtist.bookings}}</p></div>
+          <div class="detail-item"><label>Total Revenue</label><p class="amount">₱{{selectedArtist.revenue}}</p></div>
+          <div class="detail-item"><label>Rating</label>
+            <p>
+              <span *ngFor="let s of getRatingStars(selectedArtist.rating)" [class.filled]="s==='★'" style="font-size:1rem">{{s}}</span>
+              {{selectedArtist.rating}}
+            </p>
+          </div>
+          <div class="detail-item"><label>Joined</label><p>{{selectedArtist.joinedDate}}</p></div>
+          <div class="detail-item full-width">
+            <label>Completion Rate</label>
+            <div class="completion-bar-wrap" style="margin-top:6px">
+              <div class="completion-bar" [style.width.%]="selectedArtist.completionRate">{{selectedArtist.completionRate}}%</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <p class="section-label">Recent Bookings</p>
+          <div class="mini-booking-list">
+            <div class="mini-booking" *ngFor="let b of getArtistBookings(selectedArtist.name)">
+              <span class="badge" [ngClass]="b.status">{{b.status}}</span>
+              <span>{{b.client}}</span>
+              <span class="muted">{{b.date}}</span>
+              <span class="amount">₱{{b.amount}}</span>
+            </div>
+            <p class="muted" *ngIf="getArtistBookings(selectedArtist.name).length===0">No bookings found in current data.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="cancel-btn" (click)="closeModal()">Close</button></div>
+    </ng-container>
+
+    <!-- ADD BOOKING — Smart Artist Suggestion -->
+    <ng-container *ngIf="modalType==='addBooking'">
+      <div class="modal-header">
+        <h3>New Booking</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-scroll-body">
+
+        <!-- ① CLIENT INFO -->
+        <div class="modal-section-label">👤 Client Information</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Client Name *</label>
+            <input type="text" [(ngModel)]="newBooking.client" placeholder="e.g. Maria Santos" />
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" [(ngModel)]="newBooking.phone" placeholder="09XXXXXXXXX" />
+          </div>
+        </div>
+
+        <!-- ② SERVICE -->
+        <div class="modal-section-label">💄 Service</div>
+        <div class="form-group">
+          <select [(ngModel)]="newBooking.service" (ngModelChange)="onServiceChange()">
+            <option value="">Select a service...</option>
+            <option *ngFor="let s of services" [value]="s.name">
+              {{s.icon}} {{s.name}} — ₱{{s.price}} ({{s.duration}})
+            </option>
+          </select>
+        </div>
+
+        <!-- ③ DATE & TIME — Calendar Picker -->
+        <div class="modal-section-label">📅 Date & Time</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" [(ngModel)]="newBooking.bookingDate" class="date-input" />
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" [(ngModel)]="newBooking.bookingTime" class="time-input" />
+          </div>
+        </div>
+
+        <!-- ④ ARTIST PICKER -->
+        <div class="modal-section-label">
+          🎨 Artist
+          <span class="auto-tag" *ngIf="autoAssignedArtist">✨ Auto-suggested by specialty</span>
+        </div>
+
+        <div class="artist-hint" *ngIf="!newBooking.service">
+          <span>👆 Select a service first to see recommended artists</span>
+        </div>
+
+        <div *ngIf="newBooking.service">
+          <div *ngIf="suggestedArtists.length > 0">
+            <p class="artist-group-label">⭐ Recommended for <strong>{{newBooking.service}}</strong></p>
+            <div class="artist-picker-grid">
+              <div class="artist-pick-card"
+                *ngFor="let a of suggestedArtists"
+                [class.selected]="newBooking.artist === a.name"
+                [class.busy]="a.availability !== 'Available'"
+                (click)="newBooking.artist = a.name">
+                <div class="apc-avatar">{{a.initials}}</div>
+                <div class="apc-info">
+                  <p class="apc-name">{{a.name}}</p>
+                  <p class="apc-specialty">{{a.specialty}}</p>
+                  <p class="apc-rating">⭐ {{a.rating}}</p>
+                </div>
+                <div class="apc-avail" [ngClass]="{'avail-yes':a.availability==='Available','avail-busy':a.availability==='Busy','avail-off':a.availability!=='Available'&&a.availability!=='Busy'}">
+                  {{a.availability}}
+                </div>
+                <span class="apc-check" *ngIf="newBooking.artist === a.name">✓</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="otherArtists.length > 0" style="margin-top:10px">
+            <p class="artist-group-label other-label">Other Available Artists</p>
+            <div class="artist-picker-grid">
+              <div class="artist-pick-card other-card"
+                *ngFor="let a of otherArtists"
+                [class.selected]="newBooking.artist === a.name"
+                [class.busy]="a.availability !== 'Available'"
+                (click)="newBooking.artist = a.name">
+                <div class="apc-avatar other-av">{{a.initials}}</div>
+                <div class="apc-info">
+                  <p class="apc-name">{{a.name}}</p>
+                  <p class="apc-specialty">{{a.specialty}}</p>
+                  <p class="apc-rating">⭐ {{a.rating}}</p>
+                </div>
+                <div class="apc-avail" [ngClass]="{'avail-yes':a.availability==='Available','avail-busy':a.availability==='Busy','avail-off':a.availability!=='Available'&&a.availability!=='Busy'}">
+                  {{a.availability}}
+                </div>
+                <span class="apc-check" *ngIf="newBooking.artist === a.name">✓</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="selected-artist-bar" *ngIf="newBooking.artist">
+            <span>✅ Selected: <strong>{{newBooking.artist}}</strong></span>
+            <span *ngIf="getArtistForBooking(newBooking.artist!) as art" class="muted">
+              — {{art.specialty}} • ⭐{{art.rating}}
+            </span>
+          </div>
+        </div>
+
+        <!-- ⑤ ADD-ONS -->
+        <div class="modal-section-label" style="margin-top:14px">✨ Add-Ons <span class="addon-sub">(optional extras)</span></div>
+        <div class="addons-grid">
+          <div class="addon-card"
+            *ngFor="let a of bookingAddons"
+            [class.selected]="a.selected"
+            (click)="toggleAddon(a)">
+            <div class="addon-check">{{a.selected ? '✓' : '+'}}</div>
+            <div class="addon-info">
+              <p class="addon-name">{{a.name}}</p>
+              <p class="addon-desc">{{a.desc}}</p>
+            </div>
+            <span class="addon-price">+₱{{a.price}}</span>
+          </div>
+        </div>
+
+        <!-- ⑥ SPECIAL NOTES -->
+        <div class="modal-section-label" style="margin-top:14px">📝 Special Notes</div>
+        <div class="form-group">
+          <textarea [(ngModel)]="newBooking.notes"
+            placeholder="Any special requests, skin concerns, allergies, event details..."
+            rows="3" class="review-textarea"></textarea>
+        </div>
+
+        <!-- ⑦ PRICE SUMMARY -->
+        <div class="price-summary">
+          <div class="ps-row">
+            <span>Base Service</span>
+            <span class="ps-val">₱{{getBasePrice()}}</span>
+          </div>
+          <div class="ps-row addon-row" *ngFor="let a of selectedAddons">
+            <span>+ {{a.name}}</span>
+            <span class="ps-val addon-price-val">+₱{{a.price}}</span>
+          </div>
+          <div class="ps-divider"></div>
+          <div class="ps-row ps-total">
+            <span>Total Amount</span>
+            <span class="ps-total-val">₱{{getTotalPrice()}}</span>
+          </div>
+        </div>
+
+      </div><!-- /modal-scroll-body -->
+
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeModal()">Cancel</button>
+        <button class="save-btn" (click)="saveModal()">Confirm Booking</button>
+      </div>
+    </ng-container>
+
+    <!-- ADD CLIENT -->
+    <ng-container *ngIf="modalType==='addClient'">
+      <div class="modal-header"><h3>Add New Client</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Full Name *</label><input type="text" [(ngModel)]="newClient.name" placeholder="e.g. Joy Dela Cruz" /></div>
+        <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="newClient.email" placeholder="email@example.com" /></div>
+        <div class="form-group"><label>Phone</label><input type="text" [(ngModel)]="newClient.phone" placeholder="09XXXXXXXXX" /></div>
+      </div>
+      <div class="modal-footer"><button class="cancel-btn" (click)="closeModal()">Cancel</button><button class="save-btn" (click)="saveModal()">Add Client</button></div>
+    </ng-container>
+
+    <!-- ADD ARTIST -->
+    <ng-container *ngIf="modalType==='addArtist'">
+      <div class="modal-header"><h3>Add New Artist</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Full Name *</label><input type="text" [(ngModel)]="newArtist.name" placeholder="e.g. Ana Reyes" /></div>
+        <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="newArtist.email" placeholder="artist@glowbook.com" /></div>
+        <div class="form-row">
+          <div class="form-group"><label>Phone</label><input type="text" [(ngModel)]="newArtist.phone" placeholder="09XXXXXXXXX" /></div>
+          <div class="form-group"><label>Specialty</label><input type="text" [(ngModel)]="newArtist.specialty" placeholder="e.g. Bridal & Glam" /></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="cancel-btn" (click)="closeModal()">Cancel</button><button class="save-btn" (click)="saveModal()">Add Artist</button></div>
+    </ng-container>
+
+    <!-- REPLY TO REVIEW -->
+    <ng-container *ngIf="modalType==='replyReview' && selectedReview">
+      <div class="modal-header"><h3>Reply to Review</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="review-preview-card">
+          <div class="rpc-top">
+            <div class="rpc-stars">
+              <span *ngFor="let s of getRatingStarsArray(selectedReview.rating)" [class.star-on]="s">★</span>
+            </div>
+            <span class="muted">{{selectedReview.client}} — {{selectedReview.service}}</span>
+          </div>
+          <p class="rpc-comment">"{{selectedReview.comment}}"</p>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label>Your Reply *</label>
+          <textarea [(ngModel)]="reviewReplyText" placeholder="Write a professional reply to the client..." rows="4" class="review-textarea"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeModal()">Cancel</button>
+        <button class="save-btn" (click)="saveReviewReply()">Save Reply</button>
+      </div>
+    </ng-container>
+
+    <!-- ADD SERVICE -->
+    <ng-container *ngIf="modalType==='addService'">
+      <div class="modal-header"><h3>Add New Service</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group"><label>Icon (emoji)</label><input type="text" [(ngModel)]="newService.icon" placeholder="💄" /></div>
+          <div class="form-group"><label>Service Name *</label><input type="text" [(ngModel)]="newService.name" placeholder="e.g. Korean Makeup" /></div>
+        </div>
+        <div class="form-group"><label>Description</label><input type="text" [(ngModel)]="newService.desc" placeholder="Short description..." /></div>
+        <div class="form-row">
+          <div class="form-group"><label>Price (₱) *</label><input type="text" [(ngModel)]="newService.price" placeholder="0" /></div>
+          <div class="form-group"><label>Duration</label><input type="text" [(ngModel)]="newService.duration" placeholder="e.g. 2 hrs" /></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="cancel-btn" (click)="closeModal()">Cancel</button><button class="save-btn" (click)="saveModal()">Add Service</button></div>
+    </ng-container>
+
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showConfirmDialog" (click)="cancelConfirm()">
+  <div class="confirm-box" (click)="$event.stopPropagation()">
+    <div class="confirm-icon">⚠️</div>
+    <h3>Are you sure?</h3>
+    <p>This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="cancel-btn" (click)="cancelConfirm()">Cancel</button>
+      <button class="delete-confirm-btn" (click)="confirmDialogAction()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" [class.visible]="toastVisible" [ngClass]="'toast-'+toastType">
+  {{toastMessage}}
+</div>

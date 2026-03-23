@@ -1,0 +1,1375 @@
+<div class="artist-dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+        <div class="sidebar-header">
+            <div class="brand-mark">
+                <span class="brand-gem">🎨</span>
+                <span class="brand-text" *ngIf="!sidebarCollapsed">GlowBook</span>
+            </div>
+            <button class="collapse-btn" (click)="sidebarCollapsed = !sidebarCollapsed">
+                {{ sidebarCollapsed ? '▶' : '◀' }}
+            </button>
+        </div>
+
+        <div class="artist-profile-mini" *ngIf="!sidebarCollapsed">
+            <div class="avatar-ring">
+                <div class="avatar">{{ artistInitials }}</div>
+                <div class="status-dot"></div>
+            </div>
+            <div class="profile-info">
+                <p class="profile-name">{{ artistName }}</p>
+                <p class="profile-role">💄 {{ artistSpecialty }}</p>
+            </div>
+        </div>
+        <div class="avatar-mini-wrap" *ngIf="sidebarCollapsed">
+            <div class="avatar-ring">
+                <div class="avatar">{{ artistInitials }}</div>
+                <div class="status-dot"></div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item" [class.active]="activeTab==='overview'" (click)="setTab('overview')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Overview</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='bookings'" (click)="setTab('bookings')">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Bookings</span>
+                <span class="nav-badge" *ngIf="!sidebarCollapsed && pendingCount > 0">{{ pendingCount }}</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='messages'" (click)="setTab('messages')">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Messages</span>
+                <span class="nav-badge" *ngIf="!sidebarCollapsed && unreadMessages > 0">{{ unreadMessages }}</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='portfolio'" (click)="setTab('portfolio')">
+                <span class="nav-icon">🖼</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Portfolio</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='schedule'" (click)="setTab('schedule')">
+                <span class="nav-icon">🗓</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Schedule</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='earnings'" (click)="setTab('earnings')">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Earnings</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='reviews'" (click)="setTab('reviews')">
+                <span class="nav-icon">⭐</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Reviews</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='services'" (click)="setTab('services')">
+                <span class="nav-icon">💄</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">My Services</span>
+            </a>
+            <a class="nav-item nav-emergency" [class.active]="activeTab==='emergency'" (click)="setTab('emergency')">
+                <span class="nav-icon">🚨</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Emergency</span>
+            </a>
+            <a class="nav-item" [class.active]="activeTab==='profile'" (click)="setTab('profile')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">My Profile</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a class="nav-item nav-logout" (click)="onLogout()">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-label" *ngIf="!sidebarCollapsed">Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h2 class="page-title">{{ getPageTitle() }}</h2>
+                <p class="page-sub">{{ getPageSub() }}</p>
+            </div>
+            <div class="topbar-right">
+                <div class="notif-btn" (click)="setTab('messages')">
+                    💬
+                    <span class="notif-dot" *ngIf="unreadMessages > 0"></span>
+                </div>
+                <div class="notif-btn" (click)="showNotifPanel = !showNotifPanel">
+                    🔔
+                    <span class="notif-dot" *ngIf="pendingCount > 0"></span>
+                </div>
+                <div class="topbar-avatar" (click)="setTab('profile')">{{ artistInitials }}</div>
+            </div>
+        </header>
+
+        <!-- ══════════════════════════════════
+         OVERVIEW TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='overview'">
+
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h3>Welcome back, {{ artistName }} ✨</h3>
+                    <p>You have <strong>{{ pendingCount }} pending</strong> bookings that need attention.</p>
+                </div>
+                <div class="welcome-art">💄✦🌸</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card stat-purple">
+                    <div class="stat-top">
+                        <span class="stat-icon">📅</span>
+                        <span class="stat-trend trend-up">+12%</span>
+                    </div>
+                    <p class="stat-value">{{ stats.totalBookings }}</p>
+                    <p class="stat-label">Total Bookings</p>
+                </div>
+                <div class="stat-card stat-pink">
+                    <div class="stat-top">
+                        <span class="stat-icon">⏳</span>
+                        <span class="stat-trend trend-warn">Action needed</span>
+                    </div>
+                    <p class="stat-value">{{ stats.pending }}</p>
+                    <p class="stat-label">Pending</p>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-top">
+                        <span class="stat-icon">✅</span>
+                        <span class="stat-trend trend-up">+5 this week</span>
+                    </div>
+                    <p class="stat-value">{{ stats.completed }}</p>
+                    <p class="stat-label">Completed</p>
+                </div>
+                <div class="stat-card stat-gold">
+                    <div class="stat-top">
+                        <span class="stat-icon">💰</span>
+                        <span class="stat-trend trend-up">+8%</span>
+                    </div>
+                    <p class="stat-value">₱{{ stats.earnings.toLocaleString() }}</p>
+                    <p class="stat-label">This Month</p>
+                </div>
+                <div class="stat-card stat-blue">
+                    <div class="stat-top">
+                        <span class="stat-icon">⭐</span>
+                        <span class="stat-trend trend-up">Top rated</span>
+                    </div>
+                    <p class="stat-value">{{ stats.avgRating }}</p>
+                    <p class="stat-label">Avg Rating</p>
+                </div>
+                <div class="stat-card stat-rose">
+                    <div class="stat-top">
+                        <span class="stat-icon">💬</span>
+                        <span class="stat-trend trend-warn">{{ unreadMessages }} unread</span>
+                    </div>
+                    <p class="stat-value">{{ stats.totalMessages }}</p>
+                    <p class="stat-label">Messages</p>
+                </div>
+            </div>
+
+            <!-- Two Column -->
+            <div class="overview-grid">
+                <!-- Upcoming Bookings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Upcoming Bookings</h3>
+                        <button class="card-link" (click)="setTab('bookings')">View all →</button>
+                    </div>
+                    <div class="booking-list">
+                        <div class="booking-item" *ngFor="let b of upcomingBookings">
+                            <div class="booking-avatar">{{ b.clientName[0] }}</div>
+                            <div class="booking-info">
+                                <p class="booking-client">{{ b.clientName }}</p>
+                                <p class="booking-detail">{{ b.service }} · {{ b.date }} · {{ b.time }}</p>
+                            </div>
+                            <div class="booking-right">
+                                <span class="booking-badge" [ngClass]="b.status">{{ b.status }}</span>
+                                <span class="booking-amount">₱{{ b.amount.toLocaleString() }}</span>
+                            </div>
+                        </div>
+                        <p class="empty-state" *ngIf="upcomingBookings.length===0">No upcoming bookings 🌸</p>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-col">
+                    <!-- Recent Reviews -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Reviews</h3>
+                            <button class="card-link" (click)="setTab('reviews')">See all →</button>
+                        </div>
+                        <div class="mini-reviews">
+                            <div class="mini-review" *ngFor="let r of reviews.slice(0,2)">
+                                <div class="review-stars">{{ getStars(r.rating) }}</div>
+                                <p class="review-text">"{{ r.comment }}"</p>
+                                <p class="review-author">— {{ r.clientName }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card" style="margin-top:14px">
+                        <div class="card-header">
+                            <h3>Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="qa-btn"
+                                (click)="setTab('schedule')"><span>🗓</span><span>Schedule</span></button>
+                            <button class="qa-btn"
+                                (click)="setTab('portfolio')"><span>🖼</span><span>Portfolio</span></button>
+                            <button class="qa-btn"
+                                (click)="setTab('messages')"><span>💬</span><span>Messages</span></button>
+                            <button class="qa-btn"
+                                (click)="setTab('services')"><span>💄</span><span>Services</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         BOOKINGS TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='bookings'">
+            <div class="filter-bar">
+                <button class="filter-btn" [class.active]="bookingFilter==='all'"
+                    (click)="bookingFilter='all'">All</button>
+                <button class="filter-btn" [class.active]="bookingFilter==='pending'"
+                    (click)="bookingFilter='pending'">Pending</button>
+                <button class="filter-btn" [class.active]="bookingFilter==='confirmed'"
+                    (click)="bookingFilter='confirmed'">Confirmed</button>
+                <button class="filter-btn" [class.active]="bookingFilter==='completed'"
+                    (click)="bookingFilter='completed'">Completed</button>
+                <button class="filter-btn" [class.active]="bookingFilter==='cancelled'"
+                    (click)="bookingFilter='cancelled'">Cancelled</button>
+            </div>
+            <div class="bookings-table-wrap">
+                <table class="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Service</th>
+                            <th>Date & Time</th>
+                            <th>Location</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let b of filteredBookings">
+                            <td>
+                                <div class="table-client">
+                                    <div class="table-avatar">{{ b.clientName[0] }}</div>
+                                    <div>
+                                        <p style="font-weight:600;font-size:0.84rem">{{ b.clientName }}</p>
+                                        <p style="font-size:0.72rem;color:#7a50a0">{{ b.clientPhone }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ b.service }}</td>
+                            <td>{{ b.date }}<br><span style="font-size:0.75rem;color:#7a50a0">{{ b.time }}</span></td>
+                            <td style="font-size:0.8rem">{{ b.location }}</td>
+                            <td class="amount-cell">₱{{ b.amount.toLocaleString() }}</td>
+                            <td><span class="booking-badge" [ngClass]="b.status">{{ b.status }}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="act-btn confirm" *ngIf="b.status==='pending'"
+                                        (click)="confirmBooking(b)" title="Confirm">✓</button>
+                                    <button class="act-btn cancel" *ngIf="b.status==='pending'"
+                                        (click)="cancelBooking(b)" title="Cancel">✕</button>
+                                    <button class="act-btn msg" (click)="openMessage(b)"
+                                        title="Message client">💬</button>
+                                    <button class="act-btn view" (click)="viewBooking(b)"
+                                        title="View details">👁</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="empty-state" *ngIf="filteredBookings.length===0">No bookings found 🌸</p>
+            </div>
+
+            <!-- Booking Detail Modal -->
+            <div class="modal-overlay" *ngIf="selectedBooking" (click)="selectedBooking=null">
+                <div class="modal" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>Booking Details</h3>
+                        <button class="modal-close" (click)="selectedBooking=null">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-row"><span>Client</span><strong>{{ selectedBooking.clientName }}</strong>
+                        </div>
+                        <div class="detail-row"><span>Phone</span><strong>{{ selectedBooking.clientPhone }}</strong>
+                        </div>
+                        <div class="detail-row"><span>Service</span><strong>{{ selectedBooking.service }}</strong></div>
+                        <div class="detail-row"><span>Date</span><strong>{{ selectedBooking.date }}</strong></div>
+                        <div class="detail-row"><span>Time</span><strong>{{ selectedBooking.time }}</strong></div>
+                        <div class="detail-row"><span>Location</span><strong>{{ selectedBooking.location }}</strong>
+                        </div>
+                        <div class="detail-row"><span>Amount</span><strong class="amount-cell">₱{{
+                                selectedBooking.amount.toLocaleString() }}</strong></div>
+                        <div class="detail-row"><span>Status</span><span class="booking-badge"
+                                [ngClass]="selectedBooking.status">{{ selectedBooking.status }}</span></div>
+                        <div class="detail-row" *ngIf="selectedBooking.notes"><span>Notes</span><strong>{{
+                                selectedBooking.notes }}</strong></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-primary" (click)="openMessage(selectedBooking); selectedBooking=null">💬
+                            Message Client</button>
+                        <button class="btn-secondary" (click)="selectedBooking=null">Close</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         MESSAGES TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content messages-tab" *ngIf="activeTab==='messages'">
+            <div class="messages-layout">
+                <!-- Conversations List -->
+                <div class="conversations-panel">
+                    <div class="conv-search">
+                        <input type="text" [(ngModel)]="messageSearch" placeholder="🔍 Search clients..."
+                            class="search-input" />
+                    </div>
+                    <div class="conv-list">
+                        <div class="conv-item" *ngFor="let conv of filteredConversations"
+                            [class.active]="activeConversation?.clientId === conv.clientId"
+                            (click)="selectConversation(conv)">
+                            <div class="conv-avatar">{{ conv.clientName[0] }}</div>
+                            <div class="conv-info">
+                                <div class="conv-top">
+                                    <p class="conv-name">{{ conv.clientName }}</p>
+                                    <p class="conv-time">{{ conv.lastTime }}</p>
+                                </div>
+                                <p class="conv-last">{{ conv.lastMessage }}</p>
+                            </div>
+                            <span class="conv-unread" *ngIf="conv.unread > 0">{{ conv.unread }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Panel -->
+                <div class="chat-panel" *ngIf="activeConversation">
+                    <div class="chat-header">
+                        <div class="conv-avatar">{{ activeConversation.clientName[0] }}</div>
+                        <div>
+                            <p class="chat-name">{{ activeConversation.clientName }}</p>
+                            <p class="chat-status">🟢 Active</p>
+                        </div>
+                    </div>
+                    <div class="chat-messages" #chatBox>
+                        <div class="chat-msg" *ngFor="let msg of activeConversation.messages"
+                            [class.sent]="msg.sender==='artist'" [class.received]="msg.sender==='client'">
+                            <div class="msg-bubble">{{ msg.text }}</div>
+                            <p class="msg-time">{{ msg.time }}</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" [(ngModel)]="newMessage" placeholder="Type a message..." class="chat-input"
+                            (keyup.enter)="sendMessage()" />
+                        <button class="send-btn" (click)="sendMessage()">Send ✈</button>
+                    </div>
+                </div>
+
+                <!-- No Conversation Selected -->
+                <div class="chat-empty" *ngIf="!activeConversation">
+                    <div class="chat-empty-icon">💬</div>
+                    <p>Select a conversation to start messaging</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         PORTFOLIO TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='portfolio'">
+            <div class="portfolio-header">
+                <p class="portfolio-sub">Showcase your best work to attract more clients ✨</p>
+                <button class="btn-primary" (click)="triggerUpload()">+ Add Photo</button>
+                <input #fileInput type="file" accept="image/*" style="display:none" (change)="onFileSelected($event)" />
+            </div>
+            <div class="portfolio-grid">
+                <div class="portfolio-item" *ngFor="let item of portfolioItems; let i=index">
+                    <img [src]="item.url" [alt]="item.caption" />
+                    <div class="portfolio-overlay">
+                        <p class="portfolio-caption">{{ item.caption }}</p>
+                        <div class="portfolio-actions">
+                            <button class="delete-btn" (click)="deletePortfolioItem(i)">🗑 Remove</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="portfolio-add" (click)="triggerUpload()">
+                    <span>+</span>
+                    <p>Add Work</p>
+                </div>
+            </div>
+            <p class="empty-state" *ngIf="portfolioItems.length===0" style="margin-top:2rem">
+                Upload your best work to attract clients 🎨
+            </p>
+        </section>
+
+        <!-- SCHEDULE TAB -->
+        <section class="tab-content" *ngIf="activeTab==='schedule'">
+            <div class="schedule-main-grid">
+
+                <!-- Calendar Card -->
+                <div class="card cal-card">
+                    <div class="card-header">
+                        <h3>📅 Booking Calendar</h3>
+                        <div class="cal-nav">
+                            <button class="cal-nav-btn" (click)="prevMonth()">&#8249;</button>
+                            <span class="cal-month-label">{{ getMonthLabel() }}</span>
+                            <button class="cal-nav-btn" (click)="nextMonth()">&#8250;</button>
+                        </div>
+                    </div>
+                    <div class="cal-legend">
+                        <span class="legend-dot booked"></span><span>Booked</span>
+                        <span class="legend-dot dot-range-start"></span><span>Avail Start</span>
+                        <span class="legend-dot dot-range-end"></span><span>Avail End</span>
+                        <span class="legend-dot dot-in-range"></span><span>Available</span>
+                        <span class="legend-dot dot-blocked"></span><span>Blocked</span>
+                        <span class="legend-dot dot-leave"></span><span>Leave</span>
+                    </div>
+                    <div class="cal-weekdays">
+                        <span *ngFor="let d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']">{{ d }}</span>
+                    </div>
+                    <div class="cal-grid">
+                        <div *ngFor="let cell of calendarCells" class="cal-cell" [class.cal-empty]="!cell.date"
+                            [class.cal-today]="cell.isToday" [class.cal-booked]="cell.hasBooking"
+                            [class.cal-blocked]="cell.isBlocked" [class.cal-range-start]="cell.isRangeStart"
+                            [class.cal-range-end]="cell.isRangeEnd" [class.cal-in-range]="cell.inRange"
+                            [class.cal-leave]="cell.isLeave" [class.cal-leave-start]="cell.isLeaveStart"
+                            [class.cal-leave-end]="cell.isLeaveEnd" (click)="onCalendarClick(cell)">
+                            <span class="cal-day-num" *ngIf="cell.date">{{ cell.date.getDate() }}</span>
+                            <span class="cal-dot"
+                                *ngIf="cell.hasBooking && !cell.isRangeStart && !cell.isRangeEnd && !cell.inRange"></span>
+                        </div>
+                    </div>
+                    <div class="cal-range-info" *ngIf="availRange.start">
+                        <div class="range-info-row">
+                            <span class="range-label">From</span>
+                            <span class="range-value">{{ formatRangeDate(availRange.start) }}</span>
+                        </div>
+                        <div class="range-info-row" *ngIf="availRange.end">
+                            <span class="range-label">Until</span>
+                            <span class="range-value">{{ formatRangeDate(availRange.end) }}</span>
+                        </div>
+                        <p class="range-hint" *ngIf="!availRange.end">Click another date to set end date</p>
+                        <div class="range-actions" *ngIf="availRange.start && availRange.end">
+                            <button class="btn-primary" style="padding:0.45rem 1rem;font-size:0.8rem"
+                                (click)="saveAvailRange()">Save Range</button>
+                            <button class="btn-secondary" style="padding:0.45rem 1rem;font-size:0.8rem"
+                                (click)="clearAvailRange()">Clear</button>
+                        </div>
+                    </div>
+                    <!-- Booking Detail Popup -->
+                    <div class="cal-booking-popup" *ngIf="selectedCalDay">
+                        <div class="cal-popup-header">
+                            <span>📅 {{ formatRangeDate(selectedCalDay.date) }}</span>
+                            <button (click)="selectedCalDay=null">&#x2715;</button>
+                        </div>
+                        <div *ngIf="selectedCalDay.bookings && selectedCalDay.bookings.length > 0">
+                            <div class="cal-popup-booking" *ngFor="let b of selectedCalDay.bookings">
+                                <div class="cal-popup-avatar">{{ b.clientName[0] }}</div>
+                                <div class="cal-popup-info">
+                                    <p class="cal-popup-name">{{ b.clientName }}</p>
+                                    <p class="cal-popup-detail">{{ b.service }} · {{ b.time }}</p>
+                                    <p class="cal-popup-location">📍 {{ b.location }}</p>
+                                </div>
+                                <span class="booking-badge" [ngClass]="b.status">{{ b.status }}</span>
+                            </div>
+                        </div>
+                        <p class="cal-popup-empty"
+                            *ngIf="!selectedCalDay.bookings || selectedCalDay.bookings.length===0">
+                            No bookings on this day.
+                        </p>
+                    </div>
+
+                    <p class="cal-hint" *ngIf="!availRange.start && !selectedCalDay">Click a date to view bookings or
+                        set availability</p>
+                    <div class="saved-ranges" *ngIf="savedRanges.length > 0">
+                        <p class="saved-ranges-title">Saved Ranges</p>
+                        <div class="saved-range-chip" *ngFor="let r of savedRanges; let i=index">
+                            <span>{{ formatRangeDate(r.start) }} &#8594; {{ formatRangeDate(r.end) }}</span>
+                            <button (click)="savedRanges.splice(i,1); buildCalendar()">&#x2715;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Days + Hours + Blocked -->
+                <div class="schedule-right-col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Availability Days</h3>
+                        </div>
+                        <div class="days-grid">
+                            <div class="day-toggle" *ngFor="let day of weekDays" [class.active]="day.available"
+                                (click)="day.available = !day.available">
+                                <span class="day-name">{{ day.name }}</span>
+                                <span class="day-status">{{ day.available ? '✓ Open' : 'Off' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top:13px">
+                        <div class="card-header">
+                            <h3>Working Hours</h3>
+                        </div>
+                        <div class="hours-grid">
+                            <div class="hours-row" *ngFor="let day of weekDays" [class.disabled]="!day.available">
+                                <span class="hours-day">{{ day.name }}</span>
+                                <input type="time" [(ngModel)]="day.start" [disabled]="!day.available"
+                                    class="time-input" />
+                                <span class="hours-sep">&#8212;</span>
+                                <input type="time" [(ngModel)]="day.end" [disabled]="!day.available"
+                                    class="time-input" />
+                            </div>
+                        </div>
+                        <button class="btn-primary" style="margin-top:1.1rem" (click)="saveSchedule()">Save
+                            Schedule</button>
+                        <p class="success-msg" *ngIf="scheduleSaved">&#x2705; Schedule saved!</p>
+                    </div>
+                    <div class="card" style="margin-top:13px">
+                        <div class="card-header">
+                            <h3>Block Dates</h3>
+                            <button class="btn-primary" style="padding:0.38rem 0.85rem;font-size:0.78rem"
+                                (click)="addBlockedDate()">+ Block Date</button>
+                        </div>
+                        <div class="blocked-dates">
+                            <div class="blocked-chip" *ngFor="let d of blockedDates; let i=index">
+                                {{ d }}<button (click)="removeBlockedDate(i)">&#x2715;</button>
+                            </div>
+                            <p *ngIf="blockedDates.length===0" style="font-size:0.8rem;color:#6a4a9a">No blocked dates
+                                &#x1F338;</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ══════════════════════════════════
+         EARNINGS TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='earnings'">
+
+            <!-- Stats Row -->
+            <div class="earnings-stats">
+                <div class="stat-card stat-gold">
+                    <div class="stat-top"><span class="stat-icon">💰</span><span class="stat-trend trend-up">This
+                            month</span></div>
+                    <p class="stat-value">₱{{ stats.earnings.toLocaleString() }}</p>
+                    <p class="stat-label">Monthly Earnings</p>
+                </div>
+                <div class="stat-card stat-purple">
+                    <div class="stat-top"><span class="stat-icon">📊</span><span class="stat-trend trend-up">All
+                            time</span></div>
+                    <p class="stat-value">₱{{ stats.totalEarnings.toLocaleString() }}</p>
+                    <p class="stat-label">Total Earned</p>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-top"><span class="stat-icon">✅</span></div>
+                    <p class="stat-value">{{ stats.completed }}</p>
+                    <p class="stat-label">Jobs Done</p>
+                </div>
+                <div class="stat-card stat-blue">
+                    <div class="stat-top"><span class="stat-icon">💎</span></div>
+                    <p class="stat-value">₱{{ stats.avgEarning.toLocaleString() }}</p>
+                    <p class="stat-label">Avg Per Booking</p>
+                </div>
+                <div class="stat-card stat-rose">
+                    <div class="stat-top"><span class="stat-icon">🏦</span><span
+                            class="stat-trend trend-up">Available</span></div>
+                    <p class="stat-value">₱{{ stats.availableBalance.toLocaleString() }}</p>
+                    <p class="stat-label">Balance</p>
+                </div>
+            </div>
+
+            <!-- Payout + History Grid -->
+            <div class="earnings-body-grid">
+
+                <!-- ── Payout Card ── -->
+                <div class="card payout-card">
+                    <div class="card-header">
+                        <h3>💸 Request Payout</h3>
+                    </div>
+
+                    <div class="balance-display">
+                        <p class="balance-label">Available Balance</p>
+                        <p class="balance-amount">₱{{ stats.availableBalance.toLocaleString() }}</p>
+                    </div>
+
+                    <!-- Amount Input -->
+                    <div class="form-group" style="margin-top:1rem">
+                        <label>Payout Amount (₱)</label>
+                        <input type="number" [(ngModel)]="payoutForm.amount" class="form-input"
+                            [max]="stats.availableBalance" min="100" placeholder="Enter amount" />
+                        <p class="input-hint">Min: ₱100 · Max: ₱{{ stats.availableBalance.toLocaleString() }}</p>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="form-group" style="margin-top:0.9rem">
+                        <label>Cash Out Via</label>
+                        <div class="payment-methods">
+                            <div class="pay-method" [class.selected]="payoutForm.method==='gcash'"
+                                (click)="payoutForm.method='gcash'">
+                                <span class="pay-logo">G</span>
+                                <span class="pay-name">GCash</span>
+                                <span class="pay-check" *ngIf="payoutForm.method==='gcash'">✓</span>
+                            </div>
+                            <div class="pay-method" [class.selected]="payoutForm.method==='maya'"
+                                (click)="payoutForm.method='maya'">
+                                <span class="pay-logo"
+                                    style="background:linear-gradient(135deg,#00a651,#007a3d)">M</span>
+                                <span class="pay-name">Maya</span>
+                                <span class="pay-check" *ngIf="payoutForm.method==='maya'">✓</span>
+                            </div>
+                            <div class="pay-method" [class.selected]="payoutForm.method==='card'"
+                                (click)="payoutForm.method='card'">
+                                <span class="pay-logo"
+                                    style="background:linear-gradient(135deg,#1a56db,#0e3fa5)">💳</span>
+                                <span class="pay-name">Bank Card</span>
+                                <span class="pay-check" *ngIf="payoutForm.method==='card'">✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Number -->
+                    <div class="form-group" style="margin-top:0.9rem" *ngIf="payoutForm.method">
+                        <label>{{ getAccountLabel() }}</label>
+                        <input type="text" [(ngModel)]="payoutForm.accountNumber" class="form-input"
+                            [placeholder]="getAccountPlaceholder()" />
+                    </div>
+
+                    <!-- Account Name -->
+                    <div class="form-group" style="margin-top:0.7rem" *ngIf="payoutForm.method">
+                        <label>Account Name</label>
+                        <input type="text" [(ngModel)]="payoutForm.accountName" class="form-input"
+                            placeholder="Full name on account" />
+                    </div>
+
+                    <p class="payout-error" *ngIf="payoutError">⚠ {{ payoutError }}</p>
+
+                    <button class="btn-primary payout-btn" (click)="requestPayout()" [disabled]="isPayoutLoading">
+                        {{ isPayoutLoading ? 'Processing...' : '💸 Request Payout' }}
+                    </button>
+                </div>
+
+                <!-- ── Cash-Out History ── -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>💳 Cash-Out History</h3>
+                    </div>
+                    <div class="cashout-list">
+                        <div class="cashout-item" *ngFor="let p of payoutHistory">
+                            <div class="cashout-icon" [ngClass]="'method-'+p.method">
+                                {{ getMethodEmoji(p.method) }}
+                            </div>
+                            <div class="cashout-info">
+                                <p class="cashout-method">{{ getMethodLabel(p.method) }} · {{ p.accountNumber }}</p>
+                                <p class="cashout-date">Requested: {{ p.requestedDate }}</p>
+                                <p class="cashout-eta" *ngIf="p.status==='processing'">Est. arrival: {{ p.expectedDate
+                                    }}</p>
+                            </div>
+                            <div class="cashout-right">
+                                <p class="cashout-amount">₱{{ p.amount.toLocaleString() }}</p>
+                                <span class="cashout-badge" [ngClass]="p.status">
+                                    {{ p.status === 'processing' ? '⏳ Processing' : p.status === 'completed' ? '✅
+                                    Received' : '❌ Failed' }}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="empty-state" *ngIf="payoutHistory.length===0">No cash-outs yet 💸</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Earnings History -->
+            <div class="card" style="margin-top:14px">
+                <div class="card-header">
+                    <h3>📋 Earnings History</h3>
+                </div>
+                <div class="bookings-table-wrap">
+                    <table class="bookings-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Service</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let b of completedBookings">
+                                <td>{{ b.clientName }}</td>
+                                <td>{{ b.service }}</td>
+                                <td>{{ b.date }}</td>
+                                <td class="amount-cell">₱{{ b.amount.toLocaleString() }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="empty-state" *ngIf="completedBookings.length===0">No earnings yet 🌸</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         PAYOUT SUCCESS MODAL
+    ══════════════════════════════════ -->
+        <div class="modal-overlay" *ngIf="showPayoutSuccess" (click)="showPayoutSuccess=false">
+            <div class="modal payout-success-modal" (click)="$event.stopPropagation()">
+                <div class="payout-success-top">
+                    <div class="payout-success-icon">✅</div>
+                    <h3>Payout Requested!</h3>
+                    <p>Your cash-out is now being processed.</p>
+                </div>
+                <div class="payout-success-details">
+                    <div class="detail-row">
+                        <span>Method</span>
+                        <strong>{{ getMethodLabel(lastPayout?.method || '') }} {{ getMethodEmoji(lastPayout?.method ||
+                            '') }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Account</span>
+                        <strong>{{ lastPayout?.accountNumber }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Amount</span>
+                        <strong class="amount-cell">₱{{ lastPayout?.amount?.toLocaleString() }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Expected Arrival</span>
+                        <strong style="color:#4ade80">{{ lastPayout?.expectedDate }}</strong>
+                    </div>
+                </div>
+
+                <!-- Problem Notice -->
+                <div class="payout-notice">
+                    <p class="notice-title">⚠️ Not received by {{ lastPayout?.expectedDate }}?</p>
+                    <p class="notice-sub">If your payout hasn't arrived by the expected date, you may:</p>
+                    <div class="notice-actions">
+                        <button class="notice-btn call" (click)="callSupport()">📞 Call Support</button>
+                        <button class="notice-btn report" (click)="reportIssue()">🚨 Report Issue</button>
+                    </div>
+                    <p class="notice-hotline">GlowBook Hotline: <strong>1800-GLOWBOOK</strong></p>
+                </div>
+
+                <button class="btn-primary" style="width:100%;margin-top:0.5rem" (click)="showPayoutSuccess=false">Got
+                    it, thanks!</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════
+         REPORT ISSUE MODAL
+    ══════════════════════════════════ -->
+        <div class="modal-overlay" *ngIf="showReportModal" (click)="showReportModal=false">
+            <div class="modal" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>🚨 Report Payout Issue</h3>
+                    <button class="modal-close" (click)="showReportModal=false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Issue Type</label>
+                        <select [(ngModel)]="reportForm.type" class="form-input">
+                            <option value="">Select issue...</option>
+                            <option value="not_received">Payment not received</option>
+                            <option value="wrong_amount">Wrong amount received</option>
+                            <option value="wrong_account">Sent to wrong account</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea [(ngModel)]="reportForm.description" class="form-input form-textarea"
+                            placeholder="Describe your issue in detail..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" (click)="submitReport()">Submit Report</button>
+                    <button class="btn-secondary" (click)="showReportModal=false">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════
+         REVIEWS TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='reviews'">
+            <div class="reviews-summary">
+                <div class="rating-big">
+                    <p class="rating-number">{{ stats.avgRating }}</p>
+                    <div class="rating-stars">{{ getStars(Math.round(+stats.avgRating)) }}</div>
+                    <p class="rating-count">{{ reviews.length }} reviews</p>
+                </div>
+                <div class="rating-bars">
+                    <div class="rating-bar-row" *ngFor="let star of [5,4,3,2,1]">
+                        <span class="bar-label">{{ star }}★</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" [style.width.%]="getRatingPercent(star)"></div>
+                        </div>
+                        <span class="bar-count">{{ getRatingCount(star) }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="reviews-grid">
+                <div class="review-card" *ngFor="let r of reviews">
+                    <div class="review-header">
+                        <div class="review-avatar">{{ r.clientName[0] }}</div>
+                        <div>
+                            <p class="review-name">{{ r.clientName }}</p>
+                            <p class="review-date">{{ r.date }}</p>
+                        </div>
+                        <div class="review-stars-big">{{ getStars(r.rating) }}</div>
+                    </div>
+                    <p class="review-comment">"{{ r.comment }}"</p>
+                    <p class="review-service">{{ r.service }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         SERVICES TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='services'">
+            <div class="services-header">
+                <p style="font-size:0.85rem;color:#7a50a0">Manage your service offerings and pricing</p>
+                <button class="btn-primary" (click)="addService()">+ Add Service</button>
+            </div>
+            <div class="services-grid">
+                <div class="service-card" *ngFor="let s of services; let i=index">
+                    <div class="service-emoji">{{ s.emoji }}</div>
+                    <div class="service-info">
+                        <p class="service-name">{{ s.name }}</p>
+                        <p class="service-desc">{{ s.description }}</p>
+                        <p class="service-duration">⏱ {{ s.duration }}</p>
+                    </div>
+                    <div class="service-right">
+                        <p class="service-price">₱{{ s.price.toLocaleString() }}</p>
+                        <div class="service-actions">
+                            <button class="act-btn view" (click)="editService(i)">✏️</button>
+                            <button class="act-btn cancel" (click)="services.splice(i,1)">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Service Modal -->
+            <div class="modal-overlay" *ngIf="showServiceModal" (click)="showServiceModal=false">
+                <div class="modal" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>{{ editingServiceIndex >= 0 ? 'Edit Service' : 'Add Service' }}</h3>
+                        <button class="modal-close" (click)="showServiceModal=false">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Service Name</label>
+                            <input type="text" [(ngModel)]="serviceForm.name" class="form-input"
+                                placeholder="e.g. Bridal Makeup" />
+                        </div>
+                        <div class="form-group">
+                            <label>Emoji Icon</label>
+                            <input type="text" [(ngModel)]="serviceForm.emoji" class="form-input" placeholder="💄" />
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" [(ngModel)]="serviceForm.description" class="form-input"
+                                placeholder="Short description" />
+                        </div>
+                        <div class="form-group">
+                            <label>Price (₱)</label>
+                            <input type="number" [(ngModel)]="serviceForm.price" class="form-input"
+                                placeholder="2500" />
+                        </div>
+                        <div class="form-group">
+                            <label>Duration</label>
+                            <input type="text" [(ngModel)]="serviceForm.duration" class="form-input"
+                                placeholder="2-3 hours" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-primary" (click)="saveService()">Save Service</button>
+                        <button class="btn-secondary" (click)="showServiceModal=false">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════
+         PROFILE TAB
+    ══════════════════════════════════ -->
+        <section class="tab-content" *ngIf="activeTab==='profile'">
+            <div class="profile-wrap">
+                <div class="card profile-card">
+                    <div class="profile-avatar-big">{{ artistInitials }}</div>
+                    <p class="profile-badge">💄 Verified Artist</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" [(ngModel)]="profileForm.name" class="form-input"
+                                placeholder="Your name" />
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" [(ngModel)]="profileForm.email" class="form-input" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" [(ngModel)]="profileForm.phone" class="form-input"
+                                placeholder="Phone number" />
+                        </div>
+                        <div class="form-group">
+                            <label>Specialty</label>
+                            <input type="text" [(ngModel)]="profileForm.specialty" class="form-input"
+                                placeholder="e.g. Bridal, SFX" />
+                        </div>
+                        <div class="form-group" style="grid-column:1/-1">
+                            <label>Bio</label>
+                            <textarea [(ngModel)]="profileForm.bio" class="form-input form-textarea"
+                                placeholder="Tell clients about yourself..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" [(ngModel)]="profileForm.location" class="form-input"
+                                placeholder="City, Province" />
+                        </div>
+                        <div class="form-group">
+                            <label>Facebook / Instagram</label>
+                            <input type="text" [(ngModel)]="profileForm.social" class="form-input"
+                                placeholder="@yourhandle" />
+                        </div>
+                    </div>
+                    <button class="btn-primary" style="margin-top:0.5rem" (click)="saveProfile()">Save Changes</button>
+                    <p class="success-msg" *ngIf="profileSaved">✅ Profile updated!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- EMERGENCY TAB -->
+        <section class="tab-content" *ngIf="activeTab==='emergency'">
+
+            <!-- Active Banner -->
+            <div class="emergency-active-banner" *ngIf="activeEmergency">
+                <span class="emergency-pulse">&#x1F6A8;</span>
+                <div>
+                    <p class="emg-banner-title">Emergency Active &mdash; {{ activeEmergency.reason }}</p>
+                    <p class="emg-banner-sub">Declared {{ activeEmergency.declaredAt }} &middot; {{
+                        activeEmergency.affectedBookings.length }} booking(s) affected</p>
+                </div>
+                <button class="btn-resolve" (click)="resolveEmergency()">&#x2713; Mark Resolved</button>
+            </div>
+
+            <!-- Declare Emergency: 2-col layout -->
+            <div class="emg-layout" *ngIf="!activeEmergency">
+
+                <!-- LEFT: Form Steps -->
+                <div class="card emg-form-card">
+                    <div class="emg-declare-top">
+                        <div class="emg-icon-big">&#x1F6A8;</div>
+                        <div>
+                            <h3 class="emg-title">Declare an Emergency</h3>
+                            <p class="emg-sub">Clients will be notified automatically once you submit.</p>
+                        </div>
+                    </div>
+
+                    <div class="emg-step"><span class="emg-step-num">1</span><span class="emg-step-label">Select
+                            reason</span></div>
+                    <div class="reason-grid">
+                        <div class="reason-chip" *ngFor="let r of emergencyReasons"
+                            [class.selected]="emergencyForm.reason === r.label"
+                            (click)="emergencyForm.reason = r.label">
+                            <span>{{ r.emoji }}</span><span>{{ r.label }}</span>
+                        </div>
+                    </div>
+
+                    <div class="emg-step" style="margin-top:1rem"><span class="emg-step-num">2</span><span
+                            class="emg-step-label">Details <span
+                                style="font-weight:400;color:#6a4a9a;font-size:0.75rem">(optional)</span></span></div>
+                    <textarea [(ngModel)]="emergencyForm.details" class="form-input form-textarea"
+                        style="min-height:65px" placeholder="Brief description of your situation..."></textarea>
+
+                    <!-- Step 3: Auto-detected affected clients — no manual selection needed -->
+                    <div class="emg-step" style="margin-top:1rem">
+                        <span class="emg-step-num">3</span>
+                        <span class="emg-step-label">
+                            Clients to notify
+                            <span class="auto-label">auto-detected</span>
+                        </span>
+                    </div>
+
+                    <!-- Waiting for dates -->
+                    <div class="emg-waiting-hint" *ngIf="!emergencyForm.leaveStart || !emergencyForm.leaveEnd">
+                        <span class="emg-waiting-icon">&#x1F4C5;</span>
+                        <p>Select your leave dates on the calendar — affected clients will appear here automatically.
+                        </p>
+                    </div>
+
+                    <!-- Auto results -->
+                    <div *ngIf="emergencyForm.leaveStart && emergencyForm.leaveEnd">
+                        <div class="affected-auto-item" *ngFor="let b of autoAffectedBookings">
+                            <div class="affected-avatar">{{ b.clientName[0] }}</div>
+                            <div class="affected-info">
+                                <p class="ab-client">{{ b.clientName }}</p>
+                                <p class="ab-detail">{{ b.service }} &middot; {{ b.date }} &middot; {{ b.time }}</p>
+                            </div>
+                            <span class="booking-badge" [ngClass]="b.status">{{ b.status }}</span>
+                        </div>
+                        <p class="affected-empty" *ngIf="autoAffectedBookings.length===0">
+                            &#x2705; No bookings fall within your leave period.
+                        </p>
+                        <p class="auto-affected-count" *ngIf="autoAffectedBookings.length > 0">
+                            &#x26A0; {{ autoAffectedBookings.length }} client(s) will be auto-notified upon submit.
+                        </p>
+                    </div>
+
+                    <p class="emg-error" *ngIf="emergencyError">&#x26A0; {{ emergencyError }}</p>
+                    <button class="btn-emergency" style="margin-top:1rem;width:100%" (click)="declareEmergency()">
+                        &#x1F6A8; Declare Emergency &amp; Notify Clients
+                    </button>
+                </div>
+
+                <!-- RIGHT: Compact Calendar -->
+                <div class="emg-cal-card">
+                    <p class="emg-cal-title">&#x1F4C5; Leave Period</p>
+                    <p class="emg-cal-hint">Tap start date then end date</p>
+
+                    <div class="emg-cal-header">
+                        <button class="cal-nav-btn" (click)="emgPrevMonth()">&#8249;</button>
+                        <span class="emg-month-lbl">{{ getEmgMonthLabel() }}</span>
+                        <button class="cal-nav-btn" (click)="emgNextMonth()">&#8250;</button>
+                    </div>
+
+                    <div class="emg-weekdays">
+                        <span *ngFor="let d of ['S','M','T','W','T','F','S']">{{ d }}</span>
+                    </div>
+
+                    <div class="emg-grid">
+                        <div *ngFor="let cell of emgCalendarCells" class="emg-cell" [class.emg-empty]="!cell.date"
+                            [class.emg-today]="cell.isToday" [class.emg-has-booking]="cell.hasBooking"
+                            [class.emg-leave-start]="cell.isLeaveStart" [class.emg-leave-end]="cell.isLeaveEnd"
+                            [class.emg-in-range]="cell.inRange" (click)="onEmgCalClick(cell)">
+                            <span class="emg-day" *ngIf="cell.date">{{ cell.date.getDate() }}</span>
+                            <span class="emg-bk-dot"
+                                *ngIf="cell.hasBooking && !cell.isLeaveStart && !cell.isLeaveEnd && !cell.inRange"></span>
+                        </div>
+                    </div>
+
+                    <div class="emg-legend">
+                        <span class="emg-legend-dot green"></span><span>Booking</span>
+                        <span class="emg-legend-dot red"></span><span>Leave</span>
+                        <span class="emg-legend-dot range"></span><span>In range</span>
+                    </div>
+
+                    <div class="emg-range-display" *ngIf="emergencyForm.leaveStart">
+                        <div class="emg-range-row">
+                            <span>&#x1F4CD;</span>
+                            <div>
+                                <p class="emg-range-lbl">Start</p>
+                                <p class="emg-range-val">{{ formatRangeDate(emergencyForm.leaveStart) }}</p>
+                            </div>
+                        </div>
+                        <div class="emg-range-row" *ngIf="emergencyForm.leaveEnd">
+                            <span>&#x1F3C1;</span>
+                            <div>
+                                <p class="emg-range-lbl">End</p>
+                                <p class="emg-range-val">{{ formatRangeDate(emergencyForm.leaveEnd) }}</p>
+                            </div>
+                        </div>
+                        <p class="emg-range-hint" *ngIf="!emergencyForm.leaveEnd">Tap end date to complete</p>
+                        <button class="emg-clear-btn" (click)="clearLeaveDates()">&#x2715; Clear</button>
+                    </div>
+                    <p class="emg-no-sel" *ngIf="!emergencyForm.leaveStart">No dates selected yet</p>
+                </div>
+
+            </div>
+
+            <!-- ── Handoff Wizard (shown after emergency declared) ── -->
+            <div *ngIf="activeEmergency" style="margin-top:14px">
+
+                <!-- Progress: one step per affected client -->
+                <div class="card handoff-wizard-card">
+                    <div class="card-header">
+                        <h3>🔍 Find Replacement Artists</h3>
+                        <span class="wizard-progress">
+                            Client {{ handoffWizardStep + 1 }} of {{ activeEmergency.affectedBookings.length }}
+                        </span>
+                    </div>
+
+                    <!-- Step Tabs (one per client) -->
+                    <div class="wizard-tabs">
+                        <div class="wizard-tab" *ngFor="let b of activeEmergency.affectedBookings; let i=index"
+                            [class.active]="handoffWizardStep===i" [class.done]="isBookingHandedOff(b.id)"
+                            (click)="handoffWizardStep=i">
+                            <span class="wtab-num">{{ i+1 }}</span>
+                            <div class="wtab-info">
+                                <p class="wtab-name">{{ b.clientName }}</p>
+                                <p class="wtab-service">{{ b.service }}</p>
+                            </div>
+                            <span class="wtab-check" *ngIf="isBookingHandedOff(b.id)">✓</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Client Info -->
+                    <div class="wizard-client-banner" *ngIf="activeEmergency.affectedBookings[handoffWizardStep] as cb">
+                        <div class="wcb-avatar">{{ cb.clientName[0] }}</div>
+                        <div class="wcb-info">
+                            <p class="wcb-name">{{ cb.clientName }}</p>
+                            <p class="wcb-detail">{{ cb.service }} · {{ cb.date }} · {{ cb.time }}</p>
+                            <p class="wcb-location">📍 {{ cb.location }}</p>
+                        </div>
+                        <div class="wcb-tags">
+                            <span class="wcb-tag" *ngFor="let tag of getServiceTags(cb.service)">{{ tag }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Auto-filtered artists for current client -->
+                    <div class="wizard-filter-row">
+                        <p class="wizard-filter-label">
+                            🎯 Showing artists with expertise in:
+                            <span class="wf-tag"
+                                *ngFor="let tag of getServiceTags(activeEmergency.affectedBookings[handoffWizardStep]?.service)">{{
+                                tag }}</span>
+                        </p>
+                        <input type="text" [(ngModel)]="artistSearch" placeholder="Search artist..."
+                            class="search-input wizard-search" />
+                    </div>
+
+                    <div class="available-artists-grid">
+                        <div class="artist-card"
+                            *ngFor="let a of getArtistsForBooking(activeEmergency.affectedBookings[handoffWizardStep])"
+                            [class.already-sent]="isHandoffSentTo(a.id, activeEmergency.affectedBookings[handoffWizardStep]?.id)">
+                            <div class="artist-card-top">
+                                <div class="artist-card-avatar">{{ a.name[0] }}</div>
+                                <div class="artist-card-info">
+                                    <p class="ac-name">{{ a.name }}</p>
+                                    <p class="ac-specialty">{{ a.specialty }}</p>
+                                    <p class="ac-location">📍 {{ a.location }}</p>
+                                </div>
+                                <div class="artist-card-rating">
+                                    <p class="ac-rating">⭐ {{ a.rating }}</p>
+                                    <p class="ac-jobs">{{ a.totalJobs }} jobs</p>
+                                </div>
+                            </div>
+                            <div class="artist-card-bottom">
+                                <div class="availability-chips">
+                                    <span class="avail-chip available">✓ Available {{
+                                        activeEmergency.affectedBookings[handoffWizardStep]?.date }}</span>
+                                    <span class="avail-chip rate">₱{{ a.rateFrom.toLocaleString() }}+</span>
+                                </div>
+                                <button class="btn-handoff"
+                                    *ngIf="!isHandoffSentTo(a.id, activeEmergency.affectedBookings[handoffWizardStep]?.id)"
+                                    (click)="openHandoffModal(a)">
+                                    Send Request →
+                                </button>
+                                <span class="already-sent-badge"
+                                    *ngIf="isHandoffSentTo(a.id, activeEmergency.affectedBookings[handoffWizardStep]?.id)">
+                                    ⏳ Request Sent
+                                </span>
+                            </div>
+                        </div>
+                        <p class="empty-state"
+                            *ngIf="getArtistsForBooking(activeEmergency.affectedBookings[handoffWizardStep]).length===0">
+                            No matching artists found for this service. 🌸
+                        </p>
+                    </div>
+
+                    <!-- Wizard Nav -->
+                    <div class="wizard-nav">
+                        <button class="btn-secondary" style="padding:0.5rem 1rem;font-size:0.82rem"
+                            *ngIf="handoffWizardStep > 0" (click)="handoffWizardStep=handoffWizardStep-1">
+                            ← Previous Client
+                        </button>
+                        <div style="flex:1"></div>
+                        <button class="btn-primary" style="padding:0.5rem 1.1rem;font-size:0.82rem"
+                            *ngIf="handoffWizardStep < activeEmergency.affectedBookings.length - 1"
+                            (click)="handoffWizardStep=handoffWizardStep+1">
+                            Next Client →
+                        </button>
+                        <span class="wizard-all-done" *ngIf="allBookingsHandedOff()">
+                            ✅ All clients assigned!
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Handoff Requests Sent -->
+                <div class="card" style="margin-top:14px" *ngIf="handoffRequests.length > 0">
+                    <div class="card-header">
+                        <h3>📨 Handoff Requests Sent</h3>
+                    </div>
+                    <div class="handoff-list">
+                        <div class="handoff-item" *ngFor="let h of handoffRequests">
+                            <div class="handoff-avatar">{{ h.artistName[0] }}</div>
+                            <div class="handoff-info">
+                                <p class="handoff-artist">{{ h.artistName }}</p>
+                                <p class="handoff-detail">{{ h.booking.service }} · {{ h.booking.date }} · {{
+                                    h.booking.clientName }}</p>
+                                <p class="handoff-time">Sent {{ h.sentAt }}</p>
+                            </div>
+                            <span class="handoff-badge" [ngClass]="h.status">
+                                {{ h.status==='pending' ? '⏳ Awaiting' : h.status==='accepted' ? '✅ Accepted' : '❌
+                                Declined' }}
+                            </span>
+                            <button class="act-btn cancel" *ngIf="h.status==='pending'"
+                                (click)="cancelHandoff(h)">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Emergency History -->
+            <div class="card" style="margin-top:14px">
+                <div class="card-header">
+                    <h3>📋 Emergency History</h3>
+                </div>
+                <div class="emg-history-list">
+                    <div class="emg-history-item" *ngFor="let e of emergencyHistory">
+                        <div class="emg-hist-icon">🚨</div>
+                        <div class="emg-hist-info">
+                            <p class="emg-hist-reason">{{ e.reason }}</p>
+                            <p class="emg-hist-detail">{{ e.affectedBookings.length }} booking(s) · Declared {{
+                                e.declaredAt }}</p>
+                            <p class="emg-hist-resolution" *ngIf="e.resolvedAt">Resolved {{ e.resolvedAt }} · Handoff to
+                                {{ e.handoffArtist || 'N/A' }}</p>
+                        </div>
+                        <span class="handoff-badge" [ngClass]="e.status">
+                            {{ e.status === 'resolved' ? '✅ Resolved' : '⏳ Active' }}
+                        </span>
+                    </div>
+                    <p class="empty-state" *ngIf="emergencyHistory.length===0">No emergency history 🌸</p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Handoff Request Modal -->
+        <div class="modal-overlay" *ngIf="showHandoffModal" (click)="showHandoffModal=false">
+            <div class="modal" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>📨 Send Handoff Request</h3>
+                    <button class="modal-close" (click)="showHandoffModal=false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="handoff-target">
+                        <div class="artist-card-avatar" style="width:46px;height:46px;font-size:1.1rem">{{
+                            selectedArtist?.name[0] }}</div>
+                        <div>
+                            <p style="font-weight:700;color:#e8d8ff">{{ selectedArtist?.name }}</p>
+                            <p style="font-size:0.75rem;color:#7a50a0">{{ selectedArtist?.specialty }} · ⭐ {{
+                                selectedArtist?.rating }}</p>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:1rem">
+                        <label>Select Booking to Hand Off</label>
+                        <select [(ngModel)]="handoffForm.bookingId" class="form-input">
+                            <option value="">Choose booking...</option>
+                            <option *ngFor="let b of activeEmergency?.affectedBookings" [value]="b.id">
+                                {{ b.clientName }} · {{ b.service }} · {{ b.date }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-top:0.8rem">
+                        <label>Message to Artist</label>
+                        <textarea [(ngModel)]="handoffForm.message" class="form-input form-textarea"
+                            placeholder="Hi! I have an emergency and I was wondering if you can cover my booking..."></textarea>
+                    </div>
+                    <div class="emg-msg-preview" *ngIf="handoffForm.bookingId">
+                        <p class="preview-label">📱 Auto-message to client:</p>
+                        <p class="preview-text">"Hi {{ getHandoffBooking()?.clientName }}! I sincerely apologize — I
+                            have an emergency and {{ selectedArtist?.name }} will be taking care of you instead. They
+                            are equally skilled and will make sure you look amazing! 💄"</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" (click)="sendHandoffRequest()">Send Request</button>
+                    <button class="btn-secondary" (click)="showHandoffModal=false">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Handoff Success Modal -->
+        <div class="modal-overlay" *ngIf="showHandoffSuccess" (click)="showHandoffSuccess=false">
+            <div class="modal" (click)="$event.stopPropagation()" style="max-width:420px;text-align:center">
+                <div class="payout-success-top">
+                    <div class="payout-success-icon">📨</div>
+                    <h3>Handoff Request Sent!</h3>
+                    <p>{{ selectedArtist?.name }} has been notified. You'll be updated once they respond.</p>
+                </div>
+                <div style="padding:1rem 1.4rem 1.4rem">
+                    <div class="emg-msg-preview">
+                        <p class="preview-label">✅ Client has been notified automatically.</p>
+                    </div>
+                    <button class="btn-primary" style="width:100%;margin-top:1rem"
+                        (click)="showHandoffSuccess=false">Done</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── In-App Toast Notification ── -->
+        <div class="toast-wrap" [class.show]="toast.show"
+            [class]="'toast-wrap ' + toast.type + (toast.show ? ' show' : '')">
+            <div class="toast-icon">
+                <span *ngIf="toast.type==='success'">&#x2705;</span>
+                <span *ngIf="toast.type==='error'">&#x26A0;</span>
+                <span *ngIf="toast.type==='info'">&#x2139;</span>
+            </div>
+            <div class="toast-body">
+                <p class="toast-title">{{ toast.title }}</p>
+                <p class="toast-msg">{{ toast.message }}</p>
+            </div>
+            <button class="toast-close" (click)="toast.show=false">&#x2715;</button>
+        </div>
+
+        <!-- ── Emergency Declared Success Modal ── -->
+        <div class="modal-overlay" *ngIf="showEmgSuccessModal" (click)="showEmgSuccessModal=false">
+            <div class="modal emg-success-modal" (click)="$event.stopPropagation()">
+                <div class="emg-success-top">
+                    <div class="emg-success-pulse">&#x1F6A8;</div>
+                    <h3>Emergency Declared</h3>
+                    <p>Your leave has been recorded and affected clients have been notified.</p>
+                </div>
+                <div class="emg-success-details">
+                    <div class="detail-row">
+                        <span>Reason</span>
+                        <strong>{{ emgSuccessData.reason }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Clients Notified</span>
+                        <strong style="color:#f87171">{{ emgSuccessData.affectedCount }} client(s)</strong>
+                    </div>
+                    <div class="detail-row" *ngIf="activeEmergency">
+                        <span>Leave Start</span>
+                        <strong>{{ activeEmergency.leaveStart ? formatRangeDate(activeEmergency.leaveStart) : '-'
+                            }}</strong>
+                    </div>
+                    <div class="detail-row" *ngIf="activeEmergency">
+                        <span>Leave End</span>
+                        <strong>{{ activeEmergency.leaveEnd ? formatRangeDate(activeEmergency.leaveEnd) : '-'
+                            }}</strong>
+                    </div>
+                </div>
+                <div class="emg-success-msg-box">
+                    <p class="emg-msg-preview-label">&#x1F4F1; Auto-message sent to clients:</p>
+                    <p class="emg-msg-preview-text">"I sincerely apologize — I have an emergency and cannot fulfill your
+                        booking at this time. I will arrange a replacement artist for you as soon as possible.
+                        &#x1F494;"</p>
+                </div>
+                <div style="padding:1rem 1.4rem 1.4rem">
+                    <button class="btn-primary" style="width:100%"
+                        (click)="showEmgSuccessModal=false; setTab('emergency')">
+                        Find Replacement Artist &#x2192;
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>

@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+.login-page {
+  min-height: 100vh;
+  background: #1a1030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.blob { position:absolute; border-radius:50%; filter:blur(90px); opacity:0.4; pointer-events:none; }
+.blob-1 { width:440px; height:440px; background:#6b3fa0; top:-110px; left:-130px; animation:floatBlob 9s ease-in-out infinite; }
+.blob-2 { width:310px; height:310px; background:#c084fc; bottom:-85px; right:-85px; animation:floatBlob 11s ease-in-out infinite reverse; opacity:0.25; }
+.blob-3 { width:210px; height:210px; background:#4a1a80; top:50%; left:60%; animation:floatBlob 13s ease-in-out infinite; }
+@keyframes floatBlob {
+  0%,100% { transform:translate(0,0) scale(1); }
+  50% { transform:translate(20px,-20px) scale(1.05); }
+}
+
+.spark { position:absolute; opacity:0.2; pointer-events:none; color:#c084fc; animation:floatSpark linear infinite; }
+.s1 { font-size:1.5rem; top:11%; left:9%; animation-duration:14s; }
+.s2 { font-size:1.0rem; top:21%; right:10%; animation-duration:18s; animation-delay:3s; }
+.s3 { font-size:1.3rem; bottom:21%; left:14%; animation-duration:16s; animation-delay:6s; }
+.s4 { font-size:0.9rem; bottom:11%; right:19%; animation-duration:20s; animation-delay:2s; }
+@keyframes floatSpark {
+  0% { transform:translateY(0) rotate(0deg); opacity:0.15; }
+  50% { transform:translateY(-30px) rotate(180deg); opacity:0.35; }
+  100% { transform:translateY(0) rotate(360deg); opacity:0.15; }
+}
+
+.login-container {
+  position:relative; z-index:10;
+  background:rgba(30,15,55,0.88);
+  backdrop-filter:blur(24px);
+  border:1px solid rgba(192,132,252,0.2);
+  border-radius:28px;
+  padding:2.8rem 2.4rem 2.2rem;
+  width:100%; max-width:420px;
+  box-shadow:0 4px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(192,132,252,0.06) inset;
+  animation:fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(28px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.brand { text-align:center; margin-bottom:1.6rem; }
+.brand-icon { font-size:3rem; display:block; margin-bottom:0.4rem; animation:iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both; }
+@keyframes iconPop { from { transform:scale(0.5); opacity:0; } to { transform:scale(1); opacity:1; } }
+.brand-name { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:700; color:#c084fc; letter-spacing:0.05em; line-height:1; }
+.brand-tagline { font-size:0.78rem; color:#9060c0; letter-spacing:0.13em; text-transform:uppercase; margin-top:0.35rem; }
+
+.role-selector { display:flex; gap:8px; background:rgba(255,255,255,0.04); border-radius:14px; padding:5px; margin-bottom:0.8rem; border:1px solid rgba(192,132,252,0.15); }
+.role-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:0.55rem 0.4rem; border:none; border-radius:10px; background:transparent; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:500; color:#6a4a9a; transition:all 0.22s ease; }
+.role-btn:hover { background:rgba(255,255,255,0.06); color:#c084fc; }
+.role-btn.active { background:rgba(192,132,252,0.15); color:#c084fc; box-shadow:0 2px 10px rgba(192,132,252,0.12); font-weight:600; border:1px solid rgba(192,132,252,0.3); }
+.role-emoji { font-size:1.3rem; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+.role-btn.active .role-emoji { transform:scale(1.2); }
+
+.role-welcome { text-align:center; font-size:0.82rem; color:#8a60c0; margin-bottom:1.4rem; font-style:italic; }
+
+.login-form { display:flex; flex-direction:column; gap:12px; }
+.input-group { position:relative; display:flex; align-items:center; }
+.input-icon { position:absolute; left:14px; font-size:0.95rem; pointer-events:none; z-index:1; }
+.input-group input { width:100%; padding:0.82rem 1rem 0.82rem 2.6rem; border:1.5px solid rgba(192,132,252,0.2); border-radius:12px; font-family:'DM Sans',sans-serif; font-size:0.92rem; color:#e8d8ff; background:rgba(255,255,255,0.05); outline:none; transition:border-color 0.2s,box-shadow 0.2s; }
+.input-group input::placeholder { color:#5a3a8a; }
+.input-group input:focus { border-color:#c084fc; background:rgba(255,255,255,0.07); box-shadow:0 0 0 4px rgba(192,132,252,0.1); }
+.toggle-pw { position:absolute; right:12px; background:none; border:none; cursor:pointer; font-size:1rem; padding:4px; opacity:0.5; transition:opacity 0.2s; }
+.toggle-pw:hover { opacity:1; }
+
+.form-options { display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; }
+.remember-me { display:flex; align-items:center; gap:6px; color:#6a4a9a; cursor:pointer; }
+.remember-me input[type="checkbox"] { accent-color:#c084fc; width:14px; height:14px; }
+.forgot-link { color:#c084fc; text-decoration:none; font-weight:500; }
+.forgot-link:hover { color:#e8d8ff; }
+
+.error-msg { font-size:0.82rem; color:#f0a0c0; background:rgba(240,160,192,0.1); border:1px solid rgba(240,160,192,0.2); border-radius:8px; padding:0.5rem 0.8rem; text-align:center; }
+
+.btn-login { display:flex; align-items:center; justify-content:center; gap:8px; padding:0.9rem; background:linear-gradient(135deg,#9b59c4 0%,#7030a0 100%); color:white; border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:600; cursor:pointer; transition:all 0.22s ease; box-shadow:0 4px 20px rgba(112,48,160,0.35); margin-top:2px; }
+.btn-login:hover:not(:disabled) { background:linear-gradient(135deg,#c084fc 0%,#9b59c4 100%); transform:translateY(-1px); }
+.btn-login:disabled { opacity:0.7; cursor:not-allowed; }
+.btn-arrow { font-size:1.1rem; transition:transform 0.2s; }
+.btn-login:hover .btn-arrow { transform:translateX(4px); }
+
+.divider { display:flex; align-items:center; gap:10px; margin:1.2rem 0 0.8rem; color:#4a2a7a; font-size:0.78rem; }
+.divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(192,132,252,0.15); }
+
+.register-link { text-align:center; font-size:0.84rem; color:#6a4a9a; }
+.register-link a { color:#c084fc; font-weight:600; text-decoration:none; border-bottom:1.5px solid transparent; transition:border-color 0.2s; }
+.register-link a:hover { border-color:#c084fc; }
+
+.footer-note { text-align:center; font-size:0.75rem; color:#4a2a7a; margin-top:1rem; letter-spacing:0.05em; }
