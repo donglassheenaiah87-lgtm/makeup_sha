@@ -43,7 +43,6 @@ export interface Review {
 
 export interface Service {
   name: string;
-  emoji: string;
   description: string;
   price: number;
   duration: string;
@@ -216,15 +215,15 @@ export class ArtistDashboardComponent implements OnInit {
 
   // ── Services ──
   services: Service[] = [
-    { name: 'Bridal Makeup', emoji: '👰', description: 'Complete bridal look with airbrush finish', price: 3500, duration: '3-4 hours' },
-    { name: 'Glam Makeup', emoji: '💫', description: 'Full glam for events, parties & celebrations', price: 1800, duration: '1.5-2 hours' },
-    { name: 'Natural Makeup', emoji: '🌸', description: 'Soft and dewy everyday natural look', price: 1200, duration: '1-1.5 hours' },
-    { name: 'SFX Makeup', emoji: '🎭', description: 'Special effects for films, shoots & events', price: 2500, duration: '2-3 hours' },
-    { name: 'Debut Makeup', emoji: '🎀', description: 'Elegant debut look for your special 18th', price: 4000, duration: '3-4 hours' },
-    { name: 'Editorial Look', emoji: '📸', description: 'Fashion-forward looks for photoshoots', price: 2200, duration: '2-2.5 hours' },
+    { name: 'Bridal Makeup', description: 'Complete bridal look with airbrush finish', price: 3500, duration: '3-4 hours' },
+    { name: 'Glam Makeup', description: 'Full glam for events, parties & celebrations', price: 1800, duration: '1.5-2 hours' },
+    { name: 'Natural Makeup', description: 'Soft and dewy everyday natural look', price: 1200, duration: '1-1.5 hours' },
+    { name: 'SFX Makeup', description: 'Special effects for films, shoots & events', price: 2500, duration: '2-3 hours' },
+    { name: 'Debut Makeup', description: 'Elegant debut look for your special 18th', price: 4000, duration: '3-4 hours' },
+    { name: 'Editorial Look', description: 'Fashion-forward looks for photoshoots', price: 2200, duration: '2-2.5 hours' },
   ];
 
-  serviceForm: Service = { name: '', emoji: '💄', description: '', price: 0, duration: '' };
+  serviceForm: Service = { name: '', description: '', price: 0, duration: '' };
 
   // ── Messages / Conversations ──
   conversations: Conversation[] = [
@@ -635,7 +634,7 @@ export class ArtistDashboardComponent implements OnInit {
   // ── Services ──
   addService() {
     this.editingServiceIndex = -1;
-    this.serviceForm = { name: '', emoji: '💄', description: '', price: 0, duration: '' };
+    this.serviceForm = { name: '', description: '', price: 0, duration: '' };
     this.showServiceModal = true;
   }
 
@@ -692,10 +691,6 @@ export class ArtistDashboardComponent implements OnInit {
   getMethodLabel(method: string): string {
     const map: Record<string, string> = { gcash: 'GCash', maya: 'Maya', card: 'Bank Card' };
     return map[method] || method;
-  }
-  getMethodEmoji(method: string): string {
-    const map: Record<string, string> = { gcash: '💙', maya: '💚', card: '💳' };
-    return map[method] || '💸';
   }
 
   requestPayout() {

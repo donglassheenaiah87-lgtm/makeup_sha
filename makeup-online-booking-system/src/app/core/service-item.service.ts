@@ -14,7 +14,8 @@ import {
 
 export interface ServiceData {
   id: string; // Document ID
-  icon: string;
+  icon?: string;
+  imageUrl?: string;
   name: string;
   desc: string;
   price: string;

@@ -670,7 +670,7 @@
                     <div class="cashout-list">
                         <div class="cashout-item" *ngFor="let p of payoutHistory">
                             <div class="cashout-icon" [ngClass]="'method-'+p.method">
-                                {{ getMethodEmoji(p.method) }}
+                                {{ getMethodLabel(p.method)[0] }}
                             </div>
                             <div class="cashout-info">
                                 <p class="cashout-method">{{ getMethodLabel(p.method) }} · {{ p.accountNumber }}</p>
@@ -734,8 +734,7 @@
                 <div class="payout-success-details">
                     <div class="detail-row">
                         <span>Method</span>
-                        <strong>{{ getMethodLabel(lastPayout?.method || '') }} {{ getMethodEmoji(lastPayout?.method ||
-                            '') }}</strong>
+                        <strong>{{ getMethodLabel(lastPayout?.method || '') }}</strong>
                     </div>
                     <div class="detail-row">
                         <span>Account</span>
@@ -846,7 +845,6 @@
             </div>
             <div class="services-grid">
                 <div class="service-card" *ngFor="let s of services; let i=index">
-                    <div class="service-emoji">{{ s.emoji }}</div>
                     <div class="service-info">
                         <p class="service-name">{{ s.name }}</p>
                         <p class="service-desc">{{ s.description }}</p>
@@ -875,10 +873,7 @@
                             <input type="text" [(ngModel)]="serviceForm.name" class="form-input"
                                 placeholder="e.g. Bridal Makeup" />
                         </div>
-                        <div class="form-group">
-                            <label>Emoji Icon</label>
-                            <input type="text" [(ngModel)]="serviceForm.emoji" class="form-input" placeholder="💄" />
-                        </div>
+
                         <div class="form-group">
                             <label>Description</label>
                             <input type="text" [(ngModel)]="serviceForm.description" class="form-input"

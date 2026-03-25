@@ -59,7 +59,8 @@ interface Artist {
 
 interface Service {
   id?: string;
-  icon: string;
+  icon?: string;
+  imageUrl?: string;
   name: string;
   desc: string;
   price: string;
@@ -141,6 +142,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   newClient: Partial<Client> = {};
   newArtist: Partial<Artist> = {};
   newService: Partial<Service> = {};
+  imagePreview: string | ArrayBuffer | null = null;
+
+  onImageUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imagePreview = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   get pageTitle(): string {
     const titles: Record<string, string> = {
@@ -256,7 +270,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       const servicesData = await this.serviceItemService.getAllServices();
       this.services = servicesData.map(s => ({
         id: s.id,
-        icon: s.icon || '✨',
+        icon: s.icon || '',
+        imageUrl: s.imageUrl || '',
         name: s.name,
         desc: s.desc || '',
         price: s.price,
@@ -625,7 +640,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     }
     if (type === 'addClient') this.newClient = {};
     if (type === 'addArtist') this.newArtist = {};
-    if (type === 'addService') this.newService = {};
+    if (type === 'addService') { this.newService = {}; this.imagePreview = null; }
     this.showModal = true;
   }
 
@@ -685,7 +700,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       const s = this.newService;
       if (!s.name || !s.price) { this.showToast('Please fill all required fields', 'error'); return; }
       await this.serviceItemService.addService({
-        icon: s.icon || '💄', 
+        icon: s.icon || '', 
+        imageUrl: this.imagePreview as string || '',
         name: s.name!, 
         desc: s.desc || '', 
         price: s.price!, 
