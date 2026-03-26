@@ -1,0 +1,72 @@
+<!-- client/portfolio/portfolio.html -->
+<div class="pf-root">
+  <!-- HERO -->
+  <div class="pf-hero">
+    <div class="pf-hero-bg">
+      <div class="pf-orb o1"></div>
+      <div class="pf-orb o2"></div>
+    </div>
+    <div class="pf-hero-inner">
+      <button class="pf-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Dashboard
+      </button>
+      <div class="pf-eyebrow"><div class="eyebrow-dot"></div> Our Work</div>
+      <h1>Portfolio <em>Gallery</em> 📸</h1>
+      <p>Explore our collection of stunning transformations & artistry.</p>
+    </div>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="pf-tabs-wrap">
+    <div class="pf-tabs">
+      <button *ngFor="let t of tabs" class="pf-tab" [class.active]="activeTab===t.key" (click)="setTab(t.key)">
+        {{ t.label }}
+        <span class="pf-tab-count">
+          {{ t.key === 'all' ? allImages.length : allImages.filter(p => p.tag === t.key).length }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GALLERY GRID -->
+  <div class="pf-wrap">
+    <div class="pf-count">{{ filtered.length }} photo{{ filtered.length !== 1 ? 's' : '' }}</div>
+    <div class="pf-grid">
+      <div class="pf-item" *ngFor="let p of filtered; let i=index"
+           [class.pf-tall]="i%5===0 || i%7===3" (click)="openLightbox(i)">
+        <img [src]="p.url" [alt]="p.label" (error)="onImgError($event)" />
+        <div class="pf-ov">
+          <div class="pf-label">{{ p.label }}</div>
+          <div class="pf-artist-tag"><i class="fas fa-user"></i> {{ p.artist }}</div>
+          <div class="pf-expand"><i class="fas fa-expand-alt"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="pf-lightbox" [class.show]="lbOpen" (click)="closeLightbox()">
+    <button class="lb-close" (click)="closeLightbox()"><i class="fas fa-times"></i></button>
+    <button class="lb-prev" (click)="$event.stopPropagation(); prevLb()"><i class="fas fa-chevron-left"></i></button>
+    <button class="lb-next" (click)="$event.stopPropagation(); nextLb()"><i class="fas fa-chevron-right"></i></button>
+    <div class="lb-content" (click)="$event.stopPropagation()" *ngIf="filtered[lbIdx]">
+      <img [src]="filtered[lbIdx].url" [alt]="filtered[lbIdx].label" />
+      <div class="lb-meta">
+        <div class="lb-label">{{ filtered[lbIdx].label }}</div>
+        <div class="lb-artist"><i class="fas fa-user"></i> {{ filtered[lbIdx].artist }}</div>
+        <div class="lb-counter">{{ lbIdx + 1 }} / {{ filtered.length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER CTA -->
+  <div class="pf-footer-cta">
+    <div class="pf-fcta-inner">
+      <h2>Love What You See? 💕</h2>
+      <p>Book your own transformation with our talented artists today.</p>
+      <button class="pf-btn-primary" (click)="goToBook()">
+        <i class="fas fa-calendar-plus"></i> Book Appointment
+      </button>
+    </div>
+  </div>
+</div>

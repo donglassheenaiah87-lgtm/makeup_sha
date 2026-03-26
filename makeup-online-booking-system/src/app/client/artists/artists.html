@@ -1,0 +1,93 @@
+<!-- client/artists/artists.html -->
+<div class="ar-root">
+  <!-- TOAST -->
+  <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
+    <div class="toast-icon"><i [class]="toastIcon"></i></div>
+    <div class="toast-body">
+      <div class="toast-title">{{ toastTitle }}</div>
+      <div class="toast-msg">{{ toastMessage }}</div>
+    </div>
+    <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- HERO -->
+  <div class="ar-hero">
+    <div class="ar-hero-bg">
+      <div class="ar-orb o1"></div>
+      <div class="ar-orb o2"></div>
+    </div>
+    <div class="ar-hero-inner">
+      <button class="ar-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Dashboard
+      </button>
+      <div class="ar-eyebrow"><div class="eyebrow-dot"></div> The Team</div>
+      <h1>Meet Our <em>Artists</em> 💄</h1>
+      <p>Certified professionals passionate about transforming beauty.</p>
+    </div>
+  </div>
+
+  <!-- FILTER & SEARCH -->
+  <div class="ar-controls">
+    <div class="ar-filters">
+      <button *ngFor="let f of filters" class="ar-filter-btn" [class.active]="activeFilter===f" (click)="setFilter(f)">
+        {{ f }}
+      </button>
+    </div>
+    <div class="ar-search-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search artists…" [(ngModel)]="searchQuery" />
+    </div>
+  </div>
+
+  <!-- ARTISTS GRID -->
+  <div class="ar-wrap">
+    <div class="ar-count">{{ displayed.length }} artist{{ displayed.length !== 1 ? 's' : '' }}</div>
+    <div class="ar-grid" *ngIf="displayed.length">
+      <div class="ar-card" *ngFor="let a of displayed; let i=index" [style.animation-delay]="(i*0.07)+'s'">
+        <div class="ar-card-img">
+          <img [src]="a.image" [alt]="a.name" (error)="onImgError($event)" />
+          <div class="ar-img-ov">
+            <button class="ar-book-btn" (click)="goToBook()">Book {{ a.firstName }}</button>
+          </div>
+          <div class="ar-cert"><i class="fas fa-certificate"></i> Certified</div>
+          <div class="ar-insta"><i class="fab fa-instagram"></i> {{ a.instagram }}</div>
+        </div>
+        <div class="ar-card-body">
+          <h3>{{ a.name }}</h3>
+          <p class="ar-role">{{ a.role }}</p>
+          <div class="ar-stats">
+            <div><i class="fas fa-star"></i> {{ a.rating }}</div>
+            <div><i class="fas fa-briefcase"></i> {{ a.exp }}</div>
+            <div><i class="fas fa-users"></i> {{ a.clients }}+ clients</div>
+          </div>
+          <p class="ar-bio">{{ a.bio }}</p>
+          <div class="ar-specialties">
+            <span *ngFor="let sp of a.specialties">{{ sp }}</span>
+          </div>
+          <div class="ar-card-foot">
+            <div class="ar-bookings-count"><i class="fas fa-calendar-check"></i> {{ a.bookings }}+ bookings</div>
+            <button class="ar-profile-btn" (click)="showToast('Profile','Full profile coming soon! ✨','fas fa-user','success')">
+              <i class="fas fa-user"></i> Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ar-empty" *ngIf="!displayed.length">
+      <i class="fas fa-user-circle"></i>
+      <p>No artists found for "{{ searchQuery }}"</p>
+      <button class="ar-filter-btn active" (click)="searchQuery=''; setFilter('All')">Clear Filter</button>
+    </div>
+  </div>
+
+  <!-- FOOTER CTA -->
+  <div class="ar-footer-cta">
+    <div class="ar-fcta-inner">
+      <h2>Book Your Favourite Artist 💕</h2>
+      <p>Select your preferred makeup artist when booking an appointment.</p>
+      <button class="ar-btn-primary" (click)="goToBook()">
+        <i class="fas fa-calendar-plus"></i> Book Now
+      </button>
+    </div>
+  </div>
+</div>

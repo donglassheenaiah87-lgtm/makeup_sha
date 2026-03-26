@@ -1,5 +1,5 @@
 <!-- dashboard.html -->
-<div class="root" [class.profile-open]="profilePanelOpen">
+<div class="root" [class.profile-open]="profilePanelOpen" [class.sidebar-open]="!sidebarCollapsed">
 
     <!-- ══ TOAST ════════════════════════════════════════════ -->
     <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
@@ -11,120 +11,114 @@
         <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
     </div>
 
+    <!-- ══ SIDEBAR OVERLAY (mobile) ══════════════════════════ -->
+    <div class="sb-mobile-overlay" [class.show]="!sidebarCollapsed" (click)="sidebarCollapsed=true"></div>
+
     <!-- ══ PERSISTENT LEFT SIDEBAR ══════════════════════════ -->
     <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+
         <!-- Logo -->
         <div class="sb-logo">
-            <div class="sb-logo-icon"><i class="fas fa-spa"></i></div>
+            <div class="sb-logo-icon">
+                <i class="fas fa-spa"></i>
+                <div class="sb-logo-shine"></div>
+            </div>
             <div class="sb-logo-text">
                 <span class="sb-logo-name">Lumière</span>
                 <span class="sb-logo-tagline">Beauty Studio</span>
             </div>
-        </div>
-
-        <!-- User mini block -->
-        <div class="sb-user" (click)="openProfilePanel()" *ngIf="currentUser">
-            <div class="sb-user-av">
-                <img *ngIf="currentUser.avatar" [src]="currentUser.avatar" [alt]="currentUser.name"
-                    (error)="onImgError($event)" />
-                <span *ngIf="!currentUser.avatar">{{ currentUser.name.charAt(0) }}</span>
-                <div class="sb-online"></div>
-            </div>
-            <div class="sb-user-info">
-                <div class="sb-user-name">{{ currentUser.name }}</div>
-                <div class="sb-user-tier">{{ currentUser.memberTier }} Member</div>
-            </div>
-            <i class="fas fa-chevron-right sb-user-arrow"></i>
-        </div>
-        <div class="sb-user sb-user-guest" *ngIf="!currentUser" (click)="goToLogin()">
-            <div class="sb-user-av sb-guest-av"><i class="fas fa-user"></i></div>
-            <div class="sb-user-info">
-                <div class="sb-user-name">Welcome!</div>
-                <div class="sb-user-tier">Tap to sign in</div>
-            </div>
+            <!-- Integrated Toggle -->
+            <button class="sb-in-collapse-btn" (click)="sidebarCollapsed=!sidebarCollapsed"
+                [title]="sidebarCollapsed?'Expand sidebar':'Collapse sidebar'">
+                <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
+            </button>
         </div>
 
         <!-- Main nav -->
-        <div class="sb-label">MAIN MENU</div>
-        <nav class="sb-nav">
-            <a class="sb-item" [class.active]="activeSection==='home'" (click)="scrollToSection('home')">
-                <div class="sb-item-icon"><i class="fas fa-home"></i></div>
-                <span class="sb-item-label">Home</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='services'" (click)="scrollToSection('services')">
-                <div class="sb-item-icon"><i class="fas fa-magic"></i></div>
-                <span class="sb-item-label">Services</span>
-                <span class="sb-pill">4</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='artists'" (click)="scrollToSection('artists')">
-                <div class="sb-item-icon"><i class="fas fa-user-circle"></i></div>
-                <span class="sb-item-label">Our Artists</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='portfolio'" (click)="scrollToSection('portfolio')">
-                <div class="sb-item-icon"><i class="fas fa-images"></i></div>
-                <span class="sb-item-label">Portfolio</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='book'" (click)="scrollToSection('book')">
-                <div class="sb-item-icon"><i class="fas fa-calendar-plus"></i></div>
-                <span class="sb-item-label">Book Now</span>
-                <span class="sb-hot-badge">HOT</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='testimonials'"
-                (click)="scrollToSection('testimonials')">
-                <div class="sb-item-icon"><i class="fas fa-star"></i></div>
-                <span class="sb-item-label">Reviews</span>
-                <div class="sb-item-bar"></div>
-            </a>
-            <a class="sb-item" [class.active]="activeSection==='contact'" (click)="scrollToSection('contact')">
-                <div class="sb-item-icon"><i class="fas fa-envelope"></i></div>
-                <span class="sb-item-label">Contact</span>
-                <div class="sb-item-bar"></div>
-            </a>
-        </nav>
+        <div class="sb-section">
+            <div class="sb-label">MAIN MENU</div>
+            <nav class="sb-nav">
+                <a class="sb-item" [class.active]="activeSection==='home'" (click)="scrollToSection('home')">
+                    <div class="sb-item-icon"><i class="fas fa-home"></i></div>
+                    <span class="sb-item-label">Home</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='services'" (click)="scrollToSection('services')">
+                    <div class="sb-item-icon"><i class="fas fa-magic"></i></div>
+                    <span class="sb-item-label">Services</span>
+                    <span class="sb-pill">4</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='artists'" (click)="scrollToSection('artists')">
+                    <div class="sb-item-icon"><i class="fas fa-user-circle"></i></div>
+                    <span class="sb-item-label">Our Artists</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='portfolio'" (click)="scrollToSection('portfolio')">
+                    <div class="sb-item-icon"><i class="fas fa-images"></i></div>
+                    <span class="sb-item-label">Portfolio</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='book'" (click)="scrollToSection('book')">
+                    <div class="sb-item-icon"><i class="fas fa-calendar-plus"></i></div>
+                    <span class="sb-item-label">Book Now</span>
+                    <span class="sb-hot-badge">HOT</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='testimonials'"
+                    (click)="scrollToSection('testimonials')">
+                    <div class="sb-item-icon"><i class="fas fa-star"></i></div>
+                    <span class="sb-item-label">Reviews</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+                <a class="sb-item" [class.active]="activeSection==='contact'" (click)="scrollToSection('contact')">
+                    <div class="sb-item-icon"><i class="fas fa-envelope"></i></div>
+                    <span class="sb-item-label">Contact</span>
+                    <div class="sb-item-bar"></div>
+                </a>
+            </nav>
+        </div>
 
-        <div class="sb-label">ACCOUNT</div>
-        <nav class="sb-nav">
-            <ng-container *ngIf="currentUser">
-                <a class="sb-item" (click)="openProfilePanel()">
-                    <div class="sb-item-icon"><i class="fas fa-id-card"></i></div>
-                    <span class="sb-item-label">My Profile</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item"
-                    (click)="showToast('My Bookings','Opening your booking history…','fas fa-calendar-check','success')">
-                    <div class="sb-item-icon"><i class="fas fa-calendar-check"></i></div>
-                    <span class="sb-item-label">My Bookings</span>
-                    <span class="sb-pill" *ngIf="currentUser.bookingCount">{{ currentUser.bookingCount }}</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item sb-item-danger" (click)="logout()">
-                    <div class="sb-item-icon"><i class="fas fa-sign-out-alt"></i></div>
-                    <span class="sb-item-label">Logout</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-            </ng-container>
-            <ng-container *ngIf="!currentUser">
-                <a class="sb-item" (click)="goToLogin()">
-                    <div class="sb-item-icon"><i class="fas fa-sign-in-alt"></i></div>
-                    <span class="sb-item-label">Login</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item" (click)="goToSignup()">
-                    <div class="sb-item-icon"><i class="fas fa-user-plus"></i></div>
-                    <span class="sb-item-label">Sign Up</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-            </ng-container>
-        </nav>
+        <div class="sb-section">
+            <div class="sb-label">ACCOUNT</div>
+            <nav class="sb-nav">
+                <ng-container *ngIf="currentUser">
+                    <a class="sb-item" (click)="openProfilePanel()">
+                        <div class="sb-item-icon"><i class="fas fa-id-card"></i></div>
+                        <span class="sb-item-label">My Profile</span>
+                        <div class="sb-item-bar"></div>
+                    </a>
+                    <a class="sb-item" (click)="navigateTo('bookings')">
+                        <div class="sb-item-icon"><i class="fas fa-calendar-check"></i></div>
+                        <span class="sb-item-label">My Bookings</span>
+                        <span class="sb-pill" *ngIf="currentUser.bookingCount">{{ currentUser.bookingCount }}</span>
+                        <div class="sb-item-bar"></div>
+                    </a>
+                    <a class="sb-item sb-item-danger" (click)="logout()">
+                        <div class="sb-item-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <span class="sb-item-label">Logout</span>
+                        <div class="sb-item-bar"></div>
+                    </a>
+                </ng-container>
+                <ng-container *ngIf="!currentUser">
+                    <a class="sb-item" (click)="goToLogin()">
+                        <div class="sb-item-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <span class="sb-item-label">Login</span>
+                        <div class="sb-item-bar"></div>
+                    </a>
+                    <a class="sb-item" (click)="goToSignup()">
+                        <div class="sb-item-icon"><i class="fas fa-user-plus"></i></div>
+                        <span class="sb-item-label">Sign Up</span>
+                        <div class="sb-item-bar"></div>
+                    </a>
+                </ng-container>
+            </nav>
+        </div>
 
         <!-- Book CTA -->
         <div class="sb-cta">
             <button class="btn-sb-book" (click)="goToBook()">
+                <div class="btn-sb-glow"></div>
                 <i class="fas fa-calendar-heart"></i>
                 <span>Book Now</span>
             </button>
@@ -137,11 +131,6 @@
                 <a class="sb-soc" href="#"><i class="fab fa-facebook-f"></i></a>
                 <a class="sb-soc" href="#"><i class="fab fa-tiktok"></i></a>
             </div>
-            <button class="sb-toggle" (click)="sidebarCollapsed=!sidebarCollapsed"
-                [title]="sidebarCollapsed?'Expand':'Collapse'">
-                <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed"
-                    [class.fa-chevron-right]="sidebarCollapsed"></i>
-            </button>
         </div>
     </aside>
 
@@ -151,11 +140,18 @@
         <!-- TOPBAR -->
         <nav class="topbar" [class.scrolled]="isScrolled">
             <div class="topbar-inner">
-                <button class="tb-menu" (click)="sidebarCollapsed=!sidebarCollapsed"><i
-                        class="fas fa-bars"></i></button>
+                <button class="tb-menu" (click)="sidebarCollapsed=!sidebarCollapsed"
+                    [title]="sidebarCollapsed?'Open menu':'Close menu'">
+                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
+                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
+                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
+                </button>
+                <div class="tb-brand-mini" *ngIf="sidebarCollapsed">
+                    <i class="fas fa-spa"></i> Lumière
+                </div>
                 <div class="tb-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search services, looks…" [(ngModel)]="searchQuery"
+                    <input type="text" placeholder="Search services, looks, artists…" [(ngModel)]="searchQuery"
                         (input)="onSearch()" (blur)="clearSearchDelay()" />
                     <div class="tb-search-results" *ngIf="searchResults.length && searchQuery">
                         <div class="tsr-item" *ngFor="let r of searchResults"
@@ -178,6 +174,7 @@
                     <button class="tb-btn" title="Notifications"
                         (click)="showToast('Notifications','No new notifications.','fas fa-bell','success')">
                         <i class="fas fa-bell"></i>
+                        <span class="tb-notif-dot"></span>
                     </button>
                     <div class="tb-user" *ngIf="currentUser" (click)="openProfilePanel()">
                         <div class="tb-user-av">
@@ -199,19 +196,28 @@
         <!-- HERO -->
         <section id="home" class="hero">
             <div class="hero-bg">
+                <div class="hero-mesh"></div>
                 <div class="hero-orb o1"></div>
                 <div class="hero-orb o2"></div>
                 <div class="hero-orb o3"></div>
+                <div class="hero-orb o4"></div>
                 <div class="hero-sparkles">
                     <span class="sp sp1">✦</span><span class="sp sp2">✧</span>
                     <span class="sp sp3">✦</span><span class="sp sp4">✧</span>
                     <span class="sp sp5">✦</span><span class="sp sp6">✧</span>
+                    <span class="sp sp7">✦</span><span class="sp sp8">✧</span>
+                </div>
+                <div class="hero-lines">
+                    <div class="hl hl1"></div>
+                    <div class="hl hl2"></div>
+                    <div class="hl hl3"></div>
                 </div>
             </div>
             <div class="hero-inner">
                 <div class="hero-text">
                     <div class="hero-eyebrow fade-up">
-                        <div class="eyebrow-dot"></div> Premier Beauty Studio · Est. 2019
+                        <div class="eyebrow-gem">✦</div>
+                        Premier Beauty Studio · Est. 2019
                     </div>
                     <h1 class="hero-h1 fade-up d1">
                         Enhance Your<br>
@@ -224,6 +230,7 @@
                     </p>
                     <div class="hero-btns fade-up d3">
                         <button class="btn-primary" (click)="goToBook()">
+                            <span class="btn-glow"></span>
                             <i class="fas fa-calendar-plus"></i> Book Now
                         </button>
                         <button class="btn-ghost" (click)="scrollToSection('portfolio')">
@@ -240,6 +247,8 @@
                 </div>
                 <div class="hero-visual fade-up d2">
                     <div class="hero-photo-wrap">
+                        <div class="hero-photo-ring r1"></div>
+                        <div class="hero-photo-ring r2"></div>
                         <div class="hero-photo-glow"></div>
                         <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=520&h=640&fit=crop&crop=face"
                             alt="Lumière Beauty" class="hero-photo" (error)="onImgError($event)" />
@@ -257,16 +266,21 @@
                                 <div class="hpc-s">100+ Reviews</div>
                             </div>
                         </div>
+                        <div class="hero-photo-card hpc-bm">
+                            <i class="fas fa-heart hpc-heart"></i>
+                            <span>500+ Happy Clients</span>
+                        </div>
                     </div>
                     <div class="hero-service-pills">
-                        <div class="hsp-item" *ngFor="let s of services.slice(0,3)">
+                        <div class="hsp-item" *ngFor="let s of services.slice(0,3)" (click)="openServiceModal(s)">
                             <div class="hsp-img"><img [src]="s.image" [alt]="s.name" (error)="onImgError($event)" />
                             </div>
                             <div class="hsp-body">
                                 <div class="hsp-name">{{ s.name }}</div>
                                 <div class="hsp-price">₱{{ s.price | number }}</div>
                             </div>
-                            <button class="hsp-book" (click)="goToBook()"><i class="fas fa-arrow-right"></i></button>
+                            <button class="hsp-book" (click)="$event.stopPropagation(); goToBook()"><i
+                                    class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -296,13 +310,19 @@
             <div class="wrap">
                 <div class="about-layout">
                     <div class="about-imgs">
-                        <img class="ai-main"
-                            src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=440&h=540&fit=crop&crop=face"
-                            alt="Artist at work" (error)="onImgError($event)" />
-                        <img class="ai-sub"
-                            src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=240&h=300&fit=crop&crop=face"
-                            alt="Glam look" (error)="onImgError($event)" />
-                        <div class="ai-award"><i class="fas fa-award"></i> Award Winning</div>
+                        <div class="about-img-frame">
+                            <img class="ai-main"
+                                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=440&h=540&fit=crop&crop=face"
+                                alt="Artist at work" (error)="onImgError($event)" />
+                            <img class="ai-sub"
+                                src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=240&h=300&fit=crop&crop=face"
+                                alt="Glam look" (error)="onImgError($event)" />
+                            <div class="ai-award"><i class="fas fa-award"></i> Award Winning</div>
+                            <div class="ai-badge-clients">
+                                <div class="aibc-num">500+</div>
+                                <div class="aibc-lbl">Happy Clients</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="about-body">
                         <div class="section-eyebrow">
@@ -321,9 +341,14 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn-primary btn-sm" (click)="scrollToSection('book')">
-                            <i class="fas fa-calendar-heart"></i> Book a Session
-                        </button>
+                        <div class="about-actions">
+                            <button class="btn-primary btn-sm" (click)="scrollToSection('book')">
+                                <i class="fas fa-calendar-heart"></i> Book a Session
+                            </button>
+                            <button class="btn-ghost btn-sm" (click)="navigateTo('about')">
+                                <i class="fas fa-arrow-right"></i> Learn More
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -339,7 +364,12 @@
                         </div>
                         <h2 class="section-h2">Our Services</h2>
                     </div>
-                    <p class="sec-sub">Professional beauty for every occasion</p>
+                    <div class="sec-head-right">
+                        <p class="sec-sub">Professional beauty for every occasion</p>
+                        <button class="btn-view-all" (click)="navigateTo('services')">
+                            View All Services <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="services-grid">
                     <div class="svc-card" *ngFor="let s of services; let i=index"
@@ -375,8 +405,7 @@
                                     <span class="svc-from">from</span>
                                     <span class="svc-amt">₱{{ s.price | number }}</span>
                                 </div>
-                                <button class="btn-svc-book" (click)="goToBook()">Book <i
-                                        class="fas fa-arrow-right"></i></button>
+                                <button class="btn-svc-book" (click)="bookThisService(s)">Book <i class="fas fa-arrow-right"></i></button>
                             </div>
                         </div>
                     </div>
@@ -422,7 +451,7 @@
                         </div>
                     </div>
                     <div class="svcm-actions">
-                        <button class="btn-primary" (click)="goToBook(); closeServiceModal()">
+                        <button class="btn-primary" (click)="bookThisService(activeSvc); closeServiceModal()">
                             <i class="fas fa-calendar-plus"></i> Book This Service
                         </button>
                         <button class="btn-ghost" (click)="toggleWish(activeSvc)">
@@ -436,18 +465,27 @@
         <!-- ARTISTS -->
         <section id="artists" class="artists-section">
             <div class="wrap">
-                <div class="section-head-centered">
-                    <div class="section-eyebrow">
-                        <div class="eyebrow-dot"></div> The Team
+                <div class="sec-head-row">
+                    <div>
+                        <div class="section-eyebrow">
+                            <div class="eyebrow-dot"></div> The Team
+                        </div>
+                        <h2 class="section-h2">Meet Our Artists</h2>
                     </div>
-                    <h2 class="section-h2">Meet Our Artists</h2>
-                    <p class="section-p">Certified professionals passionate about transforming beauty</p>
+                    <div class="sec-head-right">
+                        <p class="sec-sub">Certified professionals passionate about transforming beauty</p>
+                        <button class="btn-view-all" (click)="navigateTo('artists')">
+                            View All Artists <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="artists-grid">
                     <div class="artist-card" *ngFor="let a of artists">
                         <div class="artc-img">
                             <img [src]="a.image" [alt]="a.name" (error)="onImgError($event)" />
                             <div class="artc-ov">
+                                <button class="btn-art-profile" (click)="navigateTo('artists')"><i
+                                        class="fas fa-user"></i> Profile</button>
                                 <button class="btn-art-book" (click)="goToBook()">Book {{ a.firstName }}</button>
                             </div>
                             <div class="artc-cert"><i class="fas fa-certificate"></i> Certified</div>
@@ -502,9 +540,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="pf-load-more" *ngIf="filteredPortfolio.length > displayedCount">
-                    <button class="btn-ghost" (click)="loadMore()">
-                        <i class="fas fa-plus-circle"></i> View More ({{ filteredPortfolio.length - displayedCount }}
+                <!-- PORTFOLIO ACTIONS -->
+                <div class="section-view-more pf-view-more">
+                    <button class="btn-ghost pf-load-btn" (click)="loadMore()"
+                        *ngIf="filteredPortfolio.length > displayedCount">
+                        <i class="fas fa-plus-circle"></i> Load More ({{ filteredPortfolio.length - displayedCount }}
                         more)
                     </button>
                 </div>
@@ -521,7 +561,12 @@
             <div class="lb-content" (click)="$event.stopPropagation()" *ngIf="displayedPortfolio[lbIdx]">
                 <img [src]="displayedPortfolio[lbIdx].url" [alt]="displayedPortfolio[lbIdx].label" />
                 <div class="lb-cap">{{ displayedPortfolio[lbIdx].label }}</div>
-                <div class="lb-count">{{ lbIdx+1 }} / {{ displayedPortfolio.length }}</div>
+                <div class="lb-actions-row">
+                    <div class="lb-count">{{ lbIdx+1 }} / {{ displayedPortfolio.length }}</div>
+                    <button class="lb-full-gallery" (click)="navigateTo('portfolio')">
+                        <i class="fas fa-images"></i> Full Gallery
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -534,8 +579,7 @@
                             <div class="eyebrow-dot"></div> Appointments
                         </div>
                         <h2 class="section-h2">Book Your<br><em>Glow Session</em> 💕</h2>
-                        <p class="section-p">Ready to look and feel your absolute best? Book your appointment in
-                            minutes.</p>
+                        <p class="section-p">Ready to look and feel your absolute best? Book your appointment in minutes.</p>
                         <div class="book-perks">
                             <div class="book-perk" *ngFor="let p of bookPerks">
                                 <div class="bp-icon"><i [class]="p.icon"></i></div>
@@ -545,63 +589,180 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Trust badges -->
+                        <div class="book-trust-badges">
+                            <div class="btb"><i class="fas fa-lock"></i> Secure</div>
+                            <div class="btb"><i class="fas fa-redo"></i> Free Reschedule</div>
+                            <div class="btb"><i class="fas fa-certificate"></i> Certified MUAs</div>
+                        </div>
                     </div>
                     <div class="book-card">
                         <div class="bc-head">
-                            <h3>Quick Booking</h3>
-                            <p>Fill in the details below</p>
+                            <div class="bc-head-icon"><i class="fas fa-calendar-heart"></i></div>
+                            <div>
+                                <h3>Quick Booking</h3>
+                                <p>Fill in the details below to reserve your slot</p>
+                            </div>
                         </div>
+                        <!-- Step progress -->
                         <div class="bc-steps">
                             <div class="bc-step" [class.done]="bookDate" [class.act]="!bookDate">
-                                <div class="bc-step-n">1</div><span>Date</span>
+                                <div class="bc-step-n"><i class="fas" [class.fa-check]="bookDate" [class.fa-calendar-day]="!bookDate"></i></div>
+                                <span>Date</span>
                             </div>
-                            <div class="bc-step-line"></div>
+                            <div class="bc-step-line" [class.done]="bookDate"></div>
+                            
                             <div class="bc-step" [class.done]="bookService" [class.act]="bookDate && !bookService">
-                                <div class="bc-step-n">2</div><span>Service</span>
+                                <div class="bc-step-n"><i class="fas" [class.fa-check]="bookService" [class.fa-magic]="!bookService"></i></div>
+                                <span>Service</span>
                             </div>
-                            <div class="bc-step-line"></div>
-                            <div class="bc-step" [class.done]="bookDate && bookService">
-                                <div class="bc-step-n">3</div><span>Confirm</span>
+                            <div class="bc-step-line" [class.done]="bookService"></div>
+                            
+                            <div class="bc-step" [class.done]="bookArtist" [class.act]="bookService && !bookArtist">
+                                <div class="bc-step-n"><i class="fas" [class.fa-check]="bookArtist" [class.fa-paint-brush]="!bookArtist"></i></div>
+                                <span>Artist</span>
+                            </div>
+                            <div class="bc-step-line" [class.done]="bookArtist"></div>
+                            
+                            <div class="bc-step" [class.done]="bookPayment" [class.act]="bookArtist && !bookPayment">
+                                <div class="bc-step-n"><i class="fas" [class.fa-check]="bookPayment" [class.fa-credit-card]="!bookPayment"></i></div>
+                                <span>Payment</span>
+                            </div>
+                            <div class="bc-step-line" [class.done]="bookPayment"></div>
+                            
+                            <div class="bc-step" [class.done]="bookDate && bookService && bookArtist && bookPayment">
+                                <div class="bc-step-n"><i class="fas" [class.fa-check]="bookDate && bookService && bookArtist && bookPayment" [class.fa-check-circle]="!(bookDate && bookService && bookArtist && bookPayment)"></i></div>
+                                <span>Confirm</span>
                             </div>
                         </div>
                         <div class="bc-fields">
+                            <!-- Date field -->
                             <div class="bc-field">
-                                <label>Preferred Date</label>
+                                <label><i class="fas fa-calendar-alt"></i> Preferred Date</label>
                                 <div class="bc-inp-wrap">
-                                    <i class="fas fa-calendar-alt"></i>
                                     <input type="date" [(ngModel)]="bookDate" [min]="minBookDate" class="bc-inp" />
                                 </div>
                             </div>
+                            <!-- Service field -->
                             <div class="bc-field">
-                                <label>Service</label>
-                                <div class="bc-inp-wrap">
-                                    <i class="fas fa-magic"></i>
-                                    <select [(ngModel)]="bookService" class="bc-inp bc-sel">
-                                        <option value="">Select a service…</option>
-                                        <option *ngFor="let s of services" [value]="s.name">{{ s.name }} — ₱{{ s.price |
-                                            number }}</option>
-                                    </select>
+                                <label><i class="fas fa-magic"></i> Service</label>
+                                <div class="bc-svc-grid">
+                                    <button class="bc-svc-opt" *ngFor="let s of services"
+                                        [class.selected]="bookService === s.name"
+                                        (click)="selectService(s)">
+                                        <div class="bso-icon"><i [class]="s.icon"></i></div>
+                                        <div class="bso-info">
+                                            <div class="bso-name">{{ s.name }}</div>
+                                            <div class="bso-price">₱{{ s.price | number }}</div>
+                                        </div>
+                                        <i class="fas fa-check bso-check"></i>
+                                    </button>
                                 </div>
                             </div>
+                            <!-- Artist field -->
+                            <div class="bc-field" *ngIf="bookService">
+                                <label><i class="fas fa-paint-brush"></i> Select Artist</label>
+                                <div class="bc-svc-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                    <button class="bc-svc-opt" *ngFor="let a of filteredArtists"
+                                        [class.selected]="bookArtist === a.name"
+                                        (click)="bookArtist = a.name">
+                                        <div class="bso-icon" style="overflow:hidden; padding:0; background:transparent;">
+                                            <img [src]="a.image" style="width:100%; height:100%; object-fit:cover;" />
+                                        </div>
+                                        <div class="bso-info">
+                                            <div class="bso-name">{{ a.name }}</div>
+                                            <div class="bso-price" style="font-size:0.68rem; color:var(--text-soft); font-weight:600;">{{ a.role }}</div>
+                                        </div>
+                                        <i class="fas fa-check bso-check"></i>
+                                    </button>
+                                </div>
+                                <div *ngIf="filteredArtists.length === 0" style="text-align:center; padding:12px; font-size:.8rem; color:var(--text-soft);">
+                                    No available artists for this category.
+                                </div>
+                            </div>
+                            <!-- Time field -->
+                            <div class="bc-field" *ngIf="bookDate">
+                                <label><i class="fas fa-clock"></i> Preferred Time</label>
+                                <div class="bc-time-grid">
+                                    <button class="bc-time-slot" *ngFor="let t of bookTimeSlots"
+                                        [class.selected]="bookTime === t"
+                                        (click)="bookTime = t">{{ t }}</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Method -->
+                            <div class="bc-field" *ngIf="bookArtist">
+                                <label><i class="fas fa-wallet"></i> Payment Method</label>
+                                <div class="bc-svc-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                    <button class="bc-svc-opt" *ngFor="let p of paymentOptions"
+                                        [class.selected]="bookPayment === p.label"
+                                        style="padding-top:16px; padding-bottom:16px; align-items:center;"
+                                        (click)="bookPayment = p.label">
+                                        <div class="bso-icon" style="color:var(--mauve-600);font-size:1.4rem;"><i [class]="p.icon"></i></div>
+                                        <div class="bso-info" style="margin-left:8px;">
+                                            <div class="bso-name" style="font-size:.9rem;font-weight:700;">{{ p.label }}</div>
+                                        </div>
+                                        <i class="fas fa-check bso-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Account Details (Conditional) -->
+                            <div class="bc-field" *ngIf="bookPayment && bookPayment !== 'Pay Onsite'">
+                                <label><i class="fas" [class.fa-mobile-alt]="bookPayment !== 'Credit/Debit Card'" [class.fa-credit-card]="bookPayment === 'Credit/Debit Card'"></i> 
+                                    {{ bookPayment === 'Credit/Debit Card' ? 'Card Number' : 'Mobile Number' }}
+                                </label>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                                    <span style="font-size: .8rem; color: var(--text-soft);">Amount to Pay:</span>
+                                    <span style="font-size: 1.1rem; font-weight: 700; color: var(--mauve-700);">₱{{ getServicePrice(bookService) | number }}</span>
+                                </div>
+                                <input type="text" class="bc-input" 
+                                    [(ngModel)]="bookPaymentAccount" 
+                                    [placeholder]="bookPayment === 'Credit/Debit Card' ? 'e.g. 1234 5678 9101 1121' : 'e.g. 0912 345 6789'" />
+                            </div>
+
+                            <!-- Notes -->
                             <div class="bc-field">
-                                <label>Notes <span class="opt">optional</span></label>
-                                <textarea class="bc-textarea" placeholder="Any special requests…"
+                                <label><i class="fas fa-pen"></i> Special Requests <span class="opt">optional</span></label>
+                                <textarea class="bc-textarea" placeholder="Any special requests, skin concerns, or references…"
                                     [(ngModel)]="bookNotes" rows="3"></textarea>
                             </div>
                         </div>
+                        <!-- Summary preview -->
                         <div class="bc-preview" *ngIf="bookService">
-                            <div>
+                            <div class="bc-preview-row">
+                                <div class="bcp-label">Service</div>
                                 <div class="bcp-svc">{{ bookService }}</div>
-                                <div class="bcp-date" *ngIf="bookDate">{{ bookDate | date:'MMMM d, yyyy' }}</div>
                             </div>
-                            <div class="bcp-price">₱{{ getServicePrice(bookService) | number }}</div>
+                            <div class="bc-preview-row" *ngIf="bookArtist">
+                                <div class="bcp-label">Artist</div>
+                                <div class="bcp-svc">{{ bookArtist }}</div>
+                            </div>
+                            <div class="bc-preview-row" *ngIf="bookDate">
+                                <div class="bcp-label">Date</div>
+                                <div class="bcp-date">{{ bookDate | date:'MMMM d, yyyy' }}</div>
+                            </div>
+                            <div class="bc-preview-row" *ngIf="bookTime">
+                                <div class="bcp-label">Time</div>
+                                <div>{{ bookTime }}</div>
+                            </div>
+                            <div class="bc-preview-row" *ngIf="bookPayment">
+                                <div class="bcp-label">Payment</div>
+                                <div style="font-weight:700;color:var(--mauve-700);">{{ bookPayment }}</div>
+                            </div>
+                            <div class="bc-preview-divider"></div>
+                            <div class="bc-preview-row">
+                                <div class="bcp-label">Total</div>
+                                <div class="bcp-price">₱{{ getServicePrice(bookService) | number }}</div>
+                            </div>
                         </div>
-                        <button class="btn-primary btn-full" (click)="handleBook()"
-                            [disabled]="!bookDate || !bookService">
+                        <button class="btn-primary btn-full bc-submit-btn" (click)="handleBook()"
+                            [disabled]="!bookDate || !bookService || !bookArtist || !bookPayment">
                             <i class="fas fa-calendar-check"></i>
-                            {{ bookDate && bookService ? 'Confirm Booking' : 'Select Date & Service' }}
+                            {{ bookDate && bookService && bookArtist && bookPayment ? 'Confirm Booking' : 'Select Details First' }}
                         </button>
-                        <div class="bc-guarantee"><i class="fas fa-lock"></i> Secure & Free to reschedule 48hrs before
+                        <div class="bc-guarantee">
+                            <i class="fas fa-shield-alt"></i> Fully Secure · Free to reschedule 48hrs before
                         </div>
                     </div>
                 </div>
@@ -611,12 +772,19 @@
         <!-- TESTIMONIALS -->
         <section id="testimonials" class="testi-section">
             <div class="wrap">
-                <div class="section-head-centered">
-                    <div class="section-eyebrow">
-                        <div class="eyebrow-dot"></div> Client Love
+                <div class="sec-head-row">
+                    <div>
+                        <div class="section-eyebrow">
+                            <div class="eyebrow-dot"></div> Client Love
+                        </div>
+                        <h2 class="section-h2">What They Say</h2>
                     </div>
-                    <h2 class="section-h2">What They Say</h2>
-                    <p class="section-p">Real words from real beauties</p>
+                    <div class="sec-head-right">
+                        <p class="sec-sub">Real words from real beauties</p>
+                        <button class="btn-view-all" (click)="navigateTo('reviews')">
+                            All Reviews <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="rating-panel">
                     <div class="rp-score">
@@ -649,12 +817,6 @@
                         </div>
                         <span class="tc-verified"><i class="fas fa-check-circle"></i> Verified</span>
                     </div>
-                </div>
-                <div class="testi-cta">
-                    <button class="btn-ghost"
-                        (click)="showToast('Reviews','Redirecting to review page…','fas fa-pen-nib','success')">
-                        <i class="fas fa-pen-nib"></i> Write a Review
-                    </button>
                 </div>
             </div>
         </section>
@@ -701,6 +863,10 @@
 
         <!-- FOOTER -->
         <footer id="contact" class="footer">
+            <div class="footer-deco">
+                <div class="footer-deco-orb fd1"></div>
+                <div class="footer-deco-orb fd2"></div>
+            </div>
             <div class="footer-inner">
                 <div class="ft-brand">
                     <div class="ft-logo">
@@ -756,7 +922,10 @@
     <div class="pp-overlay" [class.show]="profilePanelOpen" (click)="closeProfilePanel()"></div>
     <div class="pp-panel" [class.open]="profilePanelOpen">
         <div class="pp-top">
-            <h3>My Profile</h3>
+            <div class="pp-top-left">
+                <div class="pp-top-icon"><i class="fas fa-id-card"></i></div>
+                <h3>My Profile</h3>
+            </div>
             <button class="pp-close" (click)="closeProfilePanel()"><i class="fas fa-times"></i></button>
         </div>
         <ng-container *ngIf="currentUser">
@@ -766,53 +935,101 @@
                         <img *ngIf="currentUser.avatar" [src]="currentUser.avatar" [alt]="currentUser.name"
                             (error)="onImgError($event)" />
                         <span *ngIf="!currentUser.avatar" class="pp-av-letter">{{ currentUser.name.charAt(0) }}</span>
+                        <div class="pp-av-ring"></div>
                     </div>
-                    <button class="pp-av-cam"
-                        (click)="showToast('Photo','Photo upload coming soon!','fas fa-camera','success')">
+                    <button class="pp-av-cam" (click)="showToast('Photo','Photo upload coming soon!','fas fa-camera','success')">
                         <i class="fas fa-camera"></i>
                     </button>
                 </div>
                 <div class="pp-name-area">
                     <h4>{{ currentUser.name }}</h4>
                     <p>{{ currentUser.email }}</p>
-                    <div class="pp-tier"><i class="fas fa-crown"></i> {{ currentUser.memberTier }}</div>
+                    <div class="pp-tier"><i class="fas fa-crown"></i> {{ currentUser.memberTier }} Member</div>
+                    <div class="pp-joined"><i class="fas fa-calendar-alt"></i> Since {{ currentUser.joinDate }}</div>
                 </div>
             </div>
             <div class="pp-stats-row">
                 <div class="pp-stat">
+                    <div class="pps-icon"><i class="fas fa-calendar-check"></i></div>
                     <div class="pps-val">{{ currentUser.bookingCount }}</div>
                     <div class="pps-lbl">Bookings</div>
                 </div>
                 <div class="pp-stat">
+                    <div class="pps-icon"><i class="fas fa-gem"></i></div>
                     <div class="pps-val">{{ currentUser.points }}</div>
                     <div class="pps-lbl">Points</div>
                 </div>
                 <div class="pp-stat">
+                    <div class="pps-icon"><i class="fas fa-star"></i></div>
                     <div class="pps-val">{{ currentUser.reviews }}</div>
                     <div class="pps-lbl">Reviews</div>
                 </div>
             </div>
-            <div class="pp-sect-title">Personal Info</div>
-            <div class="pp-info">
-                <div class="pp-info-row"><i class="fas fa-user"></i><span>{{ currentUser.name }}</span></div>
-                <div class="pp-info-row"><i class="fas fa-envelope"></i><span>{{ currentUser.email }}</span></div>
-                <div class="pp-info-row"><i class="fas fa-phone"></i><span>{{ currentUser.phone || 'Not set' }}</span>
+            <div class="pp-loyalty">
+                <div class="pp-loyalty-head">
+                    <i class="fas fa-crown"></i>
+                    <span>Loyalty Progress</span>
+                    <span class="pp-loyalty-tier">{{ currentUser.memberTier }}</span>
+                    <span class="pp-loyalty-next">→ Gold</span>
                 </div>
-                <div class="pp-info-row"><i class="fas fa-calendar"></i><span>Member since {{ currentUser.joinDate
-                        }}</span></div>
-            </div>
-            <div class="pp-sect-title">Recent Bookings</div>
-            <div class="pp-bookings">
-                <div class="ppb-item" *ngFor="let b of currentUser.recentBookings">
-                    <div class="ppb-dot" [class.done]="b.status==='Completed'" [class.up]="b.status==='Upcoming'"></div>
-                    <div class="ppb-body">
-                        <div class="ppb-svc">{{ b.service }}</div>
-                        <div class="ppb-dt">{{ b.date }}</div>
+                <div class="pp-loyalty-bar">
+                    <div class="pp-loyalty-fill" [style.width]="(currentUser.points/1000*100)+'%'">
+                        <div class="pp-loyalty-shine"></div>
                     </div>
-                    <div class="ppb-status" [class.done]="b.status==='Completed'" [class.up]="b.status==='Upcoming'">{{
-                        b.status }}</div>
                 </div>
-                <div class="ppb-empty" *ngIf="!currentUser.recentBookings.length">No bookings yet 💕</div>
+                <div class="pp-loyalty-info">
+                    <span>{{ currentUser.points }} pts</span>
+                    <span>{{ 1000 - currentUser.points }} pts to Gold 👑</span>
+                </div>
+            </div>
+            <!-- Achievement badges -->
+            <div class="pp-sect-title"><i class="fas fa-trophy"></i> Achievements</div>
+            <div class="pp-badges">
+                <div class="pp-badge"><div class="ppb-icon-box"><i class="fas fa-heart"></i></div><span>First Booking</span></div>
+                <div class="pp-badge"><div class="ppb-icon-box star"><i class="fas fa-star"></i></div><span>Loyal Client</span></div>
+                <div class="pp-badge dim"><div class="ppb-icon-box"><i class="fas fa-crown"></i></div><span>Gold Member</span></div>
+                <div class="pp-badge dim"><div class="ppb-icon-box"><i class="fas fa-gem"></i></div><span>VIP Status</span></div>
+            </div>
+            <div class="pp-sect-title"><i class="fas fa-user-circle"></i> Personal Info</div>
+            <div class="pp-info">
+                <div class="pp-info-row">
+                    <div class="ppi-icon"><i class="fas fa-user"></i></div>
+                    <div><div class="ppi-label">Full Name</div><div class="ppi-val">{{ currentUser.name }}</div></div>
+                </div>
+                <div class="pp-info-row">
+                    <div class="ppi-icon"><i class="fas fa-envelope"></i></div>
+                    <div><div class="ppi-label">Email</div><div class="ppi-val">{{ currentUser.email }}</div></div>
+                </div>
+                <div class="pp-info-row">
+                    <div class="ppi-icon"><i class="fas fa-phone"></i></div>
+                    <div><div class="ppi-label">Phone</div><div class="ppi-val">{{ currentUser.phone || 'Not set' }}</div></div>
+                </div>
+                <div class="pp-info-row">
+                    <div class="ppi-icon"><i class="fas fa-calendar"></i></div>
+                    <div><div class="ppi-label">Member Since</div><div class="ppi-val">{{ currentUser.joinDate }}</div></div>
+                </div>
+            </div>
+            <div class="pp-sect-title"><i class="fas fa-history"></i> Recent Tickets</div>
+            <div class="pp-bookings">
+                <div class="ppb-item ticket-item" *ngFor="let t of myTickets" (click)="openTicket(t)">
+                    <div class="ppb-icon-circle" [class.done]="t.status==='Completed'" [class.up]="t.status==='UPCOMING'">
+                        <i class="fas" [class.fa-check]="t.status==='Completed'" [class.fa-clock]="t.status==='UPCOMING'"></i>
+                    </div>
+                    <div class="ppb-body">
+                        <div class="ppb-svc">{{ t.serviceName }} <span style="font-size:.65rem; color:var(--mauve-500);font-weight:600;">w/ {{ t.artistName }}</span></div>
+                        <div class="ppb-dt">{{ t.date | date:'mediumDate' }}</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                        <div class="ppb-status" [class.done]="t.status==='Completed'" [class.up]="t.status==='UPCOMING'">{{ t.status }}</div>
+                        <button class="btn-ghost" style="padding: 2px 8px; font-size: .65rem; border-radius: 4px;">View Ticket</button>
+                    </div>
+                </div>
+                <div class="ppb-empty" *ngIf="myTickets.length === 0"><i class="fas fa-ticket-alt"></i> No tickets yet 💕</div>
+            </div>
+            <div class="pp-view-all-bookings">
+                <button class="btn-ghost btn-full btn-sm" (click)="navigateTo('bookings'); closeProfilePanel()">
+                    <i class="fas fa-calendar-check"></i> View All Bookings
+                </button>
             </div>
             <div class="pp-actions">
                 <button class="btn-primary btn-full" (click)="goToBook(); closeProfilePanel()">
@@ -827,13 +1044,142 @@
             <div class="pp-guest">
                 <div class="ppg-icon"><i class="fas fa-user-circle"></i></div>
                 <h4>You're not logged in</h4>
-                <p>Sign in to access your profile, bookings & rewards.</p>
-                <button class="btn-primary btn-full" (click)="goToLogin(); closeProfilePanel()"><i
-                        class="fas fa-sign-in-alt"></i> Login</button>
-                <button class="btn-ghost btn-full" (click)="goToSignup(); closeProfilePanel()"><i
-                        class="fas fa-user-plus"></i> Create Account</button>
+                <p>Sign in to access your profile, bookings &amp; rewards.</p>
+                <div class="pp-guest-features">
+                    <div class="ppgf-item"><i class="fas fa-calendar-check"></i> Track bookings</div>
+                    <div class="ppgf-item"><i class="fas fa-gem"></i> Earn loyalty points</div>
+                    <div class="ppgf-item"><i class="fas fa-star"></i> Leave reviews</div>
+                </div>
+                <button class="btn-primary btn-full" (click)="goToLogin(); closeProfilePanel()"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <button class="btn-ghost btn-full" (click)="goToSignup(); closeProfilePanel()"><i class="fas fa-user-plus"></i> Create Account</button>
             </div>
         </ng-container>
+    </div>
+
+    <!-- ══ CHAT WIDGET ═══════════════════════════════════════ -->
+    <div class="chat-widget" [class.open]="chatOpen" *ngIf="currentUser">
+        <button class="cw-toggle" (click)="toggleChat()" *ngIf="!chatOpen">
+            <i class="fas fa-comment-dots"></i>
+            <span class="cw-badge" *ngIf="totalUnreadMessages > 0">{{ totalUnreadMessages }}</span>
+        </button>
+        <div class="cw-panel" *ngIf="chatOpen">
+            
+            <!-- INBOX VIEW -->
+            <ng-container *ngIf="chatView === 'inbox'">
+                <div class="cwp-head">
+                    <div class="cwph-info">
+                        <div class="cwph-name">Messages</div>
+                    </div>
+                    <button class="cwph-close" (click)="toggleChat()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="cwp-inbox">
+                    <div class="cwp-inbox-item" *ngFor="let conv of conversations" (click)="openChat(conv)">
+                        <div class="cwpi-av-wrap">
+                            <img [src]="conv.avatar" class="cwpi-av" />
+                            <div class="cwpi-online" *ngIf="conv.online"></div>
+                        </div>
+                        <div class="cwpi-info">
+                            <div class="cwpi-name">{{ conv.artistName }} <span class="cwpi-role">{{ conv.artistRole }}</span></div>
+                            <div class="cwpi-last" [class.unread]="conv.unread > 0">
+                                {{ conv.messages[conv.messages.length - 1]?.text }}
+                            </div>
+                        </div>
+                        <div class="cwpi-meta">
+                            <div class="cwpi-time">{{ conv.messages[conv.messages.length - 1]?.time }}</div>
+                            <div class="cwpi-badge" *ngIf="conv.unread > 0">{{ conv.unread }}</div>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <!-- CHAT VIEW -->
+            <ng-container *ngIf="chatView === 'chat' && activeChat">
+                <div class="cwp-head">
+                    <button class="cwph-back" (click)="backToInbox()"><i class="fas fa-chevron-left"></i></button>
+                    <div class="cwph-info">
+                        <img [src]="activeChat.avatar" class="cwph-av" [alt]="activeChat.artistName" />
+                        <div>
+                            <div class="cwph-name">{{ activeChat.artistName }}</div>
+                            <div class="cwph-status">
+                                <span class="cws-dot" *ngIf="activeChat.online"></span>
+                                {{ activeChat.online ? 'Online' : 'Offline' }}
+                            </div>
+                        </div>
+                    </div>
+                    <button class="cwph-close" (click)="toggleChat()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="cwp-body">
+                    <div class="cwp-msg-date">Today</div>
+                    <div class="cwp-msg" *ngFor="let msg of activeChat.messages" [class.me]="msg.sender === 'me'">
+                        <div class="cwpm-bubble">{{ msg.text }}</div>
+                        <div class="cwpm-time">{{ msg.time }}</div>
+                    </div>
+                    <div class="cwp-typing" *ngIf="isArtistTyping">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <div class="cwp-foot">
+                    <button class="cw-attach" title="Attach peg/photo"><i class="fas fa-image"></i></button>
+                    <input type="text" [(ngModel)]="chatInput" (keyup.enter)="sendMessage()" placeholder="Type a message..." />
+                    <button class="cw-send" (click)="sendMessage()" [disabled]="!chatInput.trim()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </ng-container>
+
+        </div>
+    </div>
+
+    <!-- ══ TICKET MODAL ════════════════════════════════════ -->
+    <div class="tm-bg" [class.show]="generatedTicket" (click)="closeTicket()">
+        <div class="tm-content" (click)="$event.stopPropagation()" *ngIf="generatedTicket">
+            <button class="tm-close" (click)="closeTicket()"><i class="fas fa-times"></i></button>
+            <div class="digital-ticket">
+                <div class="dt-header">
+                    <div class="dt-logo">
+                        <i class="fas fa-spa"></i>
+                        Lumière
+                    </div>
+                    <div class="dt-id">ID: {{ generatedTicket.id }}</div>
+                </div>
+                <div class="dt-body">
+                    <div class="dt-row">
+                        <div class="dt-label">Service</div>
+                        <div class="dt-val dt-highlight">{{ generatedTicket.serviceName }}</div>
+                    </div>
+                    <div class="dt-row">
+                        <div class="dt-label">Artist</div>
+                        <div class="dt-val">{{ generatedTicket.artistName }}</div>
+                    </div>
+                    <div class="dt-row-split">
+                        <div class="dt-col">
+                            <div class="dt-label">Date</div>
+                            <div class="dt-val">{{ generatedTicket.date | date:'MMMM d, yyyy' }}</div>
+                        </div>
+                        <div class="dt-col">
+                            <div class="dt-label">Time</div>
+                            <div class="dt-val">{{ generatedTicket.time }}</div>
+                        </div>
+                    </div>
+                    <div class="dt-row" style="margin-top:10px;">
+                        <div class="dt-label">Payment Method</div>
+                        <div class="dt-val" style="color:var(--mauve-800);"><i class="fas fa-check-circle" style="color:var(--green-500);margin-right:4px;"></i> {{ generatedTicket.payment }}</div>
+                    </div>
+                    <div class="dt-row" style="margin-top:14px; text-align:center;">
+                        <div class="dt-label">Total Amount</div>
+                        <div class="dt-val" style="font-size:1.6rem; color:var(--mauve-800);">₱{{ generatedTicket.price | number }}</div>
+                    </div>
+                </div>
+                <div class="dt-perforated"></div>
+                <div class="dt-footer">
+                    <div class="dt-barcode">
+                        ||| | || ||| || ||| | | |||| || |||
+                    </div>
+                    <div class="dt-instructions">
+                        Present this digital ticket at the front desk upon arrival.
+                        <br>Status: <span class="dt-status">{{ generatedTicket.status }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>

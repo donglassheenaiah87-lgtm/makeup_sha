@@ -1,0 +1,114 @@
+<!-- client/reviews/reviews.html -->
+<div class="rv-root">
+  <!-- TOAST -->
+  <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
+    <div class="toast-icon"><i [class]="toastIcon"></i></div>
+    <div class="toast-body">
+      <div class="toast-title">{{ toastTitle }}</div>
+      <div class="toast-msg">{{ toastMessage }}</div>
+    </div>
+    <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- HERO -->
+  <div class="rv-hero">
+    <div class="rv-hero-bg">
+      <div class="rv-orb o1"></div>
+      <div class="rv-orb o2"></div>
+    </div>
+    <div class="rv-hero-inner">
+      <button class="rv-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Dashboard
+      </button>
+      <div class="rv-eyebrow"><div class="eyebrow-dot"></div> Client Love</div>
+      <h1>What They <em>Say</em> ★</h1>
+      <p>Real words from real beauties — 100+ verified reviews.</p>
+    </div>
+  </div>
+
+  <!-- RATING SUMMARY -->
+  <div class="rv-wrap">
+    <div class="rv-summary">
+      <div class="rv-score-block">
+        <div class="rv-big-num">4.9</div>
+        <div class="rv-big-stars">★★★★★</div>
+        <div class="rv-big-cnt">100+ reviews</div>
+      </div>
+      <div class="rv-bars">
+        <div class="rv-bar-row" *ngFor="let r of ratingBars">
+          <span class="rv-bar-lbl">{{ r.label }}</span>
+          <div class="rv-bar-track"><div class="rv-bar-fill" [style.width]="r.pct+'%'"></div></div>
+          <span class="rv-bar-pct">{{ r.pct }}%</span>
+        </div>
+      </div>
+      <div class="rv-write-btn-wrap">
+        <button class="rv-write-btn" (click)="showForm=!showForm">
+          <i class="fas fa-pen-nib"></i> {{ showForm ? 'Cancel' : 'Write a Review' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- WRITE A REVIEW FORM -->
+    <div class="rv-form-card" *ngIf="showForm">
+      <h3><i class="fas fa-pen-nib"></i> Write Your Review</h3>
+      <div class="rv-form-field">
+        <label>Your Name</label>
+        <input type="text" [(ngModel)]="reviewForm.name" placeholder="e.g., Sarah L." />
+      </div>
+      <div class="rv-form-field">
+        <label>Service Received</label>
+        <select [(ngModel)]="reviewForm.service">
+          <option value="">Select service…</option>
+          <option>Bridal Makeup</option>
+          <option>Event Glam</option>
+          <option>Natural Glow</option>
+          <option>Photoshoot Look</option>
+          <option>Debut Glam</option>
+        </select>
+      </div>
+      <div class="rv-form-field rv-stars-field">
+        <label>Rating</label>
+        <div class="rv-star-select">
+          <span *ngFor="let s of [1,2,3,4,5]" class="rv-star-btn"
+            [class.active]="reviewForm.rating >= s" (click)="reviewForm.rating = s">★</span>
+        </div>
+      </div>
+      <div class="rv-form-field">
+        <label>Your Review</label>
+        <textarea [(ngModel)]="reviewForm.comment" placeholder="Share your experience…" rows="4"></textarea>
+      </div>
+      <button class="rv-submit-btn" (click)="submitReview()">
+        <i class="fas fa-paper-plane"></i> Submit Review
+      </button>
+    </div>
+
+    <!-- FILTER TABS -->
+    <div class="rv-filter-row">
+      <button *ngFor="let f of filters" class="rv-filter-btn" [class.active]="activeFilter===f" (click)="setFilter(f)">
+        {{ f }}
+      </button>
+    </div>
+
+    <!-- REVIEWS GRID -->
+    <div class="rv-count">{{ filtered.length }} review{{ filtered.length !== 1 ? 's' : '' }}</div>
+    <div class="rv-grid">
+      <div class="rv-card" *ngFor="let r of filtered; let i=index" [style.animation-delay]="(i*0.08)+'s'">
+        <div class="rv-card-qmark">"</div>
+        <p class="rv-quote">{{ r.quote }}</p>
+        <div class="rv-card-foot">
+          <div class="rv-av">
+            <img [src]="r.avatar" [alt]="r.name" (error)="onImgError($event)" />
+          </div>
+          <div class="rv-meta">
+            <div class="rv-name">{{ r.name }}</div>
+            <div class="rv-type">{{ r.type }} · {{ r.date }}</div>
+          </div>
+          <div class="rv-stars">
+            <span *ngFor="let s of starsArray(r.rating)">★</span>
+          </div>
+        </div>
+        <span class="rv-verified"><i class="fas fa-check-circle"></i> Verified</span>
+      </div>
+    </div>
+  </div>
+</div>

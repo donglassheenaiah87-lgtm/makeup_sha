@@ -1,8 +1,10 @@
 // dashboard.ts
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { UserService } from '../../core/user.service';
 
 interface Service {
   name: string; desc: string; fullDesc: string; icon: string;
@@ -33,35 +35,99 @@ interface CurrentUser {
 })
 export class ClientDashboardComponent implements OnInit, OnDestroy {
 
-  // ── UI state ───────────────────────────────────────────
+  // ── UI State ───────────────────────────────────────────
   isScrolled = false;
   sidebarCollapsed = false;
   profilePanelOpen = false;
   activeSection = 'home';
 
   // ── Toast ──────────────────────────────────────────────
-  toastVisible = false; toastTitle = ''; toastMessage = '';
-  toastIcon = 'fas fa-check-circle'; toastType: 'success' | 'error' = 'success';
+  toastVisible = false;
+  toastTitle = '';
+  toastMessage = '';
+  toastIcon = 'fas fa-check-circle';
+  toastType: 'success' | 'error' = 'success';
   private toastTimer: any;
 
   // ── Modals ─────────────────────────────────────────────
-  svcModalOpen = false; activeSvc: Service | null = null;
-  lbOpen = false; lbIdx = 0;
+  svcModalOpen = false;
+  activeSvc: Service | null = null;
+  lbOpen = false;
+  lbIdx = 0;
 
-  // ── Book ───────────────────────────────────────────────
-  bookDate = ''; bookService = ''; bookNotes = ''; minBookDate = '';
+  // ── Booking Form ───────────────────────────────────────
+  bookDate = '';
+  bookService = '';
+  bookArtist: string | null = null;
+  bookPayment = '';
+  bookPaymentAccount = '';
+  bookTime = '';
+  bookNotes = '';
+  minBookDate = '';
+  bookTimeSlots = ['10:00 AM', '11:00 AM', '01:00 PM', '02:30 PM', '04:00 PM'];
+  paymentOptions = [
+    { id: 'gcash', label: 'GCash', icon: 'fas fa-mobile-alt' },
+    { id: 'maya', label: 'PayMaya', icon: 'fas fa-wallet' },
+    { id: 'card', label: 'Credit/Debit Card', icon: 'fas fa-credit-card' },
+    { id: 'cash', label: 'Pay Onsite', icon: 'fas fa-money-bill-wave' }
+  ];
+  filteredArtists: Artist[] = [];
+  myTickets: any[] = [];
+  generatedTicket: any = null;
 
   // ── Search ─────────────────────────────────────────────
-  searchQuery = ''; searchResults: any[] = [];
+  searchQuery = '';
+  searchResults: any[] = [];
+  private searchTimeout: any;
 
-  // ── Wishlist ───────────────────────────────────────────
+  // ── Chat Widget ────────────────────────────────────────
+  chatOpen = false;
+  chatView: 'inbox' | 'chat' = 'inbox';
+  activeChat: any = null;
+  chatInput = '';
+  isArtistTyping = false;
+
+  conversations = [
+    {
+      id: 1,
+      artistName: 'Sarah M.',
+      artistRole: 'Bridal Make-up',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      online: true,
+      unread: 1,
+      messages: [
+        { text: 'Hi! Looking forward to your session on Saturday. Do you have any pegs?', time: '10:30 AM', sender: 'artist' }
+      ]
+    },
+    {
+      id: 2,
+      artistName: 'Leo T.',
+      artistRole: 'Hair Styling',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      online: false,
+      unread: 0,
+      messages: [
+        { text: 'Thanks for booking! I saw your note about having dry scalps.', time: 'Yesterday', sender: 'artist' },
+        { text: 'Yes, do I need to prepare anything before you arrive?', time: 'Yesterday', sender: 'me' },
+        { text: 'Just wash it normally without heavy conditioner! See you!', time: 'Yesterday', sender: 'artist' }
+      ]
+    }
+  ];
+
+  get totalUnreadMessages(): number {
+    return this.conversations.reduce((sum, c) => sum + (c.unread || 0), 0);
+  }
+
+  // ── Dummy Data ───────────────────────────────────────────
   wishlistCount = 0;
 
   // ── Portfolio ──────────────────────────────────────────
-  portfolioTab = 'all'; filteredPortfolio: PortfolioImage[] = [];
-  displayedCount = 8; displayedPortfolio: PortfolioImage[] = [];
+  portfolioTab = 'all';
+  filteredPortfolio: PortfolioImage[] = [];
+  displayedCount = 8;
+  displayedPortfolio: PortfolioImage[] = [];
 
-  // ── User ───────────────────────────────────────────────
+  // ── Other ──────────────────────────────────────────────
   newsletterEmail = '';
   currentUser: CurrentUser | null = null;
 
@@ -122,22 +188,26 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   artists: Artist[] = [
     {
-      name: 'Anika Reyes', firstName: 'Anika', role: 'Lead Bridal Artist', rating: '5.0', exp: '8 yrs', clients: 300,
+      name: 'Anika Reyes', firstName: 'Anika', role: 'Lead Bridal Artist',
+      rating: '5.0', exp: '8 yrs', clients: 300,
       image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=460&fit=crop&crop=face',
       specialties: ['Bridal', 'Glam', 'Airbrush']
     },
     {
-      name: 'Sofia Cruz', firstName: 'Sofia', role: 'Editorial Specialist', rating: '4.9', exp: '6 yrs', clients: 220,
+      name: 'Sofia Cruz', firstName: 'Sofia', role: 'Editorial Specialist',
+      rating: '4.9', exp: '6 yrs', clients: 220,
       image: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=400&h=460&fit=crop&crop=face',
       specialties: ['Editorial', 'SFX', 'Event']
     },
     {
-      name: 'Mia Santos', firstName: 'Mia', role: 'Natural Beauty Expert', rating: '4.8', exp: '5 yrs', clients: 180,
+      name: 'Mia Santos', firstName: 'Mia', role: 'Natural Beauty Expert',
+      rating: '4.8', exp: '5 yrs', clients: 180,
       image: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=400&h=460&fit=crop&crop=face',
       specialties: ['Natural', 'Skincare', 'Glam']
     },
     {
-      name: 'Leila Torres', firstName: 'Leila', role: 'Event & Debut Artist', rating: '4.9', exp: '7 yrs', clients: 260,
+      name: 'Leila Torres', firstName: 'Leila', role: 'Event & Debut Artist',
+      rating: '4.9', exp: '7 yrs', clients: 260,
       image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=460&fit=crop&crop=face',
       specialties: ['Debut', 'Event', 'Korean']
     }
@@ -159,24 +229,55 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   ];
 
   testimonials: Testimonial[] = [
-    { name: 'Sarah L.', type: 'Bride', date: 'March 2026', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face', quote: 'Super nice and long-lasting makeup! I felt like a princess on my wedding day. Absolutely worth every peso!' },
-    { name: 'Jessica M.', type: 'Debut Client', date: 'February 2026', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face', quote: 'Amazing work! My makeup was perfect for my debut. So many compliments! Will definitely rebook Lumière.' },
-    { name: 'Anne R.', type: 'Photoshoot', date: 'January 2026', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face', quote: 'Very professional & so talented. The photoshoot look was flawless on camera. Highly recommended!' },
+    {
+      name: 'Sarah L.', type: 'Bride', date: 'March 2026',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
+      quote: 'Super nice and long-lasting makeup! I felt like a princess on my wedding day. Absolutely worth every peso!'
+    },
+    {
+      name: 'Jessica M.', type: 'Debut Client', date: 'February 2026',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+      quote: 'Amazing work! My makeup was perfect for my debut. So many compliments! Will definitely rebook Lumière.'
+    },
+    {
+      name: 'Anne R.', type: 'Photoshoot', date: 'January 2026',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
+      quote: 'Very professional & so talented. The photoshoot look was flawless on camera. Highly recommended!'
+    },
   ];
 
   ratingBars = [
-    { label: '5★', pct: 92 }, { label: '4★', pct: 6 }, { label: '3★', pct: 2 }
+    { label: '5★', pct: 92 },
+    { label: '4★', pct: 6 },
+    { label: '3★', pct: 2 }
   ];
 
   faqs: FAQ[] = [
     {
-      // FIX: The word "You'll" contains a single quote. Since the string is also wrapped in single quotes, you must escape it with a backslash (\) like this: "You\'ll"
-      // Otherwise, the IDE thinks the string has ended prematurely, causing "Unterminated string literal" and "ll does not exist" errors.
-      question: 'How do I book an appointment?', answer: 'Click "Book Now", select your preferred date and service, and complete the form. You\'ll receive a confirmation within minutes.', open: false },
-    { question: 'Do you offer a trial session before the wedding?', answer: 'Yes! Our Bridal package includes a pre-wedding trial so you can see your look and request adjustments.', open: false },
-    { question: 'What products do you use?', answer: 'We use premium, dermatologist-tested brands safe for all skin types — long-lasting and photography-friendly.', open: false },
-    { question: 'Can I reschedule or cancel my booking?', answer: 'Yes! Rescheduling is free up to 48 hours before your appointment. Cancellations within 24 hours may incur a small fee.', open: false },
-    { question: 'Do you offer group bookings?', answer: 'Absolutely! We offer special group rates for bridal parties, debuts, and corporate events. Contact us for a custom quote.', open: false },
+      question: 'How do I book an appointment?',
+      answer: 'Click "Book Now", select your preferred date and service, and complete the form. You\'ll receive a confirmation within minutes.',
+      open: false
+    },
+    {
+      question: 'Do you offer a trial session before the wedding?',
+      answer: 'Yes! Our Bridal package includes a pre-wedding trial so you can see your look and request adjustments.',
+      open: false
+    },
+    {
+      question: 'What products do you use?',
+      answer: 'We use premium, dermatologist-tested brands safe for all skin types — long-lasting and photography-friendly.',
+      open: false
+    },
+    {
+      question: 'Can I reschedule or cancel my booking?',
+      answer: 'Yes! Rescheduling is free up to 48 hours before your appointment. Cancellations within 24 hours may incur a small fee.',
+      open: false
+    },
+    {
+      question: 'Do you offer group bookings?',
+      answer: 'Absolutely! We offer special group rates for bridal parties, debuts, and corporate events. Contact us for a custom quote.',
+      open: false
+    },
   ];
 
   aboutPoints = [
@@ -200,36 +301,60 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     { icon: 'fas fa-heart', title: 'Premium Products', sub: 'Luxury-grade cosmetics' },
   ];
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private userService: UserService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
-    const stored = localStorage.getItem('lumiere_user');
-    if (stored) {
-      try {
-        const u = JSON.parse(stored);
-        this.currentUser = {
-          name: u.name || 'Guest User',
-          email: u.email || '',
-          phone: u.phone || '',
-          avatar: u.avatar || '',
-          memberTier: u.memberTier || 'Silver',
-          bookingCount: u.bookingCount || 3,
-          points: u.points || 450,
-          reviews: u.reviews || 2,
-          joinDate: u.joinDate || 'January 2025',
-          recentBookings: u.recentBookings || [
-            { service: 'Bridal Makeup', date: 'Mar 15, 2026', status: 'Upcoming' },
-            { service: 'Event Glam', date: 'Feb 20, 2026', status: 'Completed' },
-          ]
-        };
-      } catch { this.currentUser = null; }
-    }
+
+    // Listen to Firebase Auth state
+    this.authService.currentUser$.subscribe(async (user) => {
+      if (user) {
+        try {
+          const userData = await this.userService.getUser(user.uid);
+          if (userData && userData.role === 'client') {
+            this.currentUser = {
+              name: userData.name || 'Guest User',
+              email: userData.email || '',
+              phone: userData.phone || '',
+              avatar: '',
+              memberTier: 'Silver',
+              bookingCount: 3,
+              points: userData.loyaltyPoints || 450,
+              reviews: 2,
+              joinDate: 'January 2025',
+              recentBookings: [
+                { service: 'Bridal Makeup', date: 'Mar 15, 2026', status: 'Upcoming' },
+                { service: 'Event Glam', date: 'Feb 20, 2026', status: 'Completed' },
+              ]
+            };
+          } else {
+            this.currentUser = null;
+          }
+        } catch {
+          this.currentUser = null;
+        }
+      } else {
+        this.currentUser = null;
+      }
+      this.cdr.detectChanges();
+    });
+
     const today = new Date();
     this.minBookDate = today.toISOString().split('T')[0];
     this.bookDate = this.minBookDate;
+
     this.filteredPortfolio = [...this.allPortfolio];
     this.updateDisplayed();
+
+    // Auto-collapse sidebar on small screens
+    if (window.innerWidth <= 700) {
+      this.sidebarCollapsed = true;
+    }
   }
 
   ngOnDestroy(): void {
@@ -243,40 +368,126 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     const sections = ['contact', 'testimonials', 'book', 'portfolio', 'artists', 'services', 'home'];
     for (const id of sections) {
       const el = document.getElementById(id);
-      if (el && el.getBoundingClientRect().top <= 140) { this.activeSection = id; break; }
+      if (el && el.getBoundingClientRect().top <= 140) {
+        this.activeSection = id;
+        break;
+      }
+    }
+  }
+
+  // FIX: TS2554: Expected 0 arguments, but got 1.
+  // Reason: @HostListener was passing ['$event'] but onResize() took 0 arguments.
+  // Solution: Removed ['$event'] from @HostListener since the event object is not used.
+  @HostListener('window:resize')
+  onResize(): void {
+    if (window.innerWidth <= 700 && !this.sidebarCollapsed) {
+      this.sidebarCollapsed = true;
     }
   }
 
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.closeServiceModal(); this.closeLightbox(); this.closeProfilePanel(); }
+  onEsc(): void {
+    this.closeServiceModal();
+    this.closeLightbox();
+    this.closeProfilePanel();
+    // Also close sidebar on mobile when Escape is pressed
+    if (window.innerWidth <= 700) {
+      this.sidebarCollapsed = true;
+    }
+  }
 
   // ── Toast ──────────────────────────────────────────────
-  showToast(title: string, msg: string, icon = 'fas fa-check-circle', type: 'success' | 'error' = 'success'): void {
-    this.toastTitle = title; this.toastMessage = msg;
-    this.toastIcon = icon; this.toastType = type;
+  showToast(
+    title: string,
+    msg: string,
+    icon = 'fas fa-check-circle',
+    type: 'success' | 'error' = 'success'
+  ): void {
+    this.toastTitle = title;
+    this.toastMessage = msg;
+    this.toastIcon = icon;
+    this.toastType = type;
     this.toastVisible = true;
     if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => this.toastVisible = false, 3500);
+    this.toastTimer = setTimeout(() => (this.toastVisible = false), 3800);
   }
 
   // ── Navigation ─────────────────────────────────────────
   scrollToSection(id: string): void {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    this.activeSection = id; this.searchQuery = '';
+    this.activeSection = id;
+    this.searchQuery = '';
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth <= 700) this.sidebarCollapsed = true;
   }
+
+  /**
+   * Navigate to a dedicated sub-page.
+   * Routes: 'services' | 'artists' | 'portfolio' | 'reviews' | 'bookings' | 'about'
+   *
+   * Each route corresponds to a separate page that shows the full content
+   * for that section (e.g. all services, full portfolio gallery, all artists, etc.)
+   */
+  navigateTo(page: string): void {
+    const routeMap: Record<string, string> = {
+      services: '/client/services',
+      artists: '/client/artists',
+      portfolio: '/client/portfolio',
+      reviews: '/client/reviews',
+      bookings: '/client/my-bookings',
+      about: '/client/services',
+    };
+    const route = routeMap[page];
+    if (route) {
+      this.router.navigate([route]);
+    } else {
+      this.showToast(
+        'Coming Soon',
+        `The ${page} page is launching soon! ✨`,
+        'fas fa-sparkles',
+        'success'
+      );
+    }
+  }
+
   goToLogin(): void { this.router.navigate(['/login']); }
   goToSignup(): void { this.router.navigate(['/signup']); }
+
   goToBook(): void {
-    const user = localStorage.getItem('lumiere_user');
-    if (user) { this.router.navigate(['/book']); }
-    else { this.showToast('Login Required', 'Please log in to book an appointment 💕', 'fas fa-lock', 'error'); setTimeout(() => this.router.navigate(['/login']), 1500); }
+    if (this.currentUser) {
+      this.scrollToSection('book');
+    } else {
+      this.showToast(
+        'Login Required',
+        'Please log in to book an appointment 💕',
+        'fas fa-lock',
+        'error'
+      );
+      setTimeout(() => this.router.navigate(['/login']), 1600);
+    }
   }
+
+  bookThisService(service: Service): void {
+    if (!this.currentUser) {
+      this.goToBook(); // Reuses the "Login Required" toast logic
+      return;
+    }
+    this.selectService(service);
+    this.scrollToSection('book');
+  }
+
   logout(): void {
-    localStorage.removeItem('lumiere_user');
-    this.currentUser = null;
-    this.closeProfilePanel();
-    this.showToast('Logged Out', 'You have been logged out successfully.', 'fas fa-sign-out-alt', 'success');
+    this.authService.logout().then(() => {
+      this.currentUser = null;
+      this.closeProfilePanel();
+      this.showToast(
+        'Logged Out',
+        'You have been logged out successfully.',
+        'fas fa-sign-out-alt',
+        'success'
+      );
+    });
   }
 
   // ── Profile Panel ──────────────────────────────────────
@@ -284,30 +495,64 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   closeProfilePanel(): void { this.profilePanelOpen = false; document.body.style.overflow = ''; }
 
   // ── Service Modal ──────────────────────────────────────
-  openServiceModal(s: Service): void { this.activeSvc = s; this.svcModalOpen = true; document.body.style.overflow = 'hidden'; }
-  closeServiceModal(): void { this.svcModalOpen = false; this.activeSvc = null; document.body.style.overflow = ''; }
+  openServiceModal(s: Service): void {
+    this.activeSvc = s;
+    this.svcModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+  closeServiceModal(): void {
+    this.svcModalOpen = false;
+    this.activeSvc = null;
+    document.body.style.overflow = '';
+  }
 
   // ── Wishlist ───────────────────────────────────────────
   toggleWish(s: Service): void {
     s.wishlisted = !s.wishlisted;
     this.wishlistCount = this.services.filter(x => x.wishlisted).length;
-    this.showToast(s.wishlisted ? 'Saved!' : 'Removed', s.wishlisted ? `${s.name} added to wishlist 💕` : `${s.name} removed.`, s.wishlisted ? 'fas fa-heart' : 'fas fa-heart-broken', 'success');
+    this.showToast(
+      s.wishlisted ? 'Saved!' : 'Removed',
+      s.wishlisted ? `${s.name} added to wishlist 💕` : `${s.name} removed.`,
+      s.wishlisted ? 'fas fa-heart' : 'fas fa-heart-broken',
+      'success'
+    );
   }
+
   showWishlistToast(): void {
     const saved = this.services.filter(x => x.wishlisted);
-    if (!saved.length) this.showToast('Wishlist', 'Save services you love using the heart button!', 'fas fa-heart', 'success');
-    else this.showToast('Wishlist', `You have ${saved.length} saved: ${saved.map(s => s.name).join(', ')}`, 'fas fa-heart', 'success');
+    if (!saved.length) {
+      this.showToast('Wishlist', 'Save services you love using the heart button!', 'fas fa-heart', 'success');
+    } else {
+      this.showToast(
+        'Wishlist',
+        `You have ${saved.length} saved: ${saved.map(s => s.name).join(', ')}`,
+        'fas fa-heart',
+        'success'
+      );
+    }
   }
 
   // ── Portfolio ──────────────────────────────────────────
   filterPortfolio(tab: string): void {
     this.portfolioTab = tab;
-    this.filteredPortfolio = tab === 'all' ? [...this.allPortfolio] : this.allPortfolio.filter(p => p.tag === tab);
+    this.filteredPortfolio = tab === 'all'
+      ? [...this.allPortfolio]
+      : this.allPortfolio.filter(p => p.tag === tab);
     this.displayedCount = 8;
     this.updateDisplayed();
   }
-  loadMore(): void { this.displayedCount = Math.min(this.displayedCount + 4, this.filteredPortfolio.length); this.updateDisplayed(); }
-  updateDisplayed(): void { this.displayedPortfolio = this.filteredPortfolio.slice(0, this.displayedCount); }
+
+  loadMore(): void {
+    this.displayedCount = Math.min(
+      this.displayedCount + 4,
+      this.filteredPortfolio.length
+    );
+    this.updateDisplayed();
+  }
+
+  updateDisplayed(): void {
+    this.displayedPortfolio = this.filteredPortfolio.slice(0, this.displayedCount);
+  }
 
   // ── Lightbox ───────────────────────────────────────────
   openLightbox(i: number): void { this.lbIdx = i; this.lbOpen = true; document.body.style.overflow = 'hidden'; }
@@ -320,35 +565,164 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     if (!this.searchQuery.trim()) { this.searchResults = []; return; }
     const q = this.searchQuery.toLowerCase();
     this.searchResults = [
-      ...this.services.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+      ...this.services
+        .filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
         .map(s => ({ name: s.name, category: s.category, icon: s.icon, section: 'services' })),
-      ...this.artists.filter(a => a.name.toLowerCase().includes(q) || a.role.toLowerCase().includes(q))
+      ...this.artists
+        .filter(a => a.name.toLowerCase().includes(q) || a.role.toLowerCase().includes(q))
         .map(a => ({ name: a.name, category: a.role, icon: 'fas fa-user-circle', section: 'artists' })),
     ].slice(0, 6);
   }
-  clearSearchDelay(): void { setTimeout(() => { this.searchResults = []; }, 200); }
 
-  // ── Book ───────────────────────────────────────────────
-  getServicePrice(name: string): number { return this.services.find(s => s.name === name)?.price ?? 0; }
+  clearSearchDelay(): void {
+    setTimeout(() => { this.searchResults = []; }, 220);
+  }
+
+  // ── Booking Form Logic ─────────────────────────────────
+  getServicePrice(name: string): number {
+    return this.services.find(s => s.name === name)?.price ?? 0;
+  }
+
+  selectService(service: Service): void {
+    this.bookService = service.name;
+    this.bookArtist = null;
+    this.bookTime = '';
+    // Filter artists whose specialties include the service category
+    this.filteredArtists = this.artists.filter(a => a.specialties.includes(service.category));
+    if (this.filteredArtists.length === 0) {
+      this.filteredArtists = this.artists;
+    }
+  }
+
   handleBook(): void {
-    if (!this.bookDate || !this.bookService) { this.showToast('Missing Info', 'Please select a date and service.', 'fas fa-exclamation-circle', 'error'); return; }
-    this.goToBook();
+    if (!this.bookDate || !this.bookService || !this.bookArtist || !this.bookPayment) {
+      this.showToast('Missing Info', 'Please select Date, Service, Artist, and Payment.', 'fas fa-exclamation-circle', 'error');
+      return;
+    }
+    
+    if (this.bookPayment !== 'Pay Onsite' && !this.bookPaymentAccount.trim()) {
+      this.showToast('Missing Info', 'Please provide your account or card number.', 'fas fa-exclamation-circle', 'error');
+      return;
+    }
+    
+    this.showToast('Processing', `Sending request to ${this.bookArtist}...`, 'fas fa-spinner fa-spin', 'success');
+
+    setTimeout(() => {
+      const ticketId = 'BK-' + Math.floor(100000 + Math.random() * 900000);
+      let displayPayment = this.bookPayment;
+      if (this.bookPayment !== 'Pay Onsite') {
+        const acc = this.bookPaymentAccount.trim();
+        const masked = acc.length > 4 ? '*'.repeat(acc.length - 4) + acc.slice(-4) : acc;
+        displayPayment += ` (${masked})`;
+      }
+
+      const ticket = {
+        id: ticketId,
+        date: this.bookDate,
+        time: this.bookTime || 'TBD',
+        serviceName: this.bookService,
+        artistName: this.bookArtist,
+        payment: displayPayment,
+        price: this.getServicePrice(this.bookService),
+        status: 'UPCOMING'
+      };
+      
+      this.myTickets.unshift(ticket);
+      this.generatedTicket = ticket;
+      
+      this.bookDate = '';
+      this.bookTime = '';
+      this.bookService = '';
+      this.bookArtist = null;
+      this.bookPayment = '';
+      this.bookPaymentAccount = '';
+      this.bookNotes = '';
+      this.filteredArtists = [];
+    }, 1500);
+  }
+
+  openTicket(ticket: any): void {
+    this.generatedTicket = ticket;
+  }
+  
+  closeTicket(): void {
+    this.generatedTicket = null;
   }
 
   // ── FAQ ────────────────────────────────────────────────
-  toggleFaq(i: number): void { this.faqs = this.faqs.map((f, idx) => ({ ...f, open: idx === i ? !f.open : false })); }
+  toggleFaq(i: number): void {
+    this.faqs = this.faqs.map((f, idx) => ({ ...f, open: idx === i ? !f.open : false }));
+  }
 
   // ── Newsletter ─────────────────────────────────────────
   subscribe(): void {
-    if (!this.newsletterEmail.includes('@')) { this.showToast('Invalid Email', 'Please enter a valid email.', 'fas fa-envelope', 'error'); return; }
-    this.showToast('Subscribed!', 'Thank you for joining! ✨', 'fas fa-heart', 'success');
+    if (!this.newsletterEmail.includes('@')) {
+      this.showToast('Invalid Email', 'Please enter a valid email.', 'fas fa-envelope', 'error');
+      return;
+    }
+    this.showToast('Subscribed! 💕', 'Thank you for joining Lumière! ✨', 'fas fa-heart', 'success');
     this.newsletterEmail = '';
   }
 
-  // ── Image fallback ─────────────────────────────────────
+  // ── Sidebar Toggle ─────────────────────────────────────
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  // ── Chat Widget ────────────────────────────────────────
+  toggleChat(): void {
+    this.chatOpen = !this.chatOpen;
+    if (!this.chatOpen) {
+      // Keep it wherever it was
+    }
+  }
+
+  openChat(conv: any): void {
+    this.activeChat = conv;
+    this.chatView = 'chat';
+    conv.unread = 0; // mark as read
+  }
+
+  backToInbox(): void {
+    this.chatView = 'inbox';
+    this.activeChat = null;
+  }
+
+  sendMessage(): void {
+    if (!this.activeChat) return;
+    const text = this.chatInput.trim();
+    if (!text) return;
+    
+    // Add user message
+    this.activeChat.messages.push({
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      sender: 'me'
+    });
+    this.chatInput = '';
+
+    // Mock artist reply after delay
+    this.isArtistTyping = true;
+    setTimeout(() => {
+      this.isArtistTyping = false;
+      this.activeChat.messages.push({
+        text: 'Got it! I will prep exactly what you need. See you soon! 💕',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: 'artist'
+      });
+      if (!this.chatOpen || this.chatView === 'inbox' || this.activeChat.id !== this.activeChat.id) {
+         this.activeChat.unread = (this.activeChat.unread || 0) + 1;
+      }
+      this.cdr.detectChanges();
+    }, 2500);
+  }
+
+  // ── Image Fallback ─────────────────────────────────────
   onImgError(e: Event): void {
     const img = e.target as HTMLImageElement;
     img.style.display = 'none';
-    if (img.parentElement) img.parentElement.style.background = 'linear-gradient(135deg,#e8c5ce,#c9848e)';
+    if (img.parentElement) {
+      img.parentElement.style.background = 'linear-gradient(135deg,#e8c5ce,#c9848e)';
+    }
   }
 }

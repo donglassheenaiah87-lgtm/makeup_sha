@@ -21,6 +21,32 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./client/dashboard/dashboard').then(m => m.ClientDashboardComponent)
   },
+  {
+    path: 'client/services',
+    loadComponent: () =>
+      import('./client/services/services').then(m => m.ClientServicesComponent)
+  },
+  {
+    path: 'client/artists',
+    loadComponent: () =>
+      import('./client/artists/artists').then(m => m.ClientArtistsComponent)
+  },
+  {
+    path: 'client/portfolio',
+    loadComponent: () =>
+      import('./client/portfolio/portfolio').then(m => m.ClientPortfolioComponent)
+  },
+  {
+    path: 'client/reviews',
+    loadComponent: () =>
+      import('./client/reviews/reviews').then(m => m.ClientReviewsComponent)
+  },
+  {
+    path: 'client/my-bookings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./client/my-bookings/my-bookings').then(m => m.ClientMyBookingsComponent)
+  },
 
   // ── Artist ──
   {
