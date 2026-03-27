@@ -18,14 +18,8 @@ export const authGuard: CanActivateFn = (route, state) => {
       if (user) {
         resolve(true);
       } else {
-        // Redirect to the correct login page based on the route
-        if (state.url.startsWith('/artist')) {
-          router.navigate(['/artist/login']);
-        } else if (state.url.startsWith('/admin')) {
-          router.navigate(['/admin/login']);
-        } else {
-          router.navigate(['/client/login']);
-        }
+        // Redirect to the unified login page
+        router.navigate(['/login']);
         resolve(false);
       }
     });

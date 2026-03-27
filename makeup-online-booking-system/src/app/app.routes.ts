@@ -2,14 +2,16 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'client/login', pathMatch: 'full' },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+
+  // ── Shared Login ──
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./login/login').then(m => m.LoginComponent)
+  },
 
   // ── Client ──
-  {
-    path: 'client/login',
-    loadComponent: () =>
-      import('./client/login/login').then(m => m.ClientLoginComponent)
-  },
   {
     path: 'client/register',
     loadComponent: () =>
@@ -50,11 +52,6 @@ export const routes: Routes = [
 
   // ── Artist ──
   {
-    path: 'artist/login',
-    loadComponent: () =>
-      import('./artist/login/login').then(m => m.ArtistLoginComponent)
-  },
-  {
     path: 'artist/register',
     loadComponent: () =>
       import('./artist/artistregister/artistregister').then(m => m.ArtistRegisterComponent)
@@ -67,11 +64,6 @@ export const routes: Routes = [
   },
 
   // ── Admin ──
-  {
-    path: 'admin/login',
-    loadComponent: () =>
-      import('./admin/login/login').then(m => m.AdminLoginComponent)
-  },
   {
     path: 'admin/dashboard',
     canActivate: [authGuard],

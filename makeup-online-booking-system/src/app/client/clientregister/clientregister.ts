@@ -67,7 +67,7 @@ export class ClientRegisterComponent {
       });
 
       this.successMessage = 'Account created! Redirecting to login...';
-      setTimeout(() => this.router.navigate(['/client/login']), 2000);
+      setTimeout(() => this.router.navigate(['/login']), 2000);
     } catch (error: any) {
       this.isLoading = false;
       switch (error.code) {

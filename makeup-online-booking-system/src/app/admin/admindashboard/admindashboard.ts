@@ -768,6 +768,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   async logout(): Promise<void> {
     await this.authService.logout();
-    this.router.navigate(['/admin/login']);
+    this.router.navigate(['/login']);
   }
 }

@@ -2,17 +2,17 @@ import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../core/auth.service';
-import { UserService } from '../../core/user.service';
+import { AuthService } from '../core/auth.service';
+import { UserService } from '../core/user.service';
 
 @Component({
-  selector: 'app-artist-login',
+  selector: 'app-login',
   standalone: true,
   imports: [FormsModule, CommonModule, RouterLink],
   templateUrl: './login.html',
   styleUrls: ['./login.css']
 })
-export class ArtistLoginComponent {
+export class LoginComponent {
   email = '';
   password = '';
   errorMessage = '';
@@ -20,19 +20,20 @@ export class ArtistLoginComponent {
   rememberMe = false;
   isLoading = false;
 
+  // focus state for animated input borders
+  emailFocused = false;
+  pwFocused = false;
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private userService: UserService
   ) {}
 
-  goTo(role: string) {
-    const map: Record<string, string> = {
-      client: '/client/login',
-      artist: '/artist/login',
-      admin:  '/admin/login',
-    };
-    this.router.navigate([map[role]]);
+  // ── Guest Access ──
+  continueAsGuest() {
+    sessionStorage.setItem('guestMode', 'true');
+    this.router.navigate(['/client/dashboard']);
   }
 
   async onLogin() {
@@ -50,7 +51,19 @@ export class ArtistLoginComponent {
       const uid = result.user.uid;
 
       // Step 2: Check role in Firestore
-      const userData = await this.userService.getUser(uid);
+      let userData = await this.userService.getUser(uid);
+
+      if (!userData) {
+        // Auto create user data as client if it doesn't exist
+        await this.userService.createUser(uid, {
+          email: this.email,
+          role: 'client',
+          name: this.email.split('@')[0], 
+          phone: '',
+          createdAt: new Date()
+        });
+        userData = await this.userService.getUser(uid);
+      }
 
       if (!userData) {
         this.errorMessage = 'User data not found. Contact support.';
@@ -59,15 +72,16 @@ export class ArtistLoginComponent {
         return;
       }
 
-      if (userData.role !== 'artist') {
-        this.errorMessage = 'Access denied. Artist accounts only.';
-        this.isLoading = false;
-        await this.authService.logout();
-        return;
+      // Step 3: Clear guest mode if any, then go to respective dashboard
+      sessionStorage.removeItem('guestMode');
+      
+      if (userData.role === 'admin') {
+        this.router.navigate(['/admin/dashboard']);
+      } else if (userData.role === 'artist') {
+        this.router.navigate(['/artist/dashboard']);
+      } else {
+        this.router.navigate(['/client/dashboard']);
       }
-
-      // Step 3: Go to artist dashboard
-      this.router.navigate(['/artist/dashboard']);
 
     } catch (error: any) {
       this.isLoading = false;

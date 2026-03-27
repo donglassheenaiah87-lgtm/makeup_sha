@@ -279,7 +279,7 @@ export class ArtistDashboardComponent implements OnInit {
 
   async ngOnInit() {
     const user = this.auth.currentUser;
-    if (!user) { this.router.navigate(['/artist/login']); return; }
+    if (!user) { this.router.navigate(['/login']); return; }
 
     try {
       const data = await this.userService.getUser(user.uid);
@@ -900,6 +900,6 @@ export class ArtistDashboardComponent implements OnInit {
   // ── Logout ──
   async onLogout() {
     await this.authService.logout();
-    this.router.navigate(['/artist/login']);
+    this.router.navigate(['/login']);
   }
 }
