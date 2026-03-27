@@ -1,28 +1,28 @@
-// client/portfolio/portfolio.ts
+// portfolio.ts — Enhanced with sidebar, favorites, keyboard lightbox
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
-interface PortfolioImage { url: string; label: string; tag: string; artist: string; }
+interface PortfolioImage { url: string; label: string; tag: string; artist: string; favorited?: boolean; }
 
 @Component({
   selector: 'app-client-portfolio',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './portfolio.html',
   styleUrls: ['./portfolio.css']
 })
 export class ClientPortfolioComponent implements OnInit {
-  activeTab = 'all';
-  lbOpen = false;
-  lbIdx = 0;
+  sidebarCollapsed = false;
+  activeTab = 'all'; lbOpen = false; lbIdx = 0;
+  favoriteCount = 0;
 
   tabs = [
-    { key: 'all', label: 'All' },
-    { key: 'bridal', label: 'Bridal' },
-    { key: 'glam', label: 'Glam' },
-    { key: 'natural', label: 'Natural' },
-    { key: 'editorial', label: 'Editorial' },
+    { key: 'all', label: 'All', icon: 'fas fa-th' },
+    { key: 'bridal', label: 'Bridal', icon: 'fas fa-ring' },
+    { key: 'glam', label: 'Glam', icon: 'fas fa-star' },
+    { key: 'natural', label: 'Natural', icon: 'fas fa-leaf' },
+    { key: 'editorial', label: 'Editorial', icon: 'fas fa-camera' },
   ];
 
   allImages: PortfolioImage[] = [
@@ -47,26 +47,37 @@ export class ClientPortfolioComponent implements OnInit {
   get filtered(): PortfolioImage[] {
     return this.activeTab === 'all' ? this.allImages : this.allImages.filter(p => p.tag === this.activeTab);
   }
+  get tabCount(): Record<string,number> {
+    const c: Record<string,number> = { all: this.allImages.length };
+    this.tabs.slice(1).forEach(t => c[t.key] = this.allImages.filter(p => p.tag === t.key).length);
+    return c;
+  }
 
   constructor(private router: Router) {}
+  ngOnInit() { window.scrollTo(0, 0); }
 
-  ngOnInit(): void { window.scrollTo(0, 0); }
+  setTab(tab: string) { this.activeTab = tab; this.lbOpen = false; }
 
-  setTab(tab: string): void { this.activeTab = tab; this.lbOpen = false; }
+  toggleFavorite(p: PortfolioImage, e: Event) {
+    e.stopPropagation();
+    p.favorited = !p.favorited;
+    this.favoriteCount = this.allImages.filter(x => x.favorited).length;
+  }
 
-  openLightbox(i: number): void { this.lbIdx = i; this.lbOpen = true; document.body.style.overflow = 'hidden'; }
-  closeLightbox(): void { this.lbOpen = false; document.body.style.overflow = ''; }
-  prevLb(): void { this.lbIdx = (this.lbIdx - 1 + this.filtered.length) % this.filtered.length; }
-  nextLb(): void { this.lbIdx = (this.lbIdx + 1) % this.filtered.length; }
+  openLightbox(i: number) { this.lbIdx = i; this.lbOpen = true; document.body.style.overflow = 'hidden'; }
+  closeLightbox() { this.lbOpen = false; document.body.style.overflow = ''; }
+  prevLb() { this.lbIdx = (this.lbIdx - 1 + this.filtered.length) % this.filtered.length; }
+  nextLb() { this.lbIdx = (this.lbIdx + 1) % this.filtered.length; }
 
-  @HostListener('document:keydown.escape') onEsc(): void { this.closeLightbox(); }
-  @HostListener('document:keydown.arrowleft') onLeft(): void { if (this.lbOpen) this.prevLb(); }
-  @HostListener('document:keydown.arrowright') onRight(): void { if (this.lbOpen) this.nextLb(); }
+  @HostListener('document:keydown.escape') onEsc() { this.closeLightbox(); }
+  @HostListener('document:keydown.arrowleft') onLeft() { if (this.lbOpen) this.prevLb(); }
+  @HostListener('document:keydown.arrowright') onRight() { if (this.lbOpen) this.nextLb(); }
 
-  goBack(): void { this.router.navigate(['/client/dashboard']); }
-  goToBook(): void { this.router.navigate(['/book']); }
+  goBack() { this.router.navigate(['/client/dashboard']); }
+  goToBook() { this.router.navigate(['/client/dashboard'], { queryParams: { section: 'book' } }); }
+  goToDashboard(section: string) { this.router.navigate(['/client/dashboard'], { queryParams: { section } }); }
 
-  onImgError(e: Event): void {
+  onImgError(e: Event) {
     const img = e.target as HTMLImageElement;
     img.style.display = 'none';
     if (img.parentElement) img.parentElement.style.background = 'linear-gradient(135deg,#e8c5ce,#c9848e)';

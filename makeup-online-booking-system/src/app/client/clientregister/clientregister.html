@@ -1,60 +1,201 @@
-<div class="register-page">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-  <div class="petal p1">✿</div>
-  <div class="petal p2">❀</div>
-  <div class="petal p3">✾</div>
-  <div class="petal p4">✿</div>
-  <div class="register-container">
-    <div class="brand">
-      <div class="brand-icon">💄</div>
-      <h1 class="brand-name">GlowBook</h1>
-      <p class="brand-tagline">Create your client account</p>
+<!-- clientregister.html — Enhanced Split-Screen Registration -->
+<div class="reg-root">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="reg-left">
+    <div class="reg-left-inner">
+      <!-- Floating decorations -->
+      <div class="reg-orb o1"></div>
+      <div class="reg-orb o2"></div>
+      <div class="reg-orb o3"></div>
+      <div class="reg-sparkle sp1">✦</div>
+      <div class="reg-sparkle sp2">✧</div>
+      <div class="reg-sparkle sp3">✦</div>
+
+      <!-- Logo -->
+      <div class="reg-logo fade-in">
+        <div class="reg-logo-icon"><i class="fas fa-spa"></i></div>
+        <div>
+          <div class="reg-logo-name">Lumière</div>
+          <div class="reg-logo-tagline">Beauty Studio</div>
+        </div>
+      </div>
+
+      <!-- Hero copy -->
+      <div class="reg-hero-text fade-in d1">
+        <h2 class="reg-left-h">Your Beauty<br><em>Journey</em> Starts Here ✨</h2>
+        <p class="reg-left-p">Join thousands of clients who trust Lumière for their most beautiful moments — bridal, events, editorial & everyday glam.</p>
+      </div>
+
+      <!-- Feature bullets -->
+      <div class="reg-features fade-in d2">
+        <div class="reg-feat" *ngFor="let f of features">
+          <div class="reg-feat-icon"><i [class]="f.icon"></i></div>
+          <div>
+            <div class="reg-feat-title">{{ f.title }}</div>
+            <div class="reg-feat-desc">{{ f.desc }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social proof -->
+      <div class="reg-proof fade-in d3">
+        <div class="reg-proof-avs">
+          <div class="reg-proof-av" *ngFor="let i of [1,2,3,4]">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+        <div class="reg-proof-txt"><strong>500+</strong> happy clients already</div>
+      </div>
     </div>
-    <form (ngSubmit)="onRegister()" class="register-form">
-      <div class="input-group">
-        <span class="input-icon">👤</span>
-        <input type="text" [(ngModel)]="name" name="name"
-          placeholder="Full name" required />
+  </div>
+
+  <!-- ═══ RIGHT PANEL (form) ═══ -->
+  <div class="reg-right">
+    <div class="reg-card fade-up">
+
+      <!-- Back to login link -->
+      <a routerLink="/login" class="reg-back-link">
+        <i class="fas fa-arrow-left"></i> Back to Login
+      </a>
+
+      <!-- Header -->
+      <div class="reg-card-head">
+        <div class="reg-card-icon"><i class="fas fa-user-plus"></i></div>
+        <div>
+          <h1 class="reg-card-title">Create Account</h1>
+          <p class="reg-card-sub">Fill in the details below to get started</p>
+        </div>
       </div>
-      <div class="input-group">
-        <span class="input-icon">✉</span>
-        <input type="email" [(ngModel)]="email" name="email"
-          placeholder="Email address" required />
+
+      <!-- Progress steps -->
+      <div class="reg-steps">
+        <div class="reg-step" [class.done]="name && email" [class.active]="!(name && email)">
+          <div class="reg-step-n"><i class="fas" [class.fa-check]="name && email" [class.fa-user]="!(name && email)"></i></div>
+          <span>Info</span>
+        </div>
+        <div class="reg-step-line" [class.done]="name && email"></div>
+        <div class="reg-step" [class.done]="password && confirmPassword && password === confirmPassword" [class.active]="name && email && !(password && confirmPassword)">
+          <div class="reg-step-n"><i class="fas" [class.fa-check]="password && confirmPassword && password === confirmPassword" [class.fa-lock]="!(password && confirmPassword && password === confirmPassword)"></i></div>
+          <span>Security</span>
+        </div>
+        <div class="reg-step-line" [class.done]="password && confirmPassword && password === confirmPassword"></div>
+        <div class="reg-step" [class.done]="agreedToTerms" [class.active]="password && confirmPassword && !agreedToTerms">
+          <div class="reg-step-n"><i class="fas" [class.fa-check]="agreedToTerms" [class.fa-check-circle]="!agreedToTerms"></i></div>
+          <span>Agree</span>
+        </div>
       </div>
-      <div class="input-group">
-        <span class="input-icon">📞</span>
-        <input type="text" [(ngModel)]="phone" name="phone"
-          placeholder="Phone number" required />
-      </div>
-      <div class="input-group">
-        <span class="input-icon">🔒</span>
-        <input [type]="showPassword ? 'text' : 'password'"
-          [(ngModel)]="password" name="password"
-          placeholder="Password" required />
-        <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
-          {{ showPassword ? '🙈' : '👁' }}
+
+      <!-- Form -->
+      <form (ngSubmit)="onRegister()" class="reg-form">
+
+        <!-- Full Name -->
+        <div class="reg-field" [class.focused]="nameFocus" [class.filled]="name" [class.has-error]="nameError">
+          <label class="reg-label"><i class="fas fa-user"></i> Full Name</label>
+          <div class="reg-inp-wrap">
+            <input type="text" [(ngModel)]="name" name="name"
+              placeholder="e.g., Maria Santos"
+              (focus)="nameFocus=true" (blur)="nameFocus=false; validateName()" required />
+            <span class="reg-inp-check" *ngIf="name && !nameError"><i class="fas fa-check-circle"></i></span>
+            <span class="reg-inp-x" *ngIf="nameError"><i class="fas fa-times-circle"></i></span>
+          </div>
+          <div class="reg-field-err" *ngIf="nameError">{{ nameError }}</div>
+        </div>
+
+        <!-- Email -->
+        <div class="reg-field" [class.focused]="emailFocus" [class.filled]="email" [class.has-error]="emailError">
+          <label class="reg-label"><i class="fas fa-envelope"></i> Email Address</label>
+          <div class="reg-inp-wrap">
+            <input type="email" [(ngModel)]="email" name="email"
+              placeholder="yourname@gmail.com"
+              (focus)="emailFocus=true" (blur)="emailFocus=false; validateEmail()" required />
+            <span class="reg-inp-check" *ngIf="email && !emailError"><i class="fas fa-check-circle"></i></span>
+            <span class="reg-inp-x" *ngIf="emailError"><i class="fas fa-times-circle"></i></span>
+          </div>
+          <div class="reg-field-err" *ngIf="emailError">{{ emailError }}</div>
+        </div>
+
+        <!-- Phone -->
+        <div class="reg-field" [class.focused]="phoneFocus" [class.filled]="phone">
+          <label class="reg-label"><i class="fas fa-phone"></i> Phone Number</label>
+          <div class="reg-inp-wrap">
+            <input type="tel" [(ngModel)]="phone" name="phone"
+              placeholder="e.g., 0912 345 6789"
+              (focus)="phoneFocus=true" (blur)="phoneFocus=false" required />
+            <span class="reg-inp-check" *ngIf="phone"><i class="fas fa-check-circle"></i></span>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="reg-field" [class.focused]="pwFocus" [class.filled]="password" [class.has-error]="pwError">
+          <label class="reg-label"><i class="fas fa-lock"></i> Password</label>
+          <div class="reg-inp-wrap">
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
+              placeholder="Min. 6 characters"
+              (focus)="pwFocus=true" (blur)="pwFocus=false"
+              (input)="onPasswordInput()" required />
+            <button type="button" class="reg-eye" (click)="showPassword=!showPassword">
+              <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+            </button>
+          </div>
+          <!-- Strength bar -->
+          <div class="reg-strength" *ngIf="password">
+            <div class="reg-str-bar">
+              <div class="reg-str-fill" [class.weak]="pwStrength===1" [class.fair]="pwStrength===2" [class.strong]="pwStrength===3" [style.width]="(pwStrength/3*100)+'%'"></div>
+            </div>
+            <span class="reg-str-lbl" [class.weak]="pwStrength===1" [class.fair]="pwStrength===2" [class.strong]="pwStrength===3">
+              {{ pwStrength===1?'Weak':pwStrength===2?'Fair':'Strong' }}
+            </span>
+          </div>
+          <div class="reg-field-err" *ngIf="pwError">{{ pwError }}</div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="reg-field" [class.focused]="cpwFocus" [class.filled]="confirmPassword" [class.has-error]="confirmPassword && password !== confirmPassword">
+          <label class="reg-label"><i class="fas fa-shield-alt"></i> Confirm Password</label>
+          <div class="reg-inp-wrap">
+            <input [type]="showConfirm ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPassword"
+              placeholder="Re-enter your password"
+              (focus)="cpwFocus=true" (blur)="cpwFocus=false" required />
+            <button type="button" class="reg-eye" (click)="showConfirm=!showConfirm">
+              <i class="fas" [class.fa-eye]="!showConfirm" [class.fa-eye-slash]="showConfirm"></i>
+            </button>
+            <span class="reg-inp-check" *ngIf="confirmPassword && password===confirmPassword"><i class="fas fa-check-circle"></i></span>
+            <span class="reg-inp-x" *ngIf="confirmPassword && password!==confirmPassword"><i class="fas fa-times-circle"></i></span>
+          </div>
+          <div class="reg-field-err" *ngIf="confirmPassword && password !== confirmPassword">Passwords do not match</div>
+        </div>
+
+        <!-- Terms -->
+        <label class="reg-terms">
+          <input type="checkbox" [(ngModel)]="agreedToTerms" name="agreedToTerms" />
+          <span class="reg-terms-box" [class.checked]="agreedToTerms">
+            <i class="fas fa-check" *ngIf="agreedToTerms"></i>
+          </span>
+          <span>I agree to the <a href="#" (click)="$event.preventDefault()">Terms of Service</a> and <a href="#" (click)="$event.preventDefault()">Privacy Policy</a></span>
+        </label>
+
+        <!-- Error / Success messages -->
+        <div class="reg-alert reg-alert-error" *ngIf="errorMessage">
+          <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+        </div>
+        <div class="reg-alert reg-alert-success" *ngIf="successMessage">
+          <i class="fas fa-check-circle"></i> {{ successMessage }}
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="reg-submit-btn" [disabled]="isLoading || !agreedToTerms">
+          <span class="reg-btn-glow"></span>
+          <i class="fas" [class.fa-spin]="isLoading" [class.fa-spinner]="isLoading" [class.fa-user-plus]="!isLoading"></i>
+          {{ isLoading ? 'Creating Account…' : 'Create My Account' }}
         </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="reg-card-foot">
+        <span>Already have an account?</span>
+        <a routerLink="/login" class="reg-signin-link">Sign In <i class="fas fa-arrow-right"></i></a>
       </div>
-      <div class="input-group">
-        <span class="input-icon">🔒</span>
-        <input [type]="showConfirm ? 'text' : 'password'"
-          [(ngModel)]="confirmPassword" name="confirmPassword"
-          placeholder="Confirm password" required />
-        <button type="button" class="toggle-pw" (click)="showConfirm = !showConfirm">
-          {{ showConfirm ? '🙈' : '👁' }}
-        </button>
-      </div>
-      <p class="error-msg" *ngIf="errorMessage">⚠ {{ errorMessage }}</p>
-      <p class="success-msg" *ngIf="successMessage">✅ {{ successMessage }}</p>
-      <button type="submit" class="btn-register" [disabled]="isLoading">
-        <span>{{ isLoading ? 'Creating account...' : 'Create Account' }}</span>
-        <span class="btn-arrow" *ngIf="!isLoading">→</span>
-      </button>
-    </form>
-    <div class="divider"><span>or</span></div>
-    <p class="login-link">Already have an account? <a routerLink="/login">Sign in</a></p>
-    <p class="footer-note">✨ Beauty starts with a booking</p>
+    </div>
   </div>
 </div>

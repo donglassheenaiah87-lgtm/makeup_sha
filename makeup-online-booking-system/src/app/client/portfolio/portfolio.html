@@ -1,72 +1,153 @@
-<!-- client/portfolio/portfolio.html -->
-<div class="pf-root">
-  <!-- HERO -->
-  <div class="pf-hero">
-    <div class="pf-hero-bg">
-      <div class="pf-orb o1"></div>
-      <div class="pf-orb o2"></div>
-    </div>
-    <div class="pf-hero-inner">
-      <button class="pf-back" (click)="goBack()">
-        <i class="fas fa-arrow-left"></i> Dashboard
-      </button>
-      <div class="pf-eyebrow"><div class="eyebrow-dot"></div> Our Work</div>
-      <h1>Portfolio <em>Gallery</em> 📸</h1>
-      <p>Explore our collection of stunning transformations & artistry.</p>
-    </div>
-  </div>
+<!-- portfolio.html — Enhanced with Sidebar + Favorites + Better Lightbox -->
+<div class="pf-root" [class.sb-open]="!sidebarCollapsed">
 
-  <!-- FILTER TABS -->
-  <div class="pf-tabs-wrap">
-    <div class="pf-tabs">
-      <button *ngFor="let t of tabs" class="pf-tab" [class.active]="activeTab===t.key" (click)="setTab(t.key)">
-        {{ t.label }}
-        <span class="pf-tab-count">
-          {{ t.key === 'all' ? allImages.length : allImages.filter(p => p.tag === t.key).length }}
-        </span>
+  <!-- ══ SIDEBAR ════════════════════════════════════ -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sb-logo">
+      <div class="sb-logo-icon"><i class="fas fa-spa"></i><div class="sb-logo-shine"></div></div>
+      <div class="sb-logo-text">
+        <span class="sb-logo-name">Lumière</span>
+        <span class="sb-logo-tagline">Beauty Studio</span>
+      </div>
+      <button class="sb-collapse-btn" (click)="sidebarCollapsed=!sidebarCollapsed">
+        <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
       </button>
     </div>
-  </div>
+    <div class="sb-section">
+      <div class="sb-label">MAIN MENU</div>
+      <nav class="sb-nav">
+        <a class="sb-item" (click)="goToDashboard('home')"><div class="sb-item-icon"><i class="fas fa-home"></i></div><span class="sb-item-label">Home</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/services']"><div class="sb-item-icon"><i class="fas fa-magic"></i></div><span class="sb-item-label">Services</span><span class="sb-pill">4</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/artists']"><div class="sb-item-icon"><i class="fas fa-user-circle"></i></div><span class="sb-item-label">Our Artists</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item active" [routerLink]="['/client/portfolio']"><div class="sb-item-icon"><i class="fas fa-images"></i></div><span class="sb-item-label">Portfolio</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" (click)="goToDashboard('book')"><div class="sb-item-icon"><i class="fas fa-calendar-plus"></i></div><span class="sb-item-label">Book Now</span><span class="sb-hot-badge">HOT</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/reviews']"><div class="sb-item-icon"><i class="fas fa-star"></i></div><span class="sb-item-label">Reviews</span><div class="sb-item-bar"></div></a>
+      </nav>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">ACCOUNT</div>
+      <nav class="sb-nav">
+        <a class="sb-item" [routerLink]="['/client/my-bookings']"><div class="sb-item-icon"><i class="fas fa-calendar-check"></i></div><span class="sb-item-label">My Bookings</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" (click)="goToDashboard('home')"><div class="sb-item-icon"><i class="fas fa-tachometer-alt"></i></div><span class="sb-item-label">Dashboard</span><div class="sb-item-bar"></div></a>
+      </nav>
+    </div>
+    <div class="sb-cta">
+      <button class="btn-sb-book" (click)="goToBook()"><div class="btn-sb-glow"></div><i class="fas fa-calendar-heart"></i><span>Book Now</span></button>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-socials">
+        <a class="sb-soc" href="#"><i class="fab fa-instagram"></i></a>
+        <a class="sb-soc" href="#"><i class="fab fa-facebook-f"></i></a>
+        <a class="sb-soc" href="#"><i class="fab fa-tiktok"></i></a>
+      </div>
+    </div>
+  </aside>
+  <div class="sb-overlay" [class.show]="!sidebarCollapsed" (click)="sidebarCollapsed=true"></div>
 
-  <!-- GALLERY GRID -->
-  <div class="pf-wrap">
-    <div class="pf-count">{{ filtered.length }} photo{{ filtered.length !== 1 ? 's' : '' }}</div>
-    <div class="pf-grid">
-      <div class="pf-item" *ngFor="let p of filtered; let i=index"
-           [class.pf-tall]="i%5===0 || i%7===3" (click)="openLightbox(i)">
-        <img [src]="p.url" [alt]="p.label" (error)="onImgError($event)" />
-        <div class="pf-ov">
-          <div class="pf-label">{{ p.label }}</div>
-          <div class="pf-artist-tag"><i class="fas fa-user"></i> {{ p.artist }}</div>
-          <div class="pf-expand"><i class="fas fa-expand-alt"></i></div>
+  <!-- ══ MAIN CONTENT ═══════════════════════════════ -->
+  <main class="pf-main" [class.sb-collapsed]="sidebarCollapsed">
+
+    <!-- TOPBAR -->
+    <div class="pf-topbar">
+      <button class="pf-menu-btn" (click)="sidebarCollapsed=!sidebarCollapsed"><i class="fas fa-bars"></i></button>
+      <div class="pf-topbar-title"><i class="fas fa-images"></i> Portfolio Gallery</div>
+      <div class="pf-topbar-right">
+        <div class="pf-fav-indicator" *ngIf="favoriteCount > 0">
+          <i class="fas fa-heart"></i> {{ favoriteCount }} saved
+        </div>
+        <button class="pf-back-btn" (click)="goBack()"><i class="fas fa-arrow-left"></i> Dashboard</button>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="pf-hero">
+      <div class="pf-hero-bg"><div class="pf-orb o1"></div><div class="pf-orb o2"></div></div>
+      <div class="pf-hero-inner">
+        <div class="pf-eyebrow"><div class="eyebrow-dot"></div> Our Work</div>
+        <h1>Portfolio <em>Gallery</em> 📸</h1>
+        <p>Explore {{ allImages.length }} stunning transformations — from bridal dreams to editorial masterpieces.</p>
+        <div class="pf-stats-row">
+          <div class="pf-stat"><span>{{ allImages.filter(p => p.tag==='bridal').length }}</span> Bridal</div>
+          <div class="pf-stat-div"></div>
+          <div class="pf-stat"><span>{{ allImages.filter(p => p.tag==='glam').length }}</span> Glam</div>
+          <div class="pf-stat-div"></div>
+          <div class="pf-stat"><span>{{ allImages.filter(p => p.tag==='natural').length }}</span> Natural</div>
+          <div class="pf-stat-div"></div>
+          <div class="pf-stat"><span>{{ allImages.filter(p => p.tag==='editorial').length }}</span> Editorial</div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- LIGHTBOX -->
-  <div class="pf-lightbox" [class.show]="lbOpen" (click)="closeLightbox()">
-    <button class="lb-close" (click)="closeLightbox()"><i class="fas fa-times"></i></button>
-    <button class="lb-prev" (click)="$event.stopPropagation(); prevLb()"><i class="fas fa-chevron-left"></i></button>
-    <button class="lb-next" (click)="$event.stopPropagation(); nextLb()"><i class="fas fa-chevron-right"></i></button>
-    <div class="lb-content" (click)="$event.stopPropagation()" *ngIf="filtered[lbIdx]">
-      <img [src]="filtered[lbIdx].url" [alt]="filtered[lbIdx].label" />
-      <div class="lb-meta">
-        <div class="lb-label">{{ filtered[lbIdx].label }}</div>
-        <div class="lb-artist"><i class="fas fa-user"></i> {{ filtered[lbIdx].artist }}</div>
-        <div class="lb-counter">{{ lbIdx + 1 }} / {{ filtered.length }}</div>
+    <!-- STICKY FILTER TABS -->
+    <div class="pf-tabs-wrap">
+      <div class="pf-tabs">
+        <button *ngFor="let t of tabs" class="pf-tab" [class.active]="activeTab===t.key" (click)="setTab(t.key)">
+          <i [class]="t.icon"></i> {{ t.label }}
+          <span class="pf-tab-count">{{ tabCount[t.key] }}</span>
+        </button>
+      </div>
+      <div class="pf-count-row">{{ filtered.length }} photo{{ filtered.length!==1?'s':'' }}</div>
+    </div>
+
+    <!-- GALLERY GRID -->
+    <div class="pf-wrap">
+      <div class="pf-grid">
+        <div class="pf-item" *ngFor="let p of filtered; let i=index"
+          [class.pf-tall]="i%5===0 || i%7===3" (click)="openLightbox(i)">
+          <img [src]="p.url" [alt]="p.label" (error)="onImgError($event)" />
+          <div class="pf-ov">
+            <div class="pf-ov-top">
+              <button class="pf-fav-btn" [class.active]="p.favorited" (click)="toggleFavorite(p,$event)">
+                <i class="fas fa-heart"></i>
+              </button>
+            </div>
+            <div class="pf-ov-bot">
+              <div class="pf-label">{{ p.label }}</div>
+              <div class="pf-artist-tag"><i class="fas fa-user"></i> {{ p.artist }}</div>
+              <div class="pf-expand"><i class="fas fa-expand-alt"></i></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- FOOTER CTA -->
-  <div class="pf-footer-cta">
-    <div class="pf-fcta-inner">
-      <h2>Love What You See? 💕</h2>
-      <p>Book your own transformation with our talented artists today.</p>
-      <button class="pf-btn-primary" (click)="goToBook()">
-        <i class="fas fa-calendar-plus"></i> Book Appointment
-      </button>
+    <!-- LIGHTBOX -->
+    <div class="pf-lightbox" [class.show]="lbOpen" (click)="closeLightbox()">
+      <button class="lb-close" (click)="closeLightbox()"><i class="fas fa-times"></i></button>
+      <button class="lb-prev" (click)="$event.stopPropagation(); prevLb()"><i class="fas fa-chevron-left"></i></button>
+      <button class="lb-next" (click)="$event.stopPropagation(); nextLb()"><i class="fas fa-chevron-right"></i></button>
+      <div class="lb-content" (click)="$event.stopPropagation()" *ngIf="filtered[lbIdx]">
+        <img [src]="filtered[lbIdx].url" [alt]="filtered[lbIdx].label" />
+        <div class="lb-meta">
+          <div class="lb-meta-left">
+            <div class="lb-label">{{ filtered[lbIdx].label }}</div>
+            <div class="lb-artist"><i class="fas fa-user"></i> {{ filtered[lbIdx].artist }}</div>
+          </div>
+          <div class="lb-meta-right">
+            <div class="lb-counter">{{ lbIdx+1 }} / {{ filtered.length }}</div>
+            <button class="lb-book-btn" (click)="goToBook()">
+              <i class="fas fa-calendar-plus"></i> Book a Look Like This
+            </button>
+            <button class="lb-fav-btn" [class.active]="filtered[lbIdx].favorited" (click)="toggleFavorite(filtered[lbIdx],$event)">
+              <i class="fas fa-heart"></i> {{ filtered[lbIdx].favorited ? 'Saved' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="lb-hint"><i class="fas fa-keyboard"></i> Use arrow keys to navigate · Esc to close</div>
     </div>
-  </div>
+
+    <!-- FOOTER CTA -->
+    <div class="pf-footer-cta">
+      <div class="pf-fcta-inner">
+        <div class="pf-fcta-orb"></div>
+        <h2>Love What You See? 💕</h2>
+        <p>Book your own transformation with our talented artists today.</p>
+        <button class="pf-btn-primary" (click)="goToBook()">
+          <i class="fas fa-calendar-plus"></i> Book Appointment
+        </button>
+      </div>
+    </div>
+
+  </main>
 </div>

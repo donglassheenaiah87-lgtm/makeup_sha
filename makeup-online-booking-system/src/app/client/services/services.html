@@ -1,135 +1,221 @@
-<!-- client/services/services.html -->
-<div class="sp-root">
-  <!-- TOAST -->
-  <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
-    <div class="toast-icon"><i [class]="toastIcon"></i></div>
-    <div class="toast-body">
-      <div class="toast-title">{{ toastTitle }}</div>
-      <div class="toast-msg">{{ toastMessage }}</div>
-    </div>
-    <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
-  </div>
+<!-- services.html — Enhanced with Sidebar + Sort + Compare Mode -->
+<div class="sp-root" [class.sb-open]="!sidebarCollapsed">
 
-  <!-- HERO -->
-  <div class="sp-hero">
-    <div class="sp-hero-bg">
-      <div class="sp-orb o1"></div>
-      <div class="sp-orb o2"></div>
+  <!-- ══ SIDEBAR ════════════════════════════════════ -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sb-logo">
+      <div class="sb-logo-icon"><i class="fas fa-spa"></i><div class="sb-logo-shine"></div></div>
+      <div class="sb-logo-text"><span class="sb-logo-name">Lumière</span><span class="sb-logo-tagline">Beauty Studio</span></div>
+      <button class="sb-collapse-btn" (click)="sidebarCollapsed=!sidebarCollapsed"><i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i></button>
     </div>
-    <div class="sp-hero-inner">
-      <button class="sp-back" (click)="goBack()">
-        <i class="fas fa-arrow-left"></i> Dashboard
-      </button>
-      <div class="sp-eyebrow"><div class="eyebrow-dot"></div> What We Offer</div>
-      <h1>Our <em>Services</em> ✨</h1>
-      <p>Professional beauty for every occasion — bridal, event, editorial & more.</p>
+    <div class="sb-section">
+      <div class="sb-label">MAIN MENU</div>
+      <nav class="sb-nav">
+        <a class="sb-item" (click)="goToDashboard('home')"><div class="sb-item-icon"><i class="fas fa-home"></i></div><span class="sb-item-label">Home</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item active" [routerLink]="['/client/services']"><div class="sb-item-icon"><i class="fas fa-magic"></i></div><span class="sb-item-label">Services</span><span class="sb-pill">{{ allServices.length }}</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/artists']"><div class="sb-item-icon"><i class="fas fa-user-circle"></i></div><span class="sb-item-label">Our Artists</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/portfolio']"><div class="sb-item-icon"><i class="fas fa-images"></i></div><span class="sb-item-label">Portfolio</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" (click)="goToDashboard('book')"><div class="sb-item-icon"><i class="fas fa-calendar-plus"></i></div><span class="sb-item-label">Book Now</span><span class="sb-hot-badge">HOT</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" [routerLink]="['/client/reviews']"><div class="sb-item-icon"><i class="fas fa-star"></i></div><span class="sb-item-label">Reviews</span><div class="sb-item-bar"></div></a>
+      </nav>
     </div>
-  </div>
+    <div class="sb-section">
+      <div class="sb-label">ACCOUNT</div>
+      <nav class="sb-nav">
+        <a class="sb-item" [routerLink]="['/client/my-bookings']"><div class="sb-item-icon"><i class="fas fa-calendar-check"></i></div><span class="sb-item-label">My Bookings</span><div class="sb-item-bar"></div></a>
+        <a class="sb-item" (click)="goToDashboard('home')"><div class="sb-item-icon"><i class="fas fa-tachometer-alt"></i></div><span class="sb-item-label">Dashboard</span><div class="sb-item-bar"></div></a>
+      </nav>
+    </div>
+    <div class="sb-cta"><button class="btn-sb-book" (click)="goToBook()"><div class="btn-sb-glow"></div><i class="fas fa-calendar-heart"></i><span>Book Now</span></button></div>
+    <div class="sb-bottom"><div class="sb-socials"><a class="sb-soc" href="#"><i class="fab fa-instagram"></i></a><a class="sb-soc" href="#"><i class="fab fa-facebook-f"></i></a><a class="sb-soc" href="#"><i class="fab fa-tiktok"></i></a></div></div>
+  </aside>
+  <div class="sb-overlay" [class.show]="!sidebarCollapsed" (click)="sidebarCollapsed=true"></div>
 
-  <!-- FILTER & SEARCH BAR -->
-  <div class="sp-controls">
-    <div class="sp-filters">
-      <button *ngFor="let f of filters" class="sp-filter-btn" [class.active]="activeFilter===f" (click)="setFilter(f)">
-        {{ f }}
-      </button>
-    </div>
-    <div class="sp-search-wrap">
-      <i class="fas fa-search"></i>
-      <input type="text" placeholder="Search services…" [(ngModel)]="searchQuery" />
-    </div>
-  </div>
+  <!-- ══ MAIN ═══════════════════════════════════════ -->
+  <main class="sp-main" [class.sb-collapsed]="sidebarCollapsed">
 
-  <!-- SERVICES GRID -->
-  <div class="sp-wrap">
-    <div class="sp-count">{{ displayed.length }} service{{ displayed.length !== 1 ? 's' : '' }} found</div>
-    <div class="sp-grid" *ngIf="displayed.length">
-      <div class="sp-card" *ngFor="let s of displayed; let i=index" [style.animation-delay]="(i*0.06)+'s'">
-        <div class="sp-card-img">
-          <img [src]="s.image" [alt]="s.name" (error)="onImgError($event)" />
-          <div class="sp-img-ov"></div>
-          <div class="sp-cat-badge">{{ s.category }}</div>
-          <div class="sp-price-badge">₱{{ s.price | number }}</div>
-          <div class="sp-hover-actions">
-            <button class="sp-btn-details" (click)="openModal(s)"><i class="fas fa-eye"></i> Details</button>
-            <button class="sp-btn-wish" [class.wished]="s.wishlisted" (click)="toggleWish(s)">
-              <i class="fas fa-heart"></i>
-            </button>
+    <!-- TOAST -->
+    <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
+      <div class="toast-icon"><i [class]="toastIcon"></i></div>
+      <div class="toast-body"><div class="toast-title">{{ toastTitle }}</div><div class="toast-msg">{{ toastMessage }}</div></div>
+      <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- TOPBAR -->
+    <div class="sp-topbar">
+      <button class="sp-menu-btn" (click)="sidebarCollapsed=!sidebarCollapsed"><i class="fas fa-bars"></i></button>
+      <div class="sp-topbar-title"><i class="fas fa-magic"></i> Our Services</div>
+      <div class="sp-topbar-wish" *ngIf="wishlistCount>0"><i class="fas fa-heart"></i> {{ wishlistCount }}</div>
+      <button class="sp-back-btn" (click)="goBack()"><i class="fas fa-arrow-left"></i> Dashboard</button>
+    </div>
+
+    <!-- HERO -->
+    <div class="sp-hero">
+      <div class="sp-hero-bg"><div class="sp-orb o1"></div><div class="sp-orb o2"></div></div>
+      <div class="sp-hero-inner">
+        <div class="sp-eyebrow"><div class="eyebrow-dot"></div> What We Offer</div>
+        <h1>Our <em>Services</em> ✨</h1>
+        <p>Professional beauty for every occasion — bridal, event, editorial & more. {{ allServices.length }} services available.</p>
+        <div class="sp-hero-pills">
+          <div class="sp-hero-pill" *ngFor="let f of filters">
+            <i [class]="f.icon"></i> {{ f.key }}
           </div>
         </div>
-        <div class="sp-card-body">
-          <div class="sp-card-head">
-            <div class="sp-icon-box"><i [class]="s.icon"></i></div>
-            <div class="sp-rating"><i class="fas fa-star"></i>{{ s.rating }} <span>({{ s.ratingCount }})</span></div>
-          </div>
-          <h3>{{ s.name }}</h3>
-          <p>{{ s.desc }}</p>
-          <div class="sp-meta">
-            <span><i class="fas fa-clock"></i> {{ s.duration }}</span>
-            <span><i class="fas fa-users"></i> {{ s.bookings }}+ booked</span>
-          </div>
-          <div class="sp-card-foot">
-            <div>
-              <span class="sp-from">from</span>
-              <span class="sp-amt">₱{{ s.price | number }}</span>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="sp-controls">
+      <!-- Category filter with icons -->
+      <div class="sp-filters">
+        <button *ngFor="let f of filters" class="sp-filter-btn" [class.active]="activeFilter===f.key" (click)="setFilter(f.key)">
+          <i [class]="f.icon"></i> {{ f.key }}
+        </button>
+      </div>
+      <!-- Search + Sort -->
+      <div class="sp-right-controls">
+        <div class="sp-search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search services…" [(ngModel)]="searchQuery" />
+        </div>
+        <div class="sp-sort-wrap">
+          <i class="fas fa-sort-amount-down"></i>
+          <select [(ngModel)]="sortBy">
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+            <option value="popular">Most Popular</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICES GRID -->
+    <div class="sp-wrap">
+      <div class="sp-count">{{ displayed.length }} service{{ displayed.length!==1?'s':'' }} found</div>
+      <div class="sp-grid" *ngIf="displayed.length">
+        <div class="sp-card" *ngFor="let s of displayed; let i=index" [style.animation-delay]="(i*0.06)+'s'" [class.sp-card-compare]="isInCompare(s)">
+          <div class="sp-card-img">
+            <img [src]="s.image" [alt]="s.name" (error)="onImgError($event)" />
+            <div class="sp-img-ov"></div>
+            <div class="sp-cat-badge">{{ s.category }}</div>
+            <div class="sp-price-badge">₱{{ s.price | number }}</div>
+            <div class="sp-hover-actions">
+              <button class="sp-btn-details" (click)="openModal(s)"><i class="fas fa-eye"></i> Details</button>
+              <button class="sp-btn-wish" [class.wished]="s.wishlisted" (click)="toggleWish(s)"><i class="fas fa-heart"></i></button>
+              <button class="sp-btn-compare" [class.active]="isInCompare(s)" (click)="toggleCompare(s)">
+                <i class="fas fa-balance-scale"></i>
+              </button>
             </div>
-            <button class="sp-book-btn" (click)="goToBook()">Book <i class="fas fa-arrow-right"></i></button>
+          </div>
+          <div class="sp-card-body">
+            <div class="sp-card-head">
+              <div class="sp-icon-box"><i [class]="s.icon"></i></div>
+              <div class="sp-rating"><i class="fas fa-star"></i>{{ s.rating }} <span>({{ s.ratingCount }})</span></div>
+            </div>
+            <h3>{{ s.name }}</h3>
+            <p>{{ s.desc }}</p>
+            <div class="sp-meta">
+              <span><i class="fas fa-clock"></i> {{ s.duration }}</span>
+              <span><i class="fas fa-users"></i> {{ s.bookings }}+ booked</span>
+            </div>
+            <div class="sp-card-foot">
+              <div><span class="sp-from">from</span><span class="sp-amt">₱{{ s.price | number }}</span></div>
+              <button class="sp-book-btn" (click)="goToBook()">Book <i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sp-empty" *ngIf="!displayed.length">
+        <i class="fas fa-search"></i>
+        <p>No services found for "{{ searchQuery }}"</p>
+        <button class="sp-filter-btn active" (click)="searchQuery=''; setFilter('All')">Clear Filter</button>
+      </div>
+    </div>
+
+    <!-- SERVICE MODAL -->
+    <div class="sp-modal-bg" [class.show]="svcModalOpen" (click)="closeModal()">
+      <div class="sp-modal" (click)="$event.stopPropagation()" *ngIf="activeSvc">
+        <button class="sp-modal-close" (click)="closeModal()"><i class="fas fa-times"></i></button>
+        <div class="sp-modal-left">
+          <img [src]="activeSvc.image" [alt]="activeSvc.name" (error)="onImgError($event)" />
+          <div class="sp-modal-l-ov"></div>
+          <div class="sp-modal-l-price">₱{{ activeSvc.price | number }}</div>
+          <div class="sp-modal-l-cat">{{ activeSvc.category }}</div>
+        </div>
+        <div class="sp-modal-right">
+          <div class="sp-modal-stars">★★★★★ <span>{{ activeSvc.rating }} ({{ activeSvc.ratingCount }})</span></div>
+          <h2>{{ activeSvc.name }}</h2>
+          <p>{{ activeSvc.fullDesc }}</p>
+          <div class="sp-modal-meta">
+            <div class="sp-meta-item"><i class="fas fa-clock"></i><div><span>Duration</span><strong>{{ activeSvc.duration }}</strong></div></div>
+            <div class="sp-meta-item"><i class="fas fa-users"></i><div><span>Bookings</span><strong>{{ activeSvc.bookings }}+</strong></div></div>
+            <div class="sp-meta-item"><i class="fas fa-layer-group"></i><div><span>Category</span><strong>{{ activeSvc.category }}</strong></div></div>
+            <div class="sp-meta-item"><i class="fas fa-shield-alt"></i><div><span>Safety</span><strong>Hygienic</strong></div></div>
+          </div>
+          <div class="sp-modal-includes">
+            <div class="sp-inc-title">What's Included</div>
+            <div class="sp-inc-list">
+              <div class="sp-inc-item" *ngFor="let inc of activeSvc.includes"><i class="fas fa-check-circle"></i> {{ inc }}</div>
+            </div>
+          </div>
+          <div class="sp-modal-actions">
+            <button class="sp-btn-primary" (click)="goToBook(); closeModal()"><i class="fas fa-calendar-plus"></i> Book This Service</button>
+            <button class="sp-btn-ghost" (click)="toggleWish(activeSvc)"><i class="fas fa-heart"></i> {{ activeSvc.wishlisted ? 'Saved' : 'Save' }}</button>
           </div>
         </div>
       </div>
     </div>
-    <div class="sp-empty" *ngIf="!displayed.length">
-      <i class="fas fa-search"></i>
-      <p>No services found for "{{ searchQuery }}"</p>
-      <button class="sp-filter-btn active" (click)="searchQuery=''; setFilter('All')">Clear Filter</button>
-    </div>
-  </div>
 
-  <!-- SERVICE DETAIL MODAL -->
-  <div class="sp-modal-bg" [class.show]="svcModalOpen" (click)="closeModal()">
-    <div class="sp-modal" (click)="$event.stopPropagation()" *ngIf="activeSvc">
-      <button class="sp-modal-close" (click)="closeModal()"><i class="fas fa-times"></i></button>
-      <div class="sp-modal-left">
-        <img [src]="activeSvc.image" [alt]="activeSvc.name" (error)="onImgError($event)" />
-        <div class="sp-modal-l-ov"></div>
-        <div class="sp-modal-l-price">₱{{ activeSvc.price | number }}</div>
-        <div class="sp-modal-l-cat">{{ activeSvc.category }}</div>
+    <!-- COMPARE DRAWER -->
+    <div class="sp-compare-drawer" [class.open]="compareList.length > 0">
+      <div class="sp-cd-head">
+        <i class="fas fa-balance-scale"></i> Compare Services
+        <button class="sp-cd-clear" (click)="clearCompare()"><i class="fas fa-times"></i> Clear</button>
       </div>
-      <div class="sp-modal-right">
-        <div class="sp-modal-stars">★★★★★ <span>{{ activeSvc.rating }} ({{ activeSvc.ratingCount }})</span></div>
-        <h2>{{ activeSvc.name }}</h2>
-        <p>{{ activeSvc.fullDesc }}</p>
-        <div class="sp-modal-meta">
-          <div class="sp-meta-item"><i class="fas fa-clock"></i><div><span>Duration</span><strong>{{ activeSvc.duration }}</strong></div></div>
-          <div class="sp-meta-item"><i class="fas fa-users"></i><div><span>Bookings</span><strong>{{ activeSvc.bookings }}+</strong></div></div>
-          <div class="sp-meta-item"><i class="fas fa-layer-group"></i><div><span>Category</span><strong>{{ activeSvc.category }}</strong></div></div>
-          <div class="sp-meta-item"><i class="fas fa-shield-alt"></i><div><span>Safety</span><strong>Hygienic</strong></div></div>
-        </div>
-        <div class="sp-modal-includes">
-          <div class="sp-inc-title">What's Included</div>
-          <div class="sp-inc-list">
-            <div class="sp-inc-item" *ngFor="let inc of activeSvc.includes"><i class="fas fa-check-circle"></i> {{ inc }}</div>
+      <div class="sp-cd-items">
+        <div class="sp-cd-item" *ngFor="let s of compareList">
+          <div class="sp-cd-icon"><i [class]="s.icon"></i></div>
+          <div class="sp-cd-info">
+            <div class="sp-cd-name">{{ s.name }}</div>
+            <div class="sp-cd-price">₱{{ s.price | number }}</div>
           </div>
+          <button class="sp-cd-remove" (click)="toggleCompare(s)"><i class="fas fa-times"></i></button>
         </div>
-        <div class="sp-modal-actions">
-          <button class="sp-btn-primary" (click)="goToBook(); closeModal()">
-            <i class="fas fa-calendar-plus"></i> Book This Service
-          </button>
-          <button class="sp-btn-ghost" (click)="toggleWish(activeSvc)">
-            <i class="fas fa-heart"></i> {{ activeSvc.wishlisted ? 'Saved' : 'Save' }}
-          </button>
+        <div class="sp-cd-slot" *ngIf="compareList.length < 2">
+          <i class="fas fa-plus-circle"></i> Add a service
+        </div>
+      </div>
+      <div class="sp-cd-compare-panel" *ngIf="compareList.length === 2">
+        <div class="sp-cd-compare-row">
+          <div class="sp-cd-compare-label">Price</div>
+          <div class="sp-cd-compare-val" *ngFor="let s of compareList">₱{{ s.price | number }}</div>
+        </div>
+        <div class="sp-cd-compare-row">
+          <div class="sp-cd-compare-label">Duration</div>
+          <div class="sp-cd-compare-val" *ngFor="let s of compareList">{{ s.duration }}</div>
+        </div>
+        <div class="sp-cd-compare-row">
+          <div class="sp-cd-compare-label">Rating</div>
+          <div class="sp-cd-compare-val" *ngFor="let s of compareList">{{ s.rating }} ★</div>
+        </div>
+        <div class="sp-cd-compare-row">
+          <div class="sp-cd-compare-label">Bookings</div>
+          <div class="sp-cd-compare-val" *ngFor="let s of compareList">{{ s.bookings }}+</div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- FOOTER CTA -->
-  <div class="sp-footer-cta">
-    <div class="sp-fcta-inner">
-      <h2>Ready to Book? 💕</h2>
-      <p>Choose from our full range of professional makeup services.</p>
-      <button class="sp-btn-primary sp-fcta-btn" (click)="goToBook()">
-        <i class="fas fa-calendar-plus"></i> Book Appointment
-      </button>
+    <!-- FOOTER CTA -->
+    <div class="sp-footer-cta">
+      <div class="sp-fcta-inner">
+        <div class="sp-fcta-orb"></div>
+        <h2>Ready to Book? 💕</h2>
+        <p>Choose from our full range of professional makeup services.</p>
+        <button class="sp-btn-primary sp-fcta-btn" (click)="goToBook()"><i class="fas fa-calendar-plus"></i> Book Appointment</button>
+      </div>
     </div>
-  </div>
+
+  </main>
 </div>
