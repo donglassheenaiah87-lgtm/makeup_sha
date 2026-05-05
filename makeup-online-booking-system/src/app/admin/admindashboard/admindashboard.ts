@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { UserService, UserData } from '../../core/user.service';
 import { BookingService, BookingData } from '../../core/booking.service';
 import { ServiceItemService, ServiceData } from '../../core/service-item.service';
+import { PaymentService } from '../../core/payment.service';
 
 interface Booking {
   id: string | number;
@@ -14,6 +16,8 @@ interface Booking {
   artist: string;
   date: string;
   amount: string;
+  paymentMethod?: string;
+  paymentAccount?: string;
   status: string;
   phone?: string;
   notes?: string;
@@ -116,6 +120,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   showConfirmDialog = false;
   confirmAction = '';
   confirmTarget: Record<string, unknown> | null = null;
+  isSaving = false;
   toastMessage = '';
   toastType = 'success';
   toastVisible = false;
@@ -123,6 +128,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   currentTime = '';
   currentDate = '';
   private clockInterval: ReturnType<typeof setInterval> | null = null;
+  private subs: Subscription[] = [];
 
   // Detail view
   selectedBooking: Booking | null = null;
@@ -188,10 +194,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   // ── Stats ──
   stats = [
-    { icon: '📋', label: 'Total Bookings',  value: '0',    change: '0% this month',   positive: true  },
-    { icon: '👤', label: 'Total Clients',   value: '0',      change: '0% this month',    positive: true  },
-    { icon: '🎨', label: 'Active Artists',  value: '0',       change: '0 new this week',  positive: true  },
-    { icon: '💰', label: 'Monthly Revenue', value: '₱0', change: '0% vs last month', positive: false },
+    { icon: '📋', label: 'Total Bookings',  value: '0',    change: '0 pending',   positive: true  },
+    { icon: '👤', label: 'Total Clients',   value: '0',      change: 'Across all time',    positive: true  },
+    { icon: '🎨', label: 'Active Artists',  value: '0',       change: '0 active',  positive: true  },
+    { icon: '💰', label: 'Admin Earnings (10%)',   value: '₱0', change: '₱0 avg/booking', positive: true },
   ];
 
   // ── Notifications ──
@@ -210,12 +216,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   artistsList: Artist[] = [];
   services: Service[] = [];
 
+  isLoading = true;
+  dataLoadedCount = 0;
+
   constructor(
     private router: Router, 
     private authService: AuthService,
     private userService: UserService,
     private bookingService: BookingService,
-    private serviceItemService: ServiceItemService
+    private serviceItemService: ServiceItemService,
+    private paymentService: PaymentService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -227,80 +238,139 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   async loadDashboardData() {
-    try {
-      // 1. Fetch Clients
-      const clientsData = await this.userService.getUsersByRole('client');
-      this.clients = clientsData.map(c => ({
-        uid: c.uid,
-        name: c.name,
-        email: c.email,
-        phone: c.phone || '',
-        bookings: 0,
-        joined: c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'New',
-        status: 'active',
-        totalSpent: '0',
-        favoriteService: '—'
-      }));
-      this.stats[1].value = this.clients.length.toString();
+    // Fallback just in case Firebase takes too long or silently fails
+    setTimeout(() => {
+      if (this.isLoading) {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    }, 3000);
+    // 1. Clients Real-time
+    this.subs.push(this.userService.getUsersByRoleRealtime('client').subscribe({
+      next: (data) => {
+        this.clients = data.map(c => {
+          return {
+            uid: c.uid,
+            name: c.name,
+            email: c.email,
+            phone: c.phone || '',
+            bookings: 0,
+            joined: c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'New',
+            status: 'active',
+            totalSpent: '0',
+            favoriteService: '—'
+          };
+        });
+        this.recalculateAggregates();
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Clients sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
 
-      // 2. Fetch Artists
-      const artistsData = await this.userService.getUsersByRole('artist');
-      this.artistsList = artistsData.map(a => {
-        const initials = a.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
-        return {
-          uid: a.uid,
-          name: a.name,
-          initials,
-          specialty: a.specialty || 'General',
-          email: a.email,
-          bookings: 0,
-          rating: 5.0,
-          status: 'active',
-          revenue: '0',
-          availability: 'Available',
-          phone: a.phone || '',
-          joinedDate: a.createdAt ? new Date(a.createdAt).toLocaleDateString() : 'New',
-          completionRate: 100
-        };
-      });
-      this.stats[2].value = this.artistsList.length.toString();
-      this.topArtists = [...this.artistsList].sort((a,b) => b.rating - a.rating).slice(0, 4);
+    // 2. Artists Real-time
+    this.subs.push(this.userService.getUsersByRoleRealtime('artist').subscribe({
+      next: (data) => {
+        this.artistsList = data.map(a => {
+          const initials = a.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
+          return {
+            uid: a.uid,
+            name: a.name,
+            initials,
+            specialty: a.specialty || 'General',
+            email: a.email,
+            bookings: 0,
+            rating: a.rating || 0,
+            status: a.status || 'pending',
+            revenue: '0',
+            availability: 'Available',
+            phone: a.phone || '',
+            joinedDate: a.createdAt ? new Date(a.createdAt).toLocaleDateString() : 'New',
+            completionRate: 100
+          };
+        });
+        this.recalculateAggregates();
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Artists sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
 
-      // 3. Fetch Services
-      const servicesData = await this.serviceItemService.getAllServices();
-      this.services = servicesData.map(s => ({
-        id: s.id,
-        icon: s.icon || '',
-        imageUrl: s.imageUrl || '',
-        name: s.name,
-        desc: s.desc || '',
-        price: s.price,
-        duration: s.duration || '1 hr',
-        bookings: s.bookings || 0,
-        status: s.status || 'active'
-      }));
+    // 3. Services Real-time
+    this.subs.push(this.serviceItemService.getAllServicesRealtime().subscribe({
+      next: (data) => {
+        this.services = data.map(s => ({
+          id: s.id,
+          icon: s.icon || '',
+          imageUrl: s.imageUrl || '',
+          name: s.name,
+          desc: s.desc || '',
+          price: s.price,
+          duration: s.duration || '1 hr',
+          bookings: s.bookings || 0,
+          status: s.status || 'active'
+        }));
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Services sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
 
-      // 4. Fetch Bookings
-      const bookingsData = await this.bookingService.getAllBookings();
-      this.allBookings = bookingsData.map(b => ({
-        id: b.id,
-        client: b.clientName,
-        service: b.serviceName,
-        artist: b.artistName,
-        date: b.date,
-        amount: b.amount,
-        status: b.status,
-        phone: b.phone || '',
-        notes: b.notes || ''
-      }));
-      this.stats[0].value = this.allBookings.length.toString();
-      
-      this.recentBookings = [...this.allBookings].reverse().slice(0, 5);
-      this.buildCalendar();
+    // 4. Bookings Real-time
+    this.subs.push(this.bookingService.getAllBookingsRealtime().subscribe({
+      next: (data) => {
+        this.allBookings = data.map(b => ({
+          id: b.id,
+          client: b.clientName,
+          service: b.serviceName,
+          artist: b.artistName,
+          date: b.date,
+          amount: b.amount,
+          paymentMethod: b.paymentMethod || 'Pay Onsite',
+          paymentAccount: b.paymentAccount || '',
+          status: b.status,
+          phone: b.phone || '',
+          notes: b.notes || ''
+        }));
+        this.stats[0].value = this.allBookings.length.toString();
+        this.recentBookings = [...this.allBookings].sort((a, b) => {
+          // Sort by date (assuming ISO or similar, otherwise fallback to simple reverse)
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        }).slice(0, 5);
+        if (this.recentBookings.length === 0) this.recentBookings = [...this.allBookings].reverse().slice(0, 5);
+        
+        this.buildCalendar();
+        
+        this.recalculateAggregates();
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Bookings sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
+  }
 
-    } catch (error) {
-      console.error("Error loading dashboard data from Firebase:", error);
-      this.showToast('Failed to load data from Firebase', 'error');
+  checkIfLoaded() {
+    if (this.isLoading) {
+      this.dataLoadedCount++;
+      if (this.dataLoadedCount >= 4) {
+        this.isLoading = false;
+      }
     }
   }
 
@@ -381,9 +451,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = true;
   }
 
-  toggleArtistStatus(artist: Artist): void {
-    artist.status = artist.status === 'active' ? 'inactive' : 'active';
+  async toggleArtistStatus(artist: Artist) {
+    const newStatus = artist.status === 'active' ? 'inactive' : 'active';
+    if (artist.uid) {
+      await this.userService.updateUser(artist.uid, { status: newStatus });
+    }
+    artist.status = newStatus;
     this.showToast(`${artist.name} status updated`, 'success');
+  }
+
+  async approveArtist(artist: Artist) {
+    if (artist.uid) {
+      await this.userService.updateUser(artist.uid, { status: 'active' });
+    }
+    artist.status = 'active';
+    this.showToast(`${artist.name} approved!`, 'success');
   }
 
   viewArtistDetail(artist: Artist): void {
@@ -406,6 +488,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = true;
   }
 
+  editService(service: Service): void {
+    this.modalType = 'editService';
+    this.newService = { ...service };
+    this.imagePreview = service.imageUrl || null;
+    this.showModal = true;
+  }
+
   async toggleServiceStatus(service: Service) {
     const newStatus = service.status === 'active' ? 'inactive' : 'active';
     if (service.id) {
@@ -417,27 +506,132 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   // ── Reports ──
   reportPeriod = 'monthly';
-  monthlyData = [
-    { month: 'Jan', revenue: 18500, bookings: 92  },
-    { month: 'Feb', revenue: 22000, bookings: 110 },
-  ];
-  serviceBreakdown = [ 
-    { name: 'Bridal Makeup', percent: 35, color: '#c9a84c' },
-    { name: 'Party Makeup',  percent: 24, color: '#60c080' },
-    { name: 'Evening Glam',  percent: 19, color: '#6090d0' },
-    { name: 'Airbrush',      percent: 13, color: '#c060a0' },
-    { name: 'Others',        percent: 9,  color: '#5a7a9a' },
-  ];
+  monthlyData: any[] = [];
+  serviceBreakdown: any[] = [];
   reportKpis: any[] = [
-    { label: 'Best Month',      value: 'December',  sub: '₱30,000 revenue',     icon: '🏆' },
-    { label: 'Top Artist',      value: 'Ana Reyes',  sub: '142 bookings • 4.9⭐', icon: '🎨' },
-    { label: 'Avg per Booking', value: '₱2,100',    sub: 'Across all services',  icon: '💵' },
-    { label: 'Repeat Clients',  value: '68%',        sub: 'Book more than once',  icon: '🔁' },
+    { label: 'Best Month',      value: 'None',  sub: '₱0 revenue', icon: '🏆' },
+    { label: 'Top Artist',      value: 'N/A',  sub: '0 bookings • 0⭐', icon: '🎨' },
+    { label: 'Avg per Booking', value: '₱0',  sub: 'Across all services', icon: '💵' },
+    { label: 'Total Clients',   value: '0',  sub: 'Active in database', icon: '👤' },
   ];
 
-  get maxRevenue(): number { return Math.max(...this.monthlyData.map(m => m.revenue), 1); }
+  get maxRevenue(): number { return this.monthlyData.length > 0 ? Math.max(...this.monthlyData.map(m => m.revenue), 1) : 1; }
   get totalRevenueYTD(): number { return this.monthlyData.reduce((s, m) => s + m.revenue, 0); }
   get totalBookingsYTD(): number { return this.monthlyData.reduce((s, m) => s + m.bookings, 0); }
+
+  private recalculateAggregates(): void {
+    // Consider both 'confirmed' and 'completed' bookings for revenue and ranking metrics
+    const validBookings = this.allBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+
+    // Update Clients
+    this.clients.forEach(c => {
+      const cb = validBookings.filter(b => b.client === c.name);
+      c.bookings = cb.length;
+      c.totalSpent = cb.reduce((sum, b) => sum + (parseInt(String(b.amount).replace(/[^0-9]/g, '')) || 0), 0).toLocaleString();
+    });
+
+    // Update Artists
+    this.artistsList.forEach(a => {
+      const ab = validBookings.filter(b => b.artist === a.name);
+      a.bookings = ab.length;
+      a.revenue = ab.reduce((sum, b) => sum + ((parseInt(String(b.amount).replace(/[^0-9]/g, '')) || 0) * 0.9), 0).toLocaleString();
+    });
+
+    // Update Top Artists Array based on valid bookings
+    this.topArtists = [...this.artistsList].sort((a, b) => b.bookings - a.bookings).slice(0, 4);
+    
+    this.calculateReports(validBookings);
+  }
+
+  private calculateReports(validBookings: Booking[]): void {
+    // 1. ALWAYS UPDATE OVERVIEW STATS (Counts & basic lists)
+    this.stats[0].value = this.allBookings.length.toString();
+    this.stats[0].change = `${this.allBookings.filter(b => b.status === 'pending').length} pending`;
+    this.stats[1].value = this.clients.length.toString();
+    this.stats[1].change = `Across all time`;
+    this.stats[2].value = this.artistsList.length.toString();
+    this.stats[2].change = `${this.artistsList.filter(a => a.status === 'active').length} active`;
+
+    const topArtist = [...this.artistsList].sort((a, b) => b.bookings - a.bookings)[0];
+
+    // If no bookings, we update what we can and stop before calculating revenue
+    if (this.allBookings.length === 0) {
+      this.stats[3].value = `₱0`;
+      this.stats[3].change = `₱0 avg/booking`;
+      this.reportKpis = [
+        { label: 'Best Month', value: 'None', sub: '₱0 admin earnings', icon: '🏆' },
+        { label: 'Top Artist', value: topArtist?.name || 'N/A', sub: `${topArtist?.bookings || 0} confirmed bookings • ${topArtist?.rating || 0}⭐`, icon: '🎨' },
+        { label: 'Avg per Booking', value: '₱0', sub: 'Across confirmed bookings (Admin Cut)', icon: '💵' },
+        { label: 'Total Clients', value: this.clients.length.toString(), sub: 'Active in database', icon: '👤' },
+      ];
+      return;
+    }
+
+    // 1. Monthly Revenue & Bookings (based on valid bookings)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyMap = new Map<string, { revenue: number, bookings: number }>();
+    
+    months.forEach(m => monthlyMap.set(m, { revenue: 0, bookings: 0 }));
+
+    validBookings.forEach(b => {
+      let d = new Date(b.date);
+      if (isNaN(d.getTime())) {
+        d = new Date(); // Fallback to today if date is missing or 'TBD'
+      }
+      const monthName = months[d.getMonth()];
+      const current = monthlyMap.get(monthName)!;
+      const amount = (parseInt(String(b.amount).replace(/[^0-9]/g, '')) || 0) * 0.1; // Admin gets 10%
+      monthlyMap.set(monthName, {
+        revenue: current.revenue + amount,
+        bookings: current.bookings + 1
+      });
+    });
+
+    this.monthlyData = months.map(m => ({
+      month: m,
+      revenue: monthlyMap.get(m)!.revenue,
+      bookings: monthlyMap.get(m)!.bookings
+    })).filter(m => m.revenue > 0 || m.bookings > 0);
+
+    // 2. Service Breakdown (based on valid bookings)
+    const serviceCounts = new Map<string, number>();
+    validBookings.forEach(b => {
+      serviceCounts.set(b.service, (serviceCounts.get(b.service) || 0) + 1);
+    });
+
+    const colors = ['#c9a84c', '#60c080', '#6090d0', '#c060a0', '#5a7a9a', '#e09040', '#40b0a0'];
+    let idx = 0;
+    const totalValid = validBookings.length || 1;
+    this.serviceBreakdown = Array.from(serviceCounts.entries()).map(([name, count]) => ({
+      name,
+      percent: Math.round((count / totalValid) * 100),
+      color: colors[idx++ % colors.length]
+    })).sort((a, b) => b.percent - a.percent);
+
+    // 3. KPIs
+    const totalRev = this.monthlyData.reduce((s, m) => s + m.revenue, 0);
+    const avg = validBookings.length > 0 ? Math.round(totalRev / validBookings.length) : 0;
+    
+    let bestMonthName = 'None';
+    let maxMonthRev = -1;
+    this.monthlyData.forEach(m => {
+      if (m.revenue > maxMonthRev) {
+        maxMonthRev = m.revenue;
+        bestMonthName = m.month;
+      }
+    });
+
+    this.reportKpis = [
+      { label: 'Best Month', value: bestMonthName, sub: `₱${maxMonthRev.toLocaleString()} admin earnings`, icon: '🏆' },
+      { label: 'Top Artist', value: topArtist?.name || 'N/A', sub: `${topArtist?.bookings || 0} confirmed bookings • ${topArtist?.rating || 0}⭐`, icon: '🎨' },
+      { label: 'Avg per Booking', value: `₱${avg.toLocaleString()}`, sub: 'Across confirmed bookings (Admin Cut)', icon: '💵' },
+      { label: 'Total Clients', value: this.clients.length.toString(), sub: 'Active in database', icon: '👤' },
+    ];
+
+    // Update Overview Stats for Revenue
+    this.stats[3].value = `₱${totalRev.toLocaleString()}`;
+    this.stats[3].change = `₱${avg.toLocaleString()} avg/booking`;
+  }
 
   // ── Calendar ──
   buildCalendar(): void {
@@ -528,8 +722,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   getTotalPrice(): string {
-    const base = parseInt(this.getBasePrice().replace(',', '')) || 0;
-    const addonsTotal = this.selectedAddons.reduce((sum, a) => sum + (parseInt(a.price) || 0), 0);
+    const baseStr = String(this.getBasePrice());
+    const base = parseInt(baseStr.replace(/[^0-9]/g, '')) || 0;
+    const addonsTotal = this.selectedAddons.reduce((sum, a) => sum + (parseInt(String(a.price).replace(/[^0-9]/g, '')) || 0), 0);
     const total = base + addonsTotal;
     return total.toLocaleString();
   }
@@ -652,12 +847,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   async saveModal() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+    try {
     if (this.modalType === 'addBooking') {
       const b = this.newBooking;
       if (!b.client || !b.service || !b.artist) { this.showToast('Please fill all required fields', 'error'); return; }
       const dateStr = b.bookingDate && b.bookingTime
         ? `${b.bookingDate} ${b.bookingTime}`
-        : b.bookingDate || b.bookingTime || 'TBD';
+        : b.bookingDate || b.bookingTime || new Date().toLocaleString();
+
+      // If admin books, automatically add client to database if they don't exist
+      const existingClient = this.clients.find(c => c.name.toLowerCase() === b.client!.toLowerCase());
+      if (!existingClient) {
+        const fakeUid = 'client-' + Math.random().toString(36).substring(7);
+        await this.userService.createUser(fakeUid, {
+          name: b.client,
+          email: b.client!.replace(/\s+/g, '').toLowerCase() + '@walkin.com',
+          phone: b.phone || '',
+          role: 'client',
+          status: 'active'
+        });
+      }
       
       await this.bookingService.addBooking({
         clientName: b.client!, 
@@ -665,13 +876,23 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         artistName: b.artist!,
         date: dateStr, 
         amount: this.getTotalPrice(),
-        status: 'pending', 
+        paymentMethod: 'Pay Onsite',
+        paymentAccount: 'Cash',
+        status: 'confirmed', // Admin bookings are considered instant/face-to-face payments
         phone: b.phone || '',
         notes: b.notes || '',
         createdAt: new Date()
       });
-      this.showToast('Booking added to Firebase successfully!', 'success');
-      this.loadDashboardData(); // Refresh list
+      
+      await this.paymentService.addPayment({
+        clientName: b.client!,
+        amount: this.getTotalPrice(),
+        paymentMethod: 'Pay Onsite',
+        paymentAccount: 'Cash',
+        status: 'completed',
+        createdAt: new Date()
+      });
+      this.showToast('Walk-in booking added & confirmed successfully!', 'success');
     }
     if (this.modalType === 'addClient') {
       const c = this.newClient;
@@ -684,17 +905,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         name: c.name!, email: c.email!, phone: c.phone || '', role: 'client', createdAt: new Date()
       });
       this.showToast('Client added to Firebase successfully!', 'success');
-      this.loadDashboardData();
     }
     if (this.modalType === 'addArtist') {
       const a = this.newArtist;
       if (!a.name || !a.email) { this.showToast('Please fill all required fields', 'error'); return; }
       const fakeUid = 'artist-' + Math.random().toString(36).substring(7);
       await this.userService.createUser(fakeUid, {
-        name: a.name!, email: a.email!, phone: a.phone || '', specialty: a.specialty || 'General', role: 'artist', createdAt: new Date()
+        name: a.name!, email: a.email!, phone: a.phone || '', specialty: a.specialty || 'General', role: 'artist', rating: 0, ratingCount: 0, createdAt: new Date()
       });
       this.showToast('Artist added to Firebase successfully!', 'success');
-      this.loadDashboardData();
     }
     if (this.modalType === 'addService') {
       const s = this.newService;
@@ -711,9 +930,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         createdAt: new Date()
       });
       this.showToast('Service added to Firebase successfully!', 'success');
-      this.loadDashboardData();
+    }
+    if (this.modalType === 'editService') {
+      const s = this.newService;
+      if (!s.name || !s.price) { this.showToast('Please fill all required fields', 'error'); return; }
+      if (s.id) {
+        await this.serviceItemService.updateService(s.id, {
+          imageUrl: this.imagePreview as string || '',
+          name: s.name,
+          desc: s.desc || '',
+          price: s.price,
+          duration: s.duration || '1 hr'
+        });
+        this.showToast('Service updated successfully!', 'success');
+      }
     }
     this.closeModal();
+    } catch (error) {
+      console.error('Error saving modal:', error);
+      this.showToast('Error saving data. Please try again.', 'error');
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   // ── Confirm Dialog ──
@@ -739,7 +977,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (target.id) await this.serviceItemService.deleteService(target.id.toString());
         this.showToast('Service deleted from Firebase', 'success');
       }
-      this.loadDashboardData(); // Refresh UI
     } catch (e) {
       this.showToast('Error deleting item', 'error');
     }
@@ -758,6 +995,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.clockInterval) clearInterval(this.clockInterval);
     if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.subs.forEach(s => s.unsubscribe());
   }
 
   private updateClock(): void {

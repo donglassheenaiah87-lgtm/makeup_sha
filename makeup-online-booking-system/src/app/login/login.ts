@@ -46,23 +46,30 @@ export class LoginComponent {
     this.errorMessage = '';
 
     try {
+      const trimmedEmail = this.email.trim();
       // Step 1: Firebase Auth login
-      const result = await this.authService.login(this.email, this.password);
+      const result = await this.authService.login(trimmedEmail, this.password);
       const uid = result.user.uid;
 
       // Step 2: Check role in Firestore
       let userData = await this.userService.getUser(uid);
 
       if (!userData) {
-        // Auto create user data as client if it doesn't exist
+        // Auto create user data as client if it doesn't exist, unless it's the admin
+        const isAdmin = this.email.trim().toLowerCase() === 'admin@glowbook.com';
+        const role = isAdmin ? 'admin' : 'client';
         await this.userService.createUser(uid, {
           email: this.email,
-          role: 'client',
+          role: role,
           name: this.email.split('@')[0], 
           phone: '',
           createdAt: new Date()
         });
         userData = await this.userService.getUser(uid);
+      } else if (this.email.trim().toLowerCase() === 'admin@glowbook.com' && userData.role !== 'admin') {
+        // Force update to admin if they were accidentally created as another role before
+        await this.userService.updateUser(uid, { role: 'admin' });
+        userData.role = 'admin';
       }
 
       if (!userData) {
@@ -78,6 +85,12 @@ export class LoginComponent {
       if (userData.role === 'admin') {
         this.router.navigate(['/admin/dashboard']);
       } else if (userData.role === 'artist') {
+        if (userData.status === 'pending') {
+          this.errorMessage = 'Your artist account is pending admin approval.';
+          this.isLoading = false;
+          await this.authService.logout();
+          return;
+        }
         this.router.navigate(['/artist/dashboard']);
       } else {
         this.router.navigate(['/client/dashboard']);

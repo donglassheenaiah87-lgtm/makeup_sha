@@ -1,10 +1,15 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Auth } from '@angular/fire/auth';
 import { UserService } from '../../core/user.service';
 import { AuthService } from '../../core/auth.service';
+import { BookingService } from '../../core/booking.service';
+import { ChatService, Conversation, Message } from '../../core/chat.service';
+import { PayoutService, Payout } from '../../core/payout.service';
+import { ReviewService, Review } from '../../core/review.service';
+import { Subscription } from 'rxjs';
 
 export interface Booking {
   id: string;
@@ -15,7 +20,9 @@ export interface Booking {
   date: string;
   time: string;
   location: string;
-  amount: number;
+  amount: number | string;
+  paymentMethod?: string;
+  paymentAccount?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
 }
@@ -32,35 +39,13 @@ export interface WeekDay {
   end: string;
 }
 
-export interface Review {
-  clientName: string;
-  clientId: string;
-  rating: number;
-  comment: string;
-  date: string;
-  service: string;
-}
+// Removed redundant interfaces that are now imported from core services
 
 export interface Service {
   name: string;
   description: string;
   price: number;
   duration: string;
-}
-
-export interface Message {
-  sender: 'artist' | 'client';
-  text: string;
-  time: string;
-}
-
-export interface Conversation {
-  clientId: string;
-  clientName: string;
-  lastMessage: string;
-  lastTime: string;
-  unread: number;
-  messages: Message[];
 }
 
 @Component({
@@ -70,9 +55,10 @@ export interface Conversation {
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
-export class ArtistDashboardComponent implements OnInit {
+export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('profilePicInput') profilePicInput!: ElementRef<HTMLInputElement>;
   @ViewChild('chatBox') chatBox!: ElementRef<HTMLDivElement>;
 
   Math = Math;
@@ -142,15 +128,13 @@ export class ArtistDashboardComponent implements OnInit {
 
   lastPayout: any = null;
   reportForm = { type: '', description: '' };
-  payoutHistory: any[] = [
-    { method: 'gcash', accountNumber: '09171234567', accountName: 'Maria A.', amount: 1200, status: 'completed', requestedDate: 'Mar 18, 2026', expectedDate: 'Mar 19, 2026' },
-    { method: 'maya', accountNumber: '09281234567', accountName: 'Maria A.', amount: 2500, status: 'processing', requestedDate: 'Mar 22, 2026', expectedDate: 'Mar 24, 2026' },
-  ];
+  payoutHistory: any[] = [];
 
   // ── Artist Info ──
   artistName = 'Artist';
   artistInitials = 'A';
   artistSpecialty = 'Makeup Artist';
+  profilePicture = '';
 
   // ── Stats ──
   stats = {
@@ -165,15 +149,12 @@ export class ArtistDashboardComponent implements OnInit {
     availableBalance: 0
   };
 
-  // ── Sample Bookings (replace with Firestore later) ──
-  bookings: Booking[] = [
-    { id: '1', clientId: 'c1', clientName: 'Maria Santos', clientPhone: '09171234567', service: 'Bridal Makeup', date: 'Mar 25, 2026', time: '9:00 AM', location: 'Makati City', amount: 3500, status: 'pending', notes: 'Wants natural dewy look' },
-    { id: '2', clientId: 'c2', clientName: 'Ana Reyes', clientPhone: '09281234567', service: 'Glam Makeup', date: 'Mar 27, 2026', time: '2:00 PM', location: 'BGC, Taguig', amount: 1800, status: 'confirmed' },
-    { id: '3', clientId: 'c3', clientName: 'Sofia Cruz', clientPhone: '09091234567', service: 'SFX Makeup', date: 'Mar 22, 2026', time: '10:00 AM', location: 'Quezon City', amount: 2500, status: 'completed' },
-    { id: '4', clientId: 'c4', clientName: 'Liza Mendoza', clientPhone: '09151234567', service: 'Natural Makeup', date: 'Mar 20, 2026', time: '1:00 PM', location: 'Mandaluyong', amount: 1200, status: 'completed' },
-    { id: '5', clientId: 'c5', clientName: 'Rose Aquino', clientPhone: '09321234567', service: 'Editorial Look', date: 'Mar 29, 2026', time: '3:00 PM', location: 'Pasig City', amount: 2200, status: 'pending' },
-    { id: '6', clientId: 'c6', clientName: 'Claire Bautista', clientPhone: '09201234567', service: 'Debut Makeup', date: 'Apr 2, 2026', time: '7:00 AM', location: 'Las Piñas', amount: 4000, status: 'confirmed' },
-  ];
+  // ── Bookings ──
+  bookings: Booking[] = [];
+  private bookingsSub?: Subscription;
+  private reviewsSub?: Subscription;
+  private payoutsSub?: Subscription;
+  private chatSub?: Subscription;
 
   // ── Portfolio ──
   portfolioItems: PortfolioItem[] = [];
@@ -205,13 +186,7 @@ export class ArtistDashboardComponent implements OnInit {
   emgCalendarCells: any[] = [];
 
   // ── Reviews ──
-  reviews: Review[] = [
-    { clientName: 'Maria Santos', clientId: 'c1', rating: 5, comment: 'Absolutely stunning! My bridal look was exactly what I dreamed of. So professional and talented!', date: 'Mar 22, 2026', service: 'Bridal Makeup' },
-    { clientName: 'Sofia Cruz', clientId: 'c3', rating: 5, comment: 'The SFX work was incredible. Everyone was amazed at the event. Will definitely book again!', date: 'Mar 22, 2026', service: 'SFX Makeup' },
-    { clientName: 'Liza Mendoza', clientId: 'c4', rating: 4, comment: 'Really nice natural look. Very accommodating and the makeup lasted all day!', date: 'Mar 20, 2026', service: 'Natural Makeup' },
-    { clientName: 'Joy Dela Cruz', clientId: 'c7', rating: 5, comment: 'Super galing! Napaganda talaga ang aking look for the debut. Highly recommended!', date: 'Mar 15, 2026', service: 'Debut Makeup' },
-    { clientName: 'Karen Villanueva', clientId: 'c8', rating: 4, comment: 'Very skilled and patient. Listened to what I wanted. Would book again for future events.', date: 'Mar 10, 2026', service: 'Glam Makeup' },
-  ];
+  reviews: Review[] = [];
 
   // ── Services ──
   services: Service[] = [
@@ -226,55 +201,32 @@ export class ArtistDashboardComponent implements OnInit {
   serviceForm: Service = { name: '', description: '', price: 0, duration: '' };
 
   // ── Messages / Conversations ──
-  conversations: Conversation[] = [
-    {
-      clientId: 'c1', clientName: 'Maria Santos',
-      lastMessage: 'Thank you! See you on the 25th 😊',
-      lastTime: '10:30 AM', unread: 2,
-      messages: [
-        { sender: 'client', text: 'Hi! I booked a bridal makeup for March 25.', time: '9:00 AM' },
-        { sender: 'artist', text: 'Hello Maria! Yes, I confirmed your booking. So excited for your big day! 💍', time: '9:15 AM' },
-        { sender: 'client', text: 'Can I request a natural dewy look?', time: '9:30 AM' },
-        { sender: 'artist', text: 'Of course! That would look gorgeous on you. I will prepare accordingly. 🌸', time: '9:45 AM' },
-        { sender: 'client', text: 'Thank you! See you on the 25th 😊', time: '10:30 AM' },
-      ]
-    },
-    {
-      clientId: 'c2', clientName: 'Ana Reyes',
-      lastMessage: 'What time should I arrive?',
-      lastTime: 'Yesterday', unread: 1,
-      messages: [
-        { sender: 'client', text: 'Hi! I am Ana, I have a booking on March 27.', time: 'Yesterday 2:00 PM' },
-        { sender: 'artist', text: 'Hi Ana! Yes, I have you for Glam Makeup at 2PM. ✨', time: 'Yesterday 2:10 PM' },
-        { sender: 'client', text: 'What time should I arrive?', time: 'Yesterday 3:00 PM' },
-      ]
-    },
-    {
-      clientId: 'c5', clientName: 'Rose Aquino',
-      lastMessage: 'Looking forward to it!',
-      lastTime: 'Mar 22', unread: 0,
-      messages: [
-        { sender: 'client', text: 'Hi! Just checking on my booking for the editorial shoot.', time: 'Mar 22 1:00 PM' },
-        { sender: 'artist', text: 'Hi Rose! All set for March 29. Let me know if you have a specific mood board! 📸', time: 'Mar 22 1:30 PM' },
-        { sender: 'client', text: 'Looking forward to it!', time: 'Mar 22 2:00 PM' },
-      ]
-    }
-  ];
+  conversations: Conversation[] = [];
 
   activeConversation: Conversation | null = null;
   selectedBooking: Booking | null = null;
 
   // ── Blocked dates ──
-  addBlockedDate() {
+  async addBlockedDate() {
     const d = prompt('Enter date to block (e.g. Apr 5, 2026):');
-    if (d) { this.blockedDates.push(d.trim()); this.buildCalendar(); }
+    if (d) { 
+      this.blockedDates.push(d.trim()); 
+      this.buildCalendar(); 
+      const user = this.auth.currentUser;
+      if (user) await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
+    }
   }
 
   constructor(
     private auth: Auth,
     private authService: AuthService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private bookingService: BookingService,
+    private chatService: ChatService,
+    private payoutService: PayoutService,
+    private reviewService: ReviewService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   async ngOnInit() {
@@ -286,6 +238,7 @@ export class ArtistDashboardComponent implements OnInit {
       if (data) {
         this.artistName = data['name'] || 'Artist';
         this.artistSpecialty = data['specialty'] || 'Makeup Artist';
+        this.profilePicture = data['profilePicture'] || '';
         this.artistInitials = this.artistName
           .split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
         this.profileForm = {
@@ -297,21 +250,66 @@ export class ArtistDashboardComponent implements OnInit {
           location: data['location'] || '',
           social: data['social'] || ''
         };
+        
+        // Subscriptions
+        this.bookingsSub = this.bookingService.getBookingsByArtistRealtime(this.artistName).subscribe(data => {
+          this.bookings = data.map(b => ({
+            id: b.id, clientId: b.clientId || 'guest', clientName: b.clientName, clientPhone: b.phone || 'N/A', service: b.serviceName, date: b.date, time: '', location: 'TBD', amount: b.amount, paymentMethod: b.paymentMethod || 'Pay Onsite', paymentAccount: b.paymentAccount || '', status: b.status as any, notes: b.notes || ''
+          }));
+          this.computeStats();
+          this.buildCalendar();
+          this.emgBuildCalendar();
+          this.cdr.detectChanges();
+        });
+
+        // Other Subscriptions
+        this.reviewsSub = this.reviewService.getReviewsForArtistRealtime(user.uid).subscribe(d => {
+          this.reviews = d;
+          this.computeStats();
+        });
+
+        this.payoutsSub = this.payoutService.getPayoutsForArtistRealtime(user.uid).subscribe(d => {
+          this.payoutHistory = d;
+          this.computeStats();
+        });
+
+        this.chatSub = this.chatService.getConversationsForArtist(user.uid).subscribe(d => {
+          this.conversations = d;
+          this.computeStats();
+        });
+
+        // Restore Portfolio, Schedule, Services
+        if (data['portfolioItems'] && data['portfolioItems'].length > 0) this.portfolioItems = data['portfolioItems'];
+        if (data['services'] && data['services'].length > 0) this.services = data['services'];
+        if (data['weekDays']) this.weekDays = data['weekDays'];
+        if (data['blockedDates']) this.blockedDates = data['blockedDates'];
       }
     } catch { /* use defaults */ }
+  }
 
-    this.computeStats();
-    this.buildCalendar();
-    this.emgBuildCalendar();
+  ngOnDestroy() {
+    if (this.bookingsSub) this.bookingsSub.unsubscribe();
+    if (this.reviewsSub) this.reviewsSub.unsubscribe();
+    if (this.payoutsSub) this.payoutsSub.unsubscribe();
+    if (this.chatSub) this.chatSub.unsubscribe();
   }
 
   computeStats() {
     this.stats.totalBookings = this.bookings.length;
     this.stats.pending = this.bookings.filter(b => b.status === 'pending').length;
     this.stats.completed = this.bookings.filter(b => b.status === 'completed').length;
-    this.stats.earnings = this.bookings.filter(b => b.status === 'completed').reduce((s, b) => s + b.amount, 0);
+    
+    // Revenue is calculated from confirmed AND completed bookings (Artist gets 90%)
+    const validBookings = this.bookings.filter(b => b.status === 'completed' || b.status === 'confirmed');
+    
+    const rawTotal = validBookings.reduce((sum, b) => {
+      const amt = typeof b.amount === 'string' ? parseInt(b.amount.replace(/[^0-9]/g, '')) || 0 : b.amount;
+      return sum + amt;
+    }, 0);
+
+    this.stats.earnings = rawTotal * 0.9;
     this.stats.totalEarnings = this.stats.earnings;
-    this.stats.avgEarning = this.stats.completed > 0 ? Math.round(this.stats.earnings / this.stats.completed) : 0;
+    this.stats.avgEarning = validBookings.length > 0 ? Math.round(this.stats.earnings / validBookings.length) : 0;
 
     const totalRating = this.reviews.reduce((s, r) => s + r.rating, 0);
     this.stats.avgRating = this.reviews.length > 0 ? (totalRating / this.reviews.length).toFixed(1) : '0.0';
@@ -357,7 +355,7 @@ export class ArtistDashboardComponent implements OnInit {
 
   // ── Computed ──
   get pendingCount() { return this.bookings.filter(b => b.status === 'pending').length; }
-  get unreadMessages() { return this.conversations.reduce((s, c) => s + c.unread, 0); }
+  get unreadMessages() { return this.conversations.reduce((s, c) => s + c.unreadArtist, 0); }
   get upcomingBookings() { return this.bookings.filter(b => b.status === 'pending' || b.status === 'confirmed').slice(0, 5); }
   get filteredBookings() { return this.bookingFilter === 'all' ? this.bookings : this.bookings.filter(b => b.status === this.bookingFilter as any); }
   get completedBookings() { return this.bookings.filter(b => b.status === 'completed'); }
@@ -378,8 +376,24 @@ export class ArtistDashboardComponent implements OnInit {
   }
 
   // ── Booking Actions ──
-  confirmBooking(b: Booking) { b.status = 'confirmed'; this.computeStats(); }
-  cancelBooking(b: Booking) { b.status = 'cancelled'; this.computeStats(); }
+  async confirmBooking(b: Booking) { 
+    b.status = 'confirmed'; 
+    if (b.id && b.id.length > 5) await this.bookingService.updateBookingStatus(b.id, 'confirmed');
+    this.showToast('success', 'Booking Confirmed', 'The client has been notified.');
+    this.computeStats(); 
+  }
+  async cancelBooking(b: Booking) { 
+    b.status = 'cancelled'; 
+    if (b.id && b.id.length > 5) await this.bookingService.updateBookingStatus(b.id, 'cancelled');
+    this.showToast('info', 'Booking Cancelled', 'The booking has been cancelled.');
+    this.computeStats(); 
+  }
+  async markCompleted(b: Booking) {
+    b.status = 'completed';
+    if (b.id && b.id.length > 5) await this.bookingService.updateBookingStatus(b.id, 'completed');
+    this.showToast('success', 'Booking Completed', 'Great job! Revenue added to your balance.');
+    this.computeStats();
+  }
   viewBooking(b: Booking) { this.selectedBooking = b; }
 
   openMessage(b: Booking) {
@@ -389,8 +403,9 @@ export class ArtistDashboardComponent implements OnInit {
       this.activeConversation = existing;
     } else {
       const newConv: Conversation = {
+        id: '', artistId: '', artistName: '',
         clientId: b.clientId, clientName: b.clientName,
-        lastMessage: '', lastTime: 'Now', unread: 0, messages: []
+        lastMessage: '', lastTime: 'Now', unreadArtist: 0, unreadClient: 0, messages: []
       };
       this.conversations.unshift(newConv);
       this.activeConversation = newConv;
@@ -400,16 +415,28 @@ export class ArtistDashboardComponent implements OnInit {
   // ── Messages ──
   selectConversation(conv: Conversation) {
     this.activeConversation = conv;
-    conv.unread = 0;
+    conv.unreadArtist = 0;
     setTimeout(() => this.scrollToBottom(), 100);
   }
 
-  sendMessage() {
+  async sendMessage() {
     if (!this.newMessage.trim() || !this.activeConversation) return;
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    this.activeConversation.messages.push({ sender: 'artist', text: this.newMessage.trim(), time: now });
-    this.activeConversation.lastMessage = this.newMessage.trim();
-    this.activeConversation.lastTime = now;
+    const text = this.newMessage.trim();
+    const user = this.auth.currentUser;
+    if (!user) return;
+    
+    // Support dummy data locally if id is missing, else send to Firebase
+    const convId = (this.activeConversation as any).id || `${user.uid}_${this.activeConversation.clientId}`;
+    
+    await this.chatService.sendMessage(
+      convId,
+      { sender: 'artist', text, time: now, timestamp: Date.now() },
+      0,
+      this.activeConversation.unreadClient + 1 || 1,
+      text,
+      now
+    );
     this.newMessage = '';
     setTimeout(() => this.scrollToBottom(), 50);
   }
@@ -428,14 +455,20 @@ export class ArtistDashboardComponent implements OnInit {
     if (!input.files?.length) return;
     const file = input.files[0];
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       this.portfolioItems.push({ url: e.target?.result as string, caption: file.name.replace(/\.[^.]+$/, '') });
+      const user = this.auth.currentUser;
+      if (user) await this.userService.updateUser(user.uid, { portfolioItems: this.portfolioItems });
     };
     reader.readAsDataURL(file);
     input.value = '';
   }
 
-  deletePortfolioItem(i: number) { this.portfolioItems.splice(i, 1); }
+  async deletePortfolioItem(i: number) { 
+    this.portfolioItems.splice(i, 1); 
+    const user = this.auth.currentUser;
+    if (user) await this.userService.updateUser(user.uid, { portfolioItems: this.portfolioItems });
+  }
 
   // ── Schedule ──
   getMonthLabel(): string {
@@ -551,9 +584,11 @@ export class ArtistDashboardComponent implements OnInit {
     this.buildCalendar();
   }
 
-  removeBlockedDate(i: number) {
+  async removeBlockedDate(i: number) {
     this.blockedDates.splice(i, 1);
     this.buildCalendar();
+    const user = this.auth.currentUser;
+    if (user) await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
   }
 
   // ── Emergency Mini Calendar ──
@@ -617,7 +652,9 @@ export class ArtistDashboardComponent implements OnInit {
     this.buildCalendar();
   }
 
-  saveSchedule() {
+  async saveSchedule() {
+    const user = this.auth.currentUser;
+    if (user) await this.userService.updateUser(user.uid, { weekDays: this.weekDays });
     this.scheduleSaved = true;
     this.showToast('success', '✅ Schedule Saved', 'Your availability has been updated.');
     setTimeout(() => this.scheduleSaved = false, 3000);
@@ -644,14 +681,22 @@ export class ArtistDashboardComponent implements OnInit {
     this.showServiceModal = true;
   }
 
-  saveService() {
+  async saveService() {
     if (!this.serviceForm.name) return;
     if (this.editingServiceIndex >= 0) {
       this.services[this.editingServiceIndex] = { ...this.serviceForm };
     } else {
       this.services.push({ ...this.serviceForm });
     }
+    const user = this.auth.currentUser;
+    if (user) await this.userService.updateUser(user.uid, { services: this.services });
     this.showServiceModal = false;
+  }
+  
+  async deleteService(i: number) {
+    this.services.splice(i, 1);
+    const user = this.auth.currentUser;
+    if (user) await this.userService.updateUser(user.uid, { services: this.services });
   }
 
   // ── Profile ──
@@ -669,7 +714,8 @@ export class ArtistDashboardComponent implements OnInit {
         specialty: this.profileForm.specialty,
         bio: this.profileForm.bio,
         location: this.profileForm.location,
-        social: this.profileForm.social
+        social: this.profileForm.social,
+        profilePicture: this.profilePicture
       } as any);
       this.artistName = this.profileForm.name;
       this.artistSpecialty = this.profileForm.specialty;
@@ -677,6 +723,49 @@ export class ArtistDashboardComponent implements OnInit {
       this.profileSaved = true;
       setTimeout(() => this.profileSaved = false, 3000);
     } catch { this.showToast('error', 'Save Failed', 'Could not save profile. Please try again.'); }
+  }
+
+  triggerProfilePicUpload() {
+    this.profilePicInput.nativeElement.click();
+  }
+
+  onProfilePicSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // compress as JPEG
+        this.profilePicture = canvas.toDataURL('image/jpeg', 0.8);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
   }
 
   // ── Payout ──
@@ -703,21 +792,24 @@ export class ArtistDashboardComponent implements OnInit {
     if (!accountName) { this.payoutError = 'Please enter your account name.'; return; }
 
     this.isPayoutLoading = true;
-    setTimeout(() => {
+    setTimeout(async () => {
       const today = new Date();
       const eta = new Date(today); eta.setDate(eta.getDate() + 2);
       const fmt = (d: Date) => d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 
-      const payout = {
-        method, accountNumber, accountName, amount,
-        status: 'processing',
-        requestedDate: fmt(today),
-        expectedDate: fmt(eta)
-      };
+      const user = this.auth.currentUser;
+      if (user) {
+        await this.payoutService.requestPayout({
+          artistId: user.uid,
+          artistName: this.artistName,
+          amount, method, accountNumber, accountName,
+          status: 'processing',
+          requestedDate: fmt(today),
+          expectedDate: fmt(eta),
+          createdAt: new Date()
+        });
+      }
 
-      this.payoutHistory.unshift(payout);
-      this.lastPayout = payout;
-      this.stats.availableBalance -= amount;
       this.payoutForm = { amount: 0, method: '', accountNumber: '', accountName: '' };
       this.isPayoutLoading = false;
       this.showPayoutSuccess = true;

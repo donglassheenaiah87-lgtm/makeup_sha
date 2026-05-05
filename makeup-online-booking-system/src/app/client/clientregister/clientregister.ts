@@ -71,9 +71,10 @@ export class ClientRegisterComponent {
 
     this.isLoading = true;
     try {
-      const result = await createUserWithEmailAndPassword(this.auth, this.email, this.password);
+      const trimmedEmail = this.email.trim();
+      const result = await createUserWithEmailAndPassword(this.auth, trimmedEmail, this.password);
       await this.userService.createUser(result.user.uid, {
-        name: this.name, email: this.email, phone: this.phone,
+        name: this.name, email: trimmedEmail, phone: this.phone,
         role: 'client', createdAt: new Date()
       });
       this.successMessage = 'Account created! Redirecting to login…';

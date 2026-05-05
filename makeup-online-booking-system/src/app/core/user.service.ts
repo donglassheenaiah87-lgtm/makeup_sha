@@ -9,8 +9,10 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where
+  where,
+  onSnapshot
 } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
 export interface UserData {
   uid: string;
@@ -20,6 +22,7 @@ export interface UserData {
   email: string;
   phone: string;
   role: 'admin' | 'artist' | 'client';
+  status?: string; // e.g. 'pending', 'active', 'inactive'
   createdAt: any;
 
   // Artist-specific
@@ -27,6 +30,13 @@ export interface UserData {
   bio?: string;
   location?: string;
   social?: string;
+  profilePicture?: string;
+  rating?: number;
+  ratingCount?: number;
+  services?: any[];
+  portfolioItems?: any[];
+  weekDays?: any[];
+  blockedDates?: string[];
 
   // Client-specific
   favoriteService?: string;
@@ -75,6 +85,33 @@ export class UserService {
     const q = query(usersRef, where('role', '==', role));
     const snap = await getDocs(q);
     return snap.docs.map(d => d.data() as UserData);
+  }
+
+  getUsersByRoleRealtime(role: 'admin' | 'artist' | 'client'): Observable<UserData[]> {
+    return new Observable<UserData[]>(subscriber => {
+      const usersRef = collection(this.firestore, 'users');
+      const q = query(usersRef, where('role', '==', role));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const users = snap.docs.map(d => d.data() as UserData);
+        subscriber.next(users);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
+  getAllUsersRealtime(): Observable<UserData[]> {
+    return new Observable<UserData[]>(subscriber => {
+      const usersRef = collection(this.firestore, 'users');
+      const unsubscribe = onSnapshot(usersRef, (snap) => {
+        const users = snap.docs.map(d => d.data() as UserData);
+        subscriber.next(users);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
   }
 
   async updateUser(uid: string, data: Partial<UserData>) {

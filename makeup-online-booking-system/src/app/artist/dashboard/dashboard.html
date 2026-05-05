@@ -255,7 +255,7 @@
                             <th>Service</th>
                             <th>Date & Time</th>
                             <th>Location</th>
-                            <th>Amount</th>
+                            <th>Amount & Payment</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -274,7 +274,12 @@
                             <td>{{ b.service }}</td>
                             <td>{{ b.date }}<br><span style="font-size:0.75rem;color:#7a50a0">{{ b.time }}</span></td>
                             <td style="font-size:0.8rem">{{ b.location }}</td>
-                            <td class="amount-cell">₱{{ b.amount.toLocaleString() }}</td>
+                            <td class="amount-cell">
+                                ₱{{ b.amount.toLocaleString() }}
+                                <div style="font-size:0.72rem;color:#7a50a0;margin-top:2px" *ngIf="b.paymentMethod">
+                                    {{ b.paymentMethod | titlecase }}
+                                </div>
+                            </td>
                             <td><span class="booking-badge" [ngClass]="b.status">{{ b.status }}</span></td>
                             <td>
                                 <div class="action-btns">
@@ -282,6 +287,8 @@
                                         (click)="confirmBooking(b)" title="Confirm">✓</button>
                                     <button class="act-btn cancel" *ngIf="b.status==='pending'"
                                         (click)="cancelBooking(b)" title="Cancel">✕</button>
+                                    <button class="act-btn" *ngIf="b.status==='confirmed'"
+                                        (click)="markCompleted(b)" title="Mark as Completed" style="background:#4ade80;color:#064e3b;border:none">✔</button>
                                     <button class="act-btn msg" (click)="openMessage(b)"
                                         title="Message client">💬</button>
                                     <button class="act-btn view" (click)="viewBooking(b)"
@@ -350,7 +357,7 @@
                                 </div>
                                 <p class="conv-last">{{ conv.lastMessage }}</p>
                             </div>
-                            <span class="conv-unread" *ngIf="conv.unread > 0">{{ conv.unread }}</span>
+                            <span class="conv-unread" *ngIf="conv.unreadArtist > 0">{{ conv.unreadArtist }}</span>
                         </div>
                     </div>
                 </div>
@@ -904,7 +911,12 @@
         <section class="tab-content" *ngIf="activeTab==='profile'">
             <div class="profile-wrap">
                 <div class="card profile-card">
-                    <div class="profile-avatar-big">{{ artistInitials }}</div>
+                    <div class="profile-avatar-wrapper" style="position:relative;display:inline-block;margin:0 auto">
+                        <div class="profile-avatar-big" *ngIf="!profilePicture">{{ artistInitials }}</div>
+                        <img *ngIf="profilePicture" [src]="profilePicture" class="profile-avatar-img" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #e8d8ff" />
+                        <button class="upload-pic-btn" (click)="triggerProfilePicUpload()" style="position:absolute;bottom:0;right:-10px;background:#9333ea;color:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,0.2)">📷</button>
+                        <input #profilePicInput type="file" accept="image/*" style="display:none" (change)="onProfilePicSelected($event)" />
+                    </div>
                     <p class="profile-badge">💄 Verified Artist</p>
                     <div class="form-grid">
                         <div class="form-group">

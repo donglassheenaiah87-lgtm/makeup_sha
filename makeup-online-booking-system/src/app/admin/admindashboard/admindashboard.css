@@ -492,9 +492,22 @@
 /* ══════════════════════════════════════
    ICON / ACTION BUTTONS
 ══════════════════════════════════════ */
-.icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 0.85rem; transition: background 0.18s; }
-.icon-btn.edit:hover   { background: rgba(201,168,76,0.15); }
-.icon-btn.delete:hover { background: rgba(224,96,96,0.15); }
+.icon-btn { 
+  background: rgba(255,255,255,0.06); 
+  border: 1px solid rgba(255,255,255,0.12); 
+  color: #d0dce8;
+  cursor: pointer; 
+  padding: 6px 10px; 
+  border-radius: 8px; 
+  font-size: 1rem; 
+  transition: all 0.2s ease; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn.edit:hover   { background: rgba(201,168,76,0.2); border-color: rgba(201,168,76,0.4); transform: translateY(-1px); }
+.icon-btn.delete:hover { background: rgba(224,96,96,0.2); border-color: rgba(224,96,96,0.4); transform: translateY(-1px); }
+.icon-btn.view-btn:hover { background: rgba(96,192,128,0.2); border-color: rgba(96,192,128,0.4); transform: translateY(-1px); }
 .action-cell { white-space: nowrap; }
 
 .filter-select {
@@ -599,29 +612,113 @@
 /* ══════════════════════════════════════
    SERVICES GRID
 ══════════════════════════════════════ */
-.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .service-card {
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,76,0.15);
-  border-radius: 14px; padding: 1.2rem; text-align: center; transition: all 0.2s;
+  background: #0f2235; 
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 16px; 
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.service-card:hover { border-color: rgba(201,168,76,0.35); transform: translateY(-2px); }
-.inactive-card { opacity: 0.55; }
-.service-card-top {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+.service-card:hover { 
+  border-color: rgba(201,168,76,0.35); 
+  transform: translateY(-4px); 
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
 }
-.service-icon { font-size: 2rem; }
-.service-card h4 { font-size: 0.92rem; font-weight: 600; color: #d0dce8; margin-bottom: 6px; }
-.service-desc { font-size: 0.78rem; color: #4a6a8a; margin-bottom: 8px; line-height: 1.4; }
-.service-meta { display: flex; justify-content: center; gap: 12px; margin-bottom: 6px; }
-.service-duration, .service-bookings-count { font-size: 0.74rem; color: #4a6a8a; }
-.service-price { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: #c9a84c; font-weight: 700; margin-bottom: 12px; }
-.service-actions { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.inactive-card { opacity: 0.6; filter: grayscale(50%); }
+
+.service-banner {
+  width: 100%;
+  height: 160px;
+  position: relative;
+  background: rgba(201,168,76,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.service-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.status-badge-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.service-card-body {
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.service-card-no-img-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.service-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #c9a84c;
+  margin-bottom: 4px;
+}
+.service-price-lg {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #d0dce8;
+  margin-bottom: 10px;
+}
+.service-dur {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #5a7a9a;
+}
+.service-desc {
+  font-size: 0.8rem;
+  color: #8aabcc;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.service-stats-row {
+  margin-bottom: 16px;
+}
+.stat-pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  color: #a0b8d0;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.service-actions { 
+  display: flex; 
+  gap: 8px; 
+  align-items: center; 
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 14px;
+}
 .svc-toggle-btn {
+  flex: 1;
   background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
-  color: #c9a84c; font-size: 0.75rem; padding: 4px 10px; border-radius: 8px;
+  color: #c9a84c; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px;
   cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.18s;
+  font-weight: 600;
+  text-align: center;
 }
-.svc-toggle-btn:hover { background: rgba(201,168,76,0.2); }
+.svc-toggle-btn:hover { background: rgba(201,168,76,0.2); transform: translateY(-1px); }
 
 /* ══════════════════════════════════════
    MINI BAR CHART (overview revenue)
@@ -1609,4 +1706,64 @@ input:checked + .slider-danger:before { background: #e06060 !important; }
 
 @media (max-width: 600px) {
   .addons-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════
+   IMAGE UPLOAD PREVIEW
+══════════════════════════════════════ */
+.image-upload-group input[type="file"] {
+  padding: 0.5rem;
+  background: rgba(255,255,255,0.02);
+}
+.image-preview {
+  margin-top: 8px;
+  width: 120px;
+  height: 120px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(201,168,76,0.3);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* GLOBAL LOADER */
+.loader-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 60vh;
+  color: #c9a84c;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(201,168,76,0.2);
+  border-top-color: #c9a84c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  color: #8aabcc;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }

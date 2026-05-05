@@ -53,23 +53,25 @@ export class ArtistRegisterComponent {
 
     try {
       // Step 1: Create Firebase Auth account
+      const trimmedEmail = this.email.trim();
       const result = await createUserWithEmailAndPassword(
-        this.auth, this.email, this.password
+        this.auth, trimmedEmail, this.password
       );
       const uid = result.user.uid;
 
       // Step 2: Save artist data to Firestore
       await this.userService.createUser(uid, {
         name: this.name,
-        email: this.email,
+        email: trimmedEmail,
         phone: this.phone,
         specialty: this.specialty,
         role: 'artist',
+        status: 'pending',
         createdAt: new Date()
       });
 
-      this.successMessage = 'Account created! Redirecting to login...';
-      setTimeout(() => this.router.navigate(['/login']), 2000);
+      this.successMessage = 'Application submitted! Please wait for admin approval.';
+      setTimeout(() => this.router.navigate(['/login']), 3000);
     } catch (error: any) {
       this.isLoading = false;
       switch (error.code) {

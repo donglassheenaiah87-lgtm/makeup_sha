@@ -5,6 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { UserService } from '../../core/user.service';
+import { BookingService } from '../../core/booking.service';
+import { PaymentService } from '../../core/payment.service';
+import { ServiceItemService } from '../../core/service-item.service';
+import { ArtistPortfolioService } from '../../core/artist-portfolio.service';
+import { ReviewService } from '../../core/review.service';
+import { Subscription } from 'rxjs';
 
 interface Service {
   name: string; desc: string; fullDesc: string; icon: string;
@@ -20,6 +26,7 @@ interface PortfolioImage { url: string; label: string; tag: string; }
 interface Testimonial { name: string; quote: string; type: string; avatar: string; date: string; }
 interface FAQ { question: string; answer: string; open: boolean; }
 interface CurrentUser {
+  uid: string;
   name: string; email: string; phone?: string; avatar?: string;
   memberTier: string; bookingCount: number; points: number;
   reviews: number; joinDate: string;
@@ -67,7 +74,6 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   bookTimeSlots = ['10:00 AM', '11:00 AM', '01:00 PM', '02:30 PM', '04:00 PM'];
   paymentOptions = [
     { id: 'gcash', label: 'GCash', icon: 'fas fa-mobile-alt' },
-    { id: 'maya', label: 'PayMaya', icon: 'fas fa-wallet' },
     { id: 'card', label: 'Credit/Debit Card', icon: 'fas fa-credit-card' },
     { id: 'cash', label: 'Pay Onsite', icon: 'fas fa-money-bill-wave' }
   ];
@@ -147,104 +153,16 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     { icon: 'fas fa-award', value: '5+', label: 'Years Experience' },
   ];
 
-  services: Service[] = [
-    {
-      name: 'Bridal Makeup', category: 'Bridal', icon: 'fas fa-heart',
-      price: 4500, duration: '2–3 hrs', rating: '5.0', ratingCount: 98,
-      bookings: 120, wishlisted: false,
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500&h=380&fit=crop&crop=face',
-      desc: 'A timeless, radiant look crafted for your most special day.',
-      fullDesc: 'Our bridal makeup is designed to make you look absolutely flawless on your wedding day. Using premium long-lasting products tailored to your skin tone and theme, including a pre-wedding trial session.',
-      includes: ['Pre-wedding consultation', 'Trial makeup session', 'Premium long-lasting products', 'Touch-up kit included', 'Hair pinning assistance']
-    },
-    {
-      name: 'Event Glam', category: 'Event', icon: 'fas fa-star',
-      price: 2200, duration: '1–2 hrs', rating: '4.9', ratingCount: 143,
-      bookings: 200, wishlisted: false,
-      image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&h=380&fit=crop&crop=face',
-      desc: 'Glamorous, long-lasting looks perfect for any celebration.',
-      fullDesc: 'Look your absolute best at any event — debuts, galas, proms, or parties. Our event makeup is crafted to last the entire night while keeping you photo-ready and stunning.',
-      includes: ['Custom look consultation', 'Full face application', 'Long-wear setting spray', 'Lash application', 'Color-matched foundation']
-    },
-    {
-      name: 'Natural Glow', category: 'Natural', icon: 'fas fa-leaf',
-      price: 1800, duration: '1 hr', rating: '4.8', ratingCount: 112,
-      bookings: 180, wishlisted: false,
-      image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=380&fit=crop&crop=face',
-      desc: 'Soft, effortless beauty that enhances your natural features.',
-      fullDesc: 'Perfect for everyday occasions, dates, or casual events. Our natural glow service enhances your best features while keeping the look fresh, light, and authentically you.',
-      includes: ['Skin prep & hydration', 'Natural-finish foundation', 'Subtle contouring', 'Tinted lip treatment', 'All-day setting spray']
-    },
-    {
-      name: 'Photoshoot Look', category: 'Editorial', icon: 'fas fa-camera',
-      price: 2500, duration: '1.5–2 hrs', rating: '4.9', ratingCount: 67,
-      bookings: 90, wishlisted: false,
-      image: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=500&h=380&fit=crop&crop=face',
-      desc: 'Camera-ready, editorial-quality finish for your shoot.',
-      fullDesc: 'Crafted specifically for HD photography and videography. We use camera-optimized products and techniques that translate beautifully on screen, for models, content creators, and portfolio shoots.',
-      includes: ['HD-ready application', 'Color-correcting base', 'Contouring & highlighting', 'Waterproof eye makeup', 'On-set touch-up support']
-    }
-  ];
+  services: Service[] = [];
+  private serviceSub?: Subscription;
+  artists: Artist[] = [];
+  private artistSub?: Subscription;
 
-  artists: Artist[] = [
-    {
-      name: 'Anika Reyes', firstName: 'Anika', role: 'Lead Bridal Artist',
-      rating: '5.0', exp: '8 yrs', clients: 300,
-      image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=460&fit=crop&crop=face',
-      specialties: ['Bridal', 'Glam', 'Airbrush']
-    },
-    {
-      name: 'Sofia Cruz', firstName: 'Sofia', role: 'Editorial Specialist',
-      rating: '4.9', exp: '6 yrs', clients: 220,
-      image: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=400&h=460&fit=crop&crop=face',
-      specialties: ['Editorial', 'SFX', 'Event']
-    },
-    {
-      name: 'Mia Santos', firstName: 'Mia', role: 'Natural Beauty Expert',
-      rating: '4.8', exp: '5 yrs', clients: 180,
-      image: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=400&h=460&fit=crop&crop=face',
-      specialties: ['Natural', 'Skincare', 'Glam']
-    },
-    {
-      name: 'Leila Torres', firstName: 'Leila', role: 'Event & Debut Artist',
-      rating: '4.9', exp: '7 yrs', clients: 260,
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=460&fit=crop&crop=face',
-      specialties: ['Debut', 'Event', 'Korean']
-    }
-  ];
+  allPortfolio: PortfolioImage[] = [];
+  private portfolioSub?: Subscription;
 
-  allPortfolio: PortfolioImage[] = [
-    { url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=500&fit=crop&crop=face', label: 'Bridal Glow', tag: 'bridal' },
-    { url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop&crop=face', label: 'Event Glam', tag: 'glam' },
-    { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=500&fit=crop&crop=face', label: 'Natural Look', tag: 'natural' },
-    { url: 'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=400&h=400&fit=crop&crop=face', label: 'Editorial', tag: 'editorial' },
-    { url: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=500&fit=crop&crop=face', label: 'Photoshoot', tag: 'editorial' },
-    { url: 'https://images.unsplash.com/photo-1523263685509-57c1d050d19b?w=400&h=400&fit=crop&crop=face', label: 'Bridal Party', tag: 'bridal' },
-    { url: 'https://images.unsplash.com/photo-1500840216050-6ffa99d75160?w=400&h=500&fit=crop&crop=face', label: 'Soft Glam', tag: 'natural' },
-    { url: 'https://images.unsplash.com/photo-1571646034647-52e6ea84b28c?w=400&h=400&fit=crop&crop=face', label: 'Debut Look', tag: 'glam' },
-    { url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&crop=face', label: 'Glamour Shot', tag: 'glam' },
-    { url: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=400&h=400&fit=crop&crop=face', label: 'Fashion Look', tag: 'editorial' },
-    { url: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=400&h=500&fit=crop&crop=face', label: 'Fresh Bride', tag: 'bridal' },
-    { url: 'https://images.unsplash.com/photo-1491349174775-aaaefdd81942?w=400&h=400&fit=crop&crop=face', label: 'Nude Look', tag: 'natural' },
-  ];
-
-  testimonials: Testimonial[] = [
-    {
-      name: 'Sarah L.', type: 'Bride', date: 'March 2026',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
-      quote: 'Super nice and long-lasting makeup! I felt like a princess on my wedding day. Absolutely worth every peso!'
-    },
-    {
-      name: 'Jessica M.', type: 'Debut Client', date: 'February 2026',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-      quote: 'Amazing work! My makeup was perfect for my debut. So many compliments! Will definitely rebook Lumière.'
-    },
-    {
-      name: 'Anne R.', type: 'Photoshoot', date: 'January 2026',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
-      quote: 'Very professional & so talented. The photoshoot look was flawless on camera. Highly recommended!'
-    },
-  ];
+  testimonials: Testimonial[] = [];
+  private reviewSub?: Subscription;
 
   ratingBars = [
     { label: '5★', pct: 92 },
@@ -305,11 +223,52 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private userService: UserService,
+    private bookingService: BookingService,
+    private paymentService: PaymentService,
+    private serviceItemService: ServiceItemService,
+    private artistPortfolioService: ArtistPortfolioService,
+    private reviewService: ReviewService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
+
+    this.artistSub = this.userService.getUsersByRoleRealtime('artist').subscribe({
+      next: (artistUsers) => {
+        console.log('Dashboard Data - Found Artists:', artistUsers.length);
+        
+        // Only show artists that have been approved by the admin
+        const activeArtists = artistUsers.filter(u => u.status === 'active');
+        
+        this.artists = activeArtists.map(u => {
+          let sp = Array.isArray(u.services) ? u.services.map((s:any) => s.name).filter((n:any) => !!n) : [];
+          if (sp.length === 0) sp = [u.specialty || 'General'];
+          
+          return {
+            name: u.name || 'Artist',
+            firstName: u.firstName || u.name?.split(' ')[0] || 'Artist',
+            role: u.specialty || 'Professional Makeup Artist',
+            image: u.profilePicture || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=460&fit=crop&crop=face',
+            rating: Number(u.rating || 0).toFixed(1),
+            exp: '5 yrs',
+            clients: Number(u.ratingCount || 0),
+            specialties: sp
+          };
+        });
+
+        // Also update filteredArtists if a service is already selected
+        if (this.bookService) {
+          const s = this.services.find(svc => svc.name === this.bookService);
+          if (s) this.selectService(s);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Dashboard Artist Subscription Error:', err);
+        this.showToast('Error', 'Failed to sync artists from database.', 'fas fa-exclamation-triangle', 'error');
+      }
+    });
 
     // Listen to Firebase Auth state
     this.authService.currentUser$.subscribe(async (user) => {
@@ -318,6 +277,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
           const userData = await this.userService.getUser(user.uid);
           if (userData && userData.role === 'client') {
             this.currentUser = {
+              uid: user.uid,
               name: userData.name || 'Guest User',
               email: userData.email || '',
               phone: userData.phone || '',
@@ -348,8 +308,46 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.minBookDate = today.toISOString().split('T')[0];
     this.bookDate = this.minBookDate;
 
-    this.filteredPortfolio = [...this.allPortfolio];
-    this.updateDisplayed();
+    this.serviceSub = this.serviceItemService.getAllServicesRealtime().subscribe({
+      next: (svcs) => {
+        this.services = svcs.filter(s => s.status !== 'inactive').map(s => ({
+          name: s.name, category: 'General', icon: s.icon || 'fas fa-star',
+          price: Number(s.price), duration: s.duration || '1 hr', rating: '5.0', ratingCount: 0,
+          bookings: s.bookings || 0, wishlisted: false,
+          image: s.imageUrl || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=380&fit=crop&crop=face',
+          desc: s.desc,
+          fullDesc: s.desc,
+          includes: ['Consultation', 'Full face application']
+        }));
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.portfolioSub = this.artistPortfolioService.getAllPortfoliosRealtime().subscribe({
+      next: (items) => {
+        this.allPortfolio = items.map(item => ({
+          url: item.imageUrl,
+          label: item.title,
+          tag: item.serviceCategory?.toLowerCase() || 'general'
+        }));
+        this.filteredPortfolio = [...this.allPortfolio];
+        this.updateDisplayed();
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.reviewSub = this.reviewService.getAllReviewsRealtime().subscribe({
+      next: (reviews) => {
+        this.testimonials = reviews.map(r => ({
+          name: r.clientName || 'Client',
+          type: r.service || 'Service',
+          date: r.date || new Date(r.createdAt).toLocaleDateString(),
+          avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&face',
+          quote: r.comment
+        }));
+        this.cdr.detectChanges();
+      }
+    });
 
     // Auto-collapse sidebar on small screens
     if (window.innerWidth <= 700) {
@@ -359,6 +357,10 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.toastTimer) clearTimeout(this.toastTimer);
+    if (this.artistSub) this.artistSub.unsubscribe();
+    if (this.serviceSub) this.serviceSub.unsubscribe();
+    if (this.portfolioSub) this.portfolioSub.unsubscribe();
+    if (this.reviewSub) this.reviewSub.unsubscribe();
     document.body.style.overflow = '';
   }
 
@@ -607,7 +609,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     
     this.showToast('Processing', `Sending request to ${this.bookArtist}...`, 'fas fa-spinner fa-spin', 'success');
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const ticketId = 'BK-' + Math.floor(100000 + Math.random() * 900000);
       let displayPayment = this.bookPayment;
       if (this.bookPayment !== 'Pay Onsite') {
@@ -616,28 +618,60 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         displayPayment += ` (${masked})`;
       }
 
-      const ticket = {
-        id: ticketId,
-        date: this.bookDate,
-        time: this.bookTime || 'TBD',
-        serviceName: this.bookService,
-        artistName: this.bookArtist,
-        payment: displayPayment,
-        price: this.getServicePrice(this.bookService),
-        status: 'UPCOMING'
-      };
-      
-      this.myTickets.unshift(ticket);
-      this.generatedTicket = ticket;
-      
-      this.bookDate = '';
-      this.bookTime = '';
-      this.bookService = '';
-      this.bookArtist = null;
-      this.bookPayment = '';
-      this.bookPaymentAccount = '';
-      this.bookNotes = '';
-      this.filteredArtists = [];
+      const bookingDateStr = `${this.bookDate} ${this.bookTime || 'TBD'}`;
+      const amountStr = this.getServicePrice(this.bookService).toLocaleString();
+
+      try {
+        await this.bookingService.addBooking({
+          clientName: this.currentUser?.name || 'Guest',
+          clientId: this.currentUser?.uid,
+          serviceName: this.bookService,
+          artistName: this.bookArtist!,
+          date: bookingDateStr,
+          amount: amountStr,
+          paymentMethod: this.bookPayment,
+          paymentAccount: this.bookPaymentAccount,
+          status: 'pending',
+          createdAt: new Date()
+        });
+
+        // Also save explicitly to the payments collection
+        await this.paymentService.addPayment({
+          clientName: this.currentUser?.name || 'Guest',
+          clientId: this.currentUser?.uid,
+          amount: amountStr,
+          paymentMethod: this.bookPayment,
+          paymentAccount: this.bookPaymentAccount,
+          status: 'pending',
+          createdAt: new Date()
+        });
+
+        const ticket = {
+          id: ticketId,
+          date: this.bookDate,
+          time: this.bookTime || 'TBD',
+          serviceName: this.bookService,
+          artistName: this.bookArtist,
+          payment: displayPayment,
+          price: this.getServicePrice(this.bookService),
+          status: 'UPCOMING'
+        };
+        
+        this.myTickets.unshift(ticket);
+        this.generatedTicket = ticket;
+        
+        this.bookDate = '';
+        this.bookTime = '';
+        this.bookService = '';
+        this.bookArtist = null;
+        this.bookPayment = '';
+        this.bookPaymentAccount = '';
+        this.bookNotes = '';
+        this.filteredArtists = [];
+      } catch (err) {
+        this.showToast('Error', 'Failed to save booking. Please try again.', 'fas fa-exclamation-triangle', 'error');
+        console.error(err);
+      }
     }, 1500);
   }
 

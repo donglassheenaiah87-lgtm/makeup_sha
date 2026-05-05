@@ -308,8 +308,8 @@
 
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(184,106,138,0.22);
-  border-radius: 28px;
-  padding: 2.8rem 2.6rem 2.4rem;
+  border-radius: 24px;
+  padding: 1.8rem 2.2rem 1.6rem;
   backdrop-filter: blur(30px);
 
   box-shadow:
@@ -340,12 +340,12 @@
 .mob-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 700; color: var(--champ-300); letter-spacing: 0.04em; }
 
 /* Card header */
-.card-head { text-align: center; margin-bottom: 2rem; }
+.card-head { text-align: center; margin-bottom: 1.2rem; }
 @keyframes gemPop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .card-gem { font-size: 2.2rem; margin-bottom: 0.6rem; display: block; animation: gemPop 0.5s var(--ease-spring) 0.3s both; }
 .card-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 2.1rem; font-weight: 700;
+  font-size: 1.8rem; font-weight: 700;
   color: #fff;
   letter-spacing: 0.02em; line-height: 1.1;
   text-shadow: 0 2px 12px rgba(0,0,0,0.4);
@@ -354,7 +354,7 @@
 
 /* ── Form fields ── */
 .login-form { display: flex; flex-direction: column; }
-.field { margin-bottom: 14px; }
+.field { margin-bottom: 10px; }
 
 .lbl {
   display: block;
@@ -381,7 +381,7 @@
 
 .inp input {
   width: 100%;
-  padding: 0.88rem 1rem 0.88rem 2.8rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   background: rgba(255,255,255,0.07);
   border: 1.5px solid rgba(184,106,138,0.3);
   border-radius: 13px;
@@ -413,7 +413,7 @@
 .remember {
   display: flex; align-items: center;
   gap: 10px; cursor: pointer;
-  user-select: none; margin-bottom: 18px; margin-top: 2px;
+  user-select: none; margin-bottom: 14px; margin-top: 2px;
 }
 .cb-raw { display: none; }
 .cb-box {
@@ -454,7 +454,7 @@
 /* Sign In button */
 .btn-sign {
   display: flex; align-items: center; justify-content: center;
-  gap: 9px; width: 100%; padding: 0.95rem;
+  gap: 9px; width: 100%; padding: 0.8rem;
   background: var(--grad-primary);
   color: #fff; border: none; border-radius: 13px;
   font-family: 'DM Sans', sans-serif;
@@ -493,7 +493,7 @@
 /* Divider */
 .divider {
   display: flex; align-items: center; gap: 10px;
-  margin: 1.3rem 0 0.9rem;
+  margin: 1rem 0 0.8rem;
   color: rgba(205,147,171,0.4);
   font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
 }
@@ -505,7 +505,7 @@
 /* Guest button */
 .btn-guest {
   display: flex; align-items: center; justify-content: center;
-  gap: 9px; width: 100%; padding: 0.85rem;
+  gap: 9px; width: 100%; padding: 0.75rem;
   background: rgba(255,255,255,0.04);
   border: 1.5px dashed rgba(184,106,138,0.28);
   border-radius: 13px;
@@ -525,7 +525,7 @@
 }
 
 /* Footer */
-.reg-link { text-align: center; font-size: 0.82rem; color: #e0bfcc; margin-top: 1.1rem; font-weight: 500; }
+.reg-link { text-align: center; font-size: 0.8rem; color: #e0bfcc; margin-top: 0.8rem; font-weight: 500; }
 .reg-link a {
   color: var(--champ-300); font-weight: 600;
   text-decoration: none;

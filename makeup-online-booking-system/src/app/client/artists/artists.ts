@@ -1,8 +1,10 @@
 // artists.ts — Enhanced with sidebar, artist modal, sort, filter icons
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { UserService } from '../../core/user.service';
+import { Subscription } from 'rxjs';
 
 interface Artist {
   name: string; firstName: string; role: string; image: string;
@@ -17,7 +19,7 @@ interface Artist {
   templateUrl: './artists.html',
   styleUrls: ['./artists.css']
 })
-export class ClientArtistsComponent implements OnInit {
+export class ClientArtistsComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   searchQuery = ''; activeFilter = 'All'; sortBy = 'default';
   modalOpen = false; selectedArtist: Artist | null = null;
@@ -31,56 +33,8 @@ export class ClientArtistsComponent implements OnInit {
     'Natural': 'fas fa-leaf', 'Editorial': 'fas fa-camera', 'SFX': 'fas fa-magic'
   };
 
-  allArtists: Artist[] = [
-    {
-      name: 'Anika Reyes', firstName: 'Anika', role: 'Lead Bridal Artist',
-      rating: '5.0', exp: '8 yrs', clients: 300, bookings: 450, available: true,
-      image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=480&h=560&fit=crop&crop=face',
-      specialties: ['Bridal', 'Glam', 'Airbrush'],
-      bio: 'Anika is our lead bridal artist with 8 years of experience crafting flawless, timeless bridal looks. She specializes in airbrush techniques and has worked with 300+ brides across the Philippines.',
-      instagram: '@anika.mua'
-    },
-    {
-      name: 'Sofia Cruz', firstName: 'Sofia', role: 'Editorial Specialist',
-      rating: '4.9', exp: '6 yrs', clients: 220, bookings: 310, available: true,
-      image: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=480&h=560&fit=crop&crop=face',
-      specialties: ['Editorial', 'SFX', 'Event'],
-      bio: 'Sofia is a creative force behind our editorial and SFX looks. With a background in fashion photography makeup, she brings artistic vision to every project.',
-      instagram: '@sofia.artistry'
-    },
-    {
-      name: 'Mia Santos', firstName: 'Mia', role: 'Natural Beauty Expert',
-      rating: '4.8', exp: '5 yrs', clients: 180, bookings: 260, available: false,
-      image: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=480&h=560&fit=crop&crop=face',
-      specialties: ['Natural', 'Skincare', 'Glam'],
-      bio: 'Mia believes in enhancing your natural beauty, not masking it. A skincare-first approach makes her the go-to for brides and clients wanting a fresh, effortless look.',
-      instagram: '@mia.glow'
-    },
-    {
-      name: 'Leila Torres', firstName: 'Leila', role: 'Event & Debut Artist',
-      rating: '4.9', exp: '7 yrs', clients: 260, bookings: 390, available: true,
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=480&h=560&fit=crop&crop=face',
-      specialties: ['Debut', 'Event', 'Korean'],
-      bio: 'Leila is our event and debut specialist, known for creating dreamy 18th birthday looks and stunning event glam. She is also a certified Korean makeup technique artist.',
-      instagram: '@leila.beauty'
-    },
-    {
-      name: 'Ria Mendoza', firstName: 'Ria', role: 'Creative & SFX Artist',
-      rating: '4.9', exp: '4 yrs', clients: 120, bookings: 180, available: true,
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=480&h=560&fit=crop&crop=face',
-      specialties: ['SFX', 'Editorial', 'Avant-garde'],
-      bio: 'Ria brings fantasy to life with her creative and SFX makeup artistry. From theatrical productions to cosplay and film, her skills are truly transformative.',
-      instagram: '@ria.sfx'
-    },
-    {
-      name: 'Cara Lim', firstName: 'Cara', role: 'Photoshoot Specialist',
-      rating: '4.8', exp: '5 yrs', clients: 200, bookings: 290, available: true,
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=480&h=560&fit=crop&crop=face',
-      specialties: ['Editorial', 'Natural', 'Glam'],
-      bio: 'Cara specializes in photoshoot and content creator makeup, ensuring every look is camera-ready and translates beautifully in photos and video.',
-      instagram: '@cara.glam'
-    },
-  ];
+  private artistSub?: Subscription;
+  allArtists: Artist[] = [];
 
   sortedArtists: Artist[] = [];
 
@@ -93,11 +47,49 @@ export class ClientArtistsComponent implements OnInit {
     });
   }
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private userService: UserService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
-    this.sortedArtists = [...this.allArtists];
+    this.artistSub = this.userService.getAllUsersRealtime().subscribe({
+      next: (allUsers) => {
+        console.log('Artists Page Data - Total Users:', allUsers.length);
+        const artistUsers = allUsers.filter(u => u.role?.toLowerCase() === 'artist');
+        console.log('Artists Page Data - Found Artists:', artistUsers.length);
+        this.allArtists = artistUsers.map(u => {
+        let sp = Array.isArray(u.services) ? u.services.map((s:any) => s.name).filter((n:any) => !!n) : [];
+        if (sp.length === 0) sp = [u.specialty || 'General'];
+        
+        return {
+          name: u.name || 'Artist',
+          firstName: u.firstName || u.name?.split(' ')[0] || 'Artist',
+          role: u.specialty || 'Professional Makeup Artist',
+          image: u.profilePicture || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=460&fit=crop&crop=face',
+          rating: Number(u.rating || 0).toFixed(1),
+          exp: '5 yrs',
+          clients: Number(u.ratingCount || 0),
+          specialties: sp,
+          bio: u.bio || 'Experienced makeup artist dedicated to making you look your best.',
+          instagram: u.social || '',
+          bookings: 0,
+          available: true
+        };
+      });
+      this.sortedArtists = [...this.allArtists];
+      this.applySorting();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error fetching artists:', error);
+        this.showToast('Fetch Error', 'Could not load artists list.', 'fas fa-exclamation-triangle', 'error');
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.artistSub) this.artistSub.unsubscribe();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    document.body.style.overflow = '';
   }
 
   setFilter(f: string) { this.activeFilter = f; }
