@@ -101,6 +101,19 @@ export class UserService {
     });
   }
 
+  getArtistsFromArtistsCollectionRealtime(): Observable<any[]> {
+    return new Observable<any[]>(subscriber => {
+      const artistsRef = collection(this.firestore, 'artists');
+      const unsubscribe = onSnapshot(artistsRef, (snap) => {
+        const artists = snap.docs.map(d => d.data());
+        subscriber.next(artists);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
   getAllUsersRealtime(): Observable<UserData[]> {
     return new Observable<UserData[]>(subscriber => {
       const usersRef = collection(this.firestore, 'users');

@@ -82,6 +82,25 @@ export class BookingService {
     return snap.docs.map(d => d.data() as BookingData);
   }
 
+  // ── Get bookings for a specific client (Real-time) ──
+  getBookingsByClientRealtime(clientName: string, clientId?: string): Observable<BookingData[]> {
+    return new Observable<BookingData[]>(subscriber => {
+      const bookingsRef = collection(this.firestore, 'bookings');
+      // If clientId is provided, we can query by clientId. Otherwise by clientName.
+      // But let's just query by clientId if available, else fallback to clientName
+      const q = clientId 
+        ? query(bookingsRef, where('clientId', '==', clientId))
+        : query(bookingsRef, where('clientName', '==', clientName));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const bookings = snap.docs.map(d => d.data() as BookingData);
+        subscriber.next(bookings);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
   // ── Get bookings for a specific artist ──
   async getBookingsByArtist(artistName: string): Promise<BookingData[]> {
     const bookingsRef = collection(this.firestore, 'bookings');

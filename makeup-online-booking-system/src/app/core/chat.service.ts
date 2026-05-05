@@ -54,6 +54,21 @@ export class ChatService {
     });
   }
 
+  // ── Get Conversations for Client ──
+  getConversationsForClient(clientId: string): Observable<Conversation[]> {
+    return new Observable<Conversation[]>(subscriber => {
+      const convRef = collection(this.firestore, 'conversations');
+      const q = query(convRef, where('clientId', '==', clientId));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const convs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Conversation));
+        subscriber.next(convs);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
   // ── Send Message ──
   async sendMessage(conversationId: string, message: Message, unreadArtist: number, unreadClient: number, lastMessage: string, lastTime: string) {
     const docRef = doc(this.firestore, `conversations/${conversationId}`);

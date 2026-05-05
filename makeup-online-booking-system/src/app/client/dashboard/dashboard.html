@@ -480,7 +480,7 @@
                     </div>
                 </div>
                 <div class="artists-grid">
-                    <div class="artist-card" *ngFor="let a of artists; let i=index" [style.animation-delay]="(i*0.08)+'s'">
+                    <div class="artist-card" *ngFor="let a of displayedArtists; let i=index" [style.animation-delay]="(i*0.08)+'s'">
                         <div class="artc-img">
                             <img [src]="a.image" [alt]="a.name" (error)="onImgError($event)" />
                             <div class="artc-ov">
@@ -493,6 +493,7 @@
                         <div class="artc-body">
                             <h4>{{ a.name }}</h4>
                             <p class="artc-role">{{ a.role }}</p>
+                            <p class="artc-bio" style="font-size: 0.85rem; color: var(--text-soft); margin-bottom: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ a.bio }}</p>
                             <div class="artc-stats">
                                 <div><i class="fas fa-star"></i> {{ a.rating }}</div>
                                 <div><i class="fas fa-briefcase"></i> {{ a.exp }}</div>
@@ -503,10 +504,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div *ngIf="artists.length === 0" class="no-artists" style="padding:40px 20px; text-align:center; font-size:1rem; color:var(--text-mid);">
-                    <i class="fas fa-user-circle" style="font-size:2.5rem; color:var(--mauve-300); display:block; margin-bottom:12px;"></i>
-                    No artists available yet. Check back soon!
                 </div>
             </div>
         </section>

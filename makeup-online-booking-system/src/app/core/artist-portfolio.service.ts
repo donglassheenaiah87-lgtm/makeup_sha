@@ -25,7 +25,7 @@ export interface PortfolioItem {
   providedIn: 'root'
 })
 export class ArtistPortfolioService {
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore) { }
 
   // ── Add Item to Portfolio (Artist) ──
   async addPortfolioItem(data: Omit<PortfolioItem, 'id'>) {

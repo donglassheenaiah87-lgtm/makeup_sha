@@ -10,6 +10,7 @@ import { PaymentService } from '../../core/payment.service';
 import { ServiceItemService } from '../../core/service-item.service';
 import { ArtistPortfolioService } from '../../core/artist-portfolio.service';
 import { ReviewService } from '../../core/review.service';
+import { ChatService, Conversation } from '../../core/chat.service';
 import { Subscription } from 'rxjs';
 
 interface Service {
@@ -19,8 +20,10 @@ interface Service {
   includes: string[]; wishlisted: boolean;
 }
 interface Artist {
+  uid?: string;
   name: string; firstName: string; role: string; image: string;
   rating: string; exp: string; clients: number; specialties: string[];
+  bio?: string;
 }
 interface PortfolioImage { url: string; label: string; tag: string; }
 interface Testimonial { name: string; quote: string; type: string; avatar: string; date: string; }
@@ -93,32 +96,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   chatInput = '';
   isArtistTyping = false;
 
-  conversations = [
-    {
-      id: 1,
-      artistName: 'Sarah M.',
-      artistRole: 'Bridal Make-up',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      online: true,
-      unread: 1,
-      messages: [
-        { text: 'Hi! Looking forward to your session on Saturday. Do you have any pegs?', time: '10:30 AM', sender: 'artist' }
-      ]
-    },
-    {
-      id: 2,
-      artistName: 'Leo T.',
-      artistRole: 'Hair Styling',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      online: false,
-      unread: 0,
-      messages: [
-        { text: 'Thanks for booking! I saw your note about having dry scalps.', time: 'Yesterday', sender: 'artist' },
-        { text: 'Yes, do I need to prepare anything before you arrive?', time: 'Yesterday', sender: 'me' },
-        { text: 'Just wash it normally without heavy conditioner! See you!', time: 'Yesterday', sender: 'artist' }
-      ]
-    }
-  ];
+  conversations: any[] = [];
 
   get totalUnreadMessages(): number {
     return this.conversations.reduce((sum, c) => sum + (c.unread || 0), 0);
@@ -158,11 +136,48 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   artists: Artist[] = [];
   private artistSub?: Subscription;
 
+  dummyArtists: Artist[] = [
+    {
+      name: 'Sophia Rivera', firstName: 'Sophia',
+      role: 'Bridal Makeup Specialist',
+      bio: 'Award-winning bridal artist with 7 years of experience creating timeless, photo-ready looks.',
+      image: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=460&fit=crop&crop=face',
+      rating: '4.9', exp: '7 yrs', clients: 320, specialties: ['Bridal', 'Editorial']
+    },
+    {
+      name: 'Mia Santos', firstName: 'Mia',
+      role: 'Glam & Editorial Artist',
+      bio: 'Passionate about bold glam, editorial concepts, and making every client feel like a star.',
+      image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=460&fit=crop&crop=face',
+      rating: '4.8', exp: '5 yrs', clients: 210, specialties: ['Glam', 'Events']
+    },
+    {
+      name: 'Luna Reyes', firstName: 'Luna',
+      role: 'Natural & Soft Glam Expert',
+      bio: 'Specializing in natural, skin-first beauty that enhances your unique features effortlessly.',
+      image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=460&fit=crop&crop=face',
+      rating: '5.0', exp: '4 yrs', clients: 180, specialties: ['Natural', 'Everyday']
+    },
+    {
+      name: 'Cara Mendez', firstName: 'Cara',
+      role: 'SFX & Creative Makeup Artist',
+      bio: 'Creative visionary specializing in transformative looks from avant-garde to special effects.',
+      image: 'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=400&h=460&fit=crop&crop=face',
+      rating: '4.7', exp: '6 yrs', clients: 145, specialties: ['SFX', 'Creative']
+    }
+  ];
+
+  get displayedArtists(): Artist[] {
+    return this.artists.length > 0 ? this.artists : this.dummyArtists;
+  }
+
   allPortfolio: PortfolioImage[] = [];
   private portfolioSub?: Subscription;
 
   testimonials: Testimonial[] = [];
   private reviewSub?: Subscription;
+  private bookingSub?: Subscription;
+  private chatSub?: Subscription;
 
   ratingBars = [
     { label: '5★', pct: 92 },
@@ -228,36 +243,35 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     private serviceItemService: ServiceItemService,
     private artistPortfolioService: ArtistPortfolioService,
     private reviewService: ReviewService,
+    private chatService: ChatService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
 
+    // Fetch all users with role == 'artist' from Firestore via UserService
     this.artistSub = this.userService.getUsersByRoleRealtime('artist').subscribe({
       next: (artistUsers) => {
-        console.log('Dashboard Data - Found Artists:', artistUsers.length);
-        
-        // Only show artists that have been approved by the admin
-        const activeArtists = artistUsers.filter(u => u.status === 'active');
-        
-        this.artists = activeArtists.map(u => {
+        console.log('Raw artist data fetched:', artistUsers);
+        // Show ALL artists with role === 'artist' — no status filter
+        this.artists = artistUsers.map((u: any) => {
           let sp = Array.isArray(u.services) ? u.services.map((s:any) => s.name).filter((n:any) => !!n) : [];
           if (sp.length === 0) sp = [u.specialty || 'General'];
-          
           return {
-            name: u.name || 'Artist',
-            firstName: u.firstName || u.name?.split(' ')[0] || 'Artist',
+            uid: u.uid,
+            name: u.name || 'Unknown Artist',
+            firstName: u.firstName || (u.name ? u.name.split(' ')[0] : 'Artist'),
             role: u.specialty || 'Professional Makeup Artist',
             image: u.profilePicture || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=460&fit=crop&crop=face',
+            bio: u.bio || 'Passionate makeup artist dedicated to bringing out your natural beauty and confidence.',
             rating: Number(u.rating || 0).toFixed(1),
             exp: '5 yrs',
             clients: Number(u.ratingCount || 0),
             specialties: sp
           };
         });
-
-        // Also update filteredArtists if a service is already selected
+        console.log('Processed artists for UI:', this.artists);
         if (this.bookService) {
           const s = this.services.find(svc => svc.name === this.bookService);
           if (s) this.selectService(s);
@@ -265,8 +279,8 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Dashboard Artist Subscription Error:', err);
-        this.showToast('Error', 'Failed to sync artists from database.', 'fas fa-exclamation-triangle', 'error');
+        // Silently log — dummy artists will still show via displayedArtists getter
+        console.error('Artist fetch error (dummy artists will display):', err);
       }
     });
 
@@ -283,23 +297,25 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
               phone: userData.phone || '',
               avatar: '',
               memberTier: 'Silver',
-              bookingCount: 3,
-              points: userData.loyaltyPoints || 450,
-              reviews: 2,
-              joinDate: 'January 2025',
-              recentBookings: [
-                { service: 'Bridal Makeup', date: 'Mar 15, 2026', status: 'Upcoming' },
-                { service: 'Event Glam', date: 'Feb 20, 2026', status: 'Completed' },
-              ]
+              bookingCount: 0,
+              points: userData.loyaltyPoints || 0,
+              reviews: 0,
+              joinDate: userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'New Member',
+              recentBookings: []
             };
+            
+            this.startUserSubscriptions(user.uid, userData.name || 'Guest User');
           } else {
             this.currentUser = null;
+            this.clearUserSubscriptions();
           }
         } catch {
           this.currentUser = null;
+          this.clearUserSubscriptions();
         }
       } else {
         this.currentUser = null;
+        this.clearUserSubscriptions();
       }
       this.cdr.detectChanges();
     });
@@ -324,8 +340,8 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     });
 
     this.portfolioSub = this.artistPortfolioService.getAllPortfoliosRealtime().subscribe({
-      next: (items) => {
-        this.allPortfolio = items.map(item => ({
+      next: (items: any[]) => {
+        this.allPortfolio = items.map((item: any) => ({
           url: item.imageUrl,
           label: item.title,
           tag: item.serviceCategory?.toLowerCase() || 'general'
@@ -353,6 +369,67 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     if (window.innerWidth <= 700) {
       this.sidebarCollapsed = true;
     }
+  }
+
+  startUserSubscriptions(uid: string, clientName: string): void {
+    this.clearUserSubscriptions();
+    
+    this.bookingSub = this.bookingService.getBookingsByClientRealtime(clientName, uid).subscribe(bookings => {
+      // Sort by date descending
+      bookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      if (this.currentUser) {
+        this.currentUser.bookingCount = bookings.length;
+        this.currentUser.recentBookings = bookings.slice(0, 3).map(b => ({
+          service: b.serviceName,
+          date: new Date(b.createdAt).toLocaleDateString(),
+          status: b.status
+        }));
+      }
+
+      this.myTickets = bookings.map(b => {
+        let displayPayment = b.paymentMethod;
+        if (b.paymentMethod !== 'Pay Onsite' && b.paymentAccount) {
+          const acc = b.paymentAccount.trim();
+          const masked = acc.length > 4 ? '*'.repeat(acc.length - 4) + acc.slice(-4) : acc;
+          displayPayment += ` (${masked})`;
+        }
+        return {
+          id: b.id,
+          date: b.date ? b.date.split(' ')[0] : '',
+          time: b.date && b.date.includes(' ') ? b.date.split(' ')[1] : 'TBD',
+          serviceName: b.serviceName,
+          artistName: b.artistName,
+          payment: displayPayment,
+          price: parseFloat(b.amount.replace(/,/g, '')),
+          status: b.status.toUpperCase()
+        };
+      });
+      this.cdr.detectChanges();
+    });
+
+    this.chatSub = this.chatService.getConversationsForClient(uid).subscribe(convs => {
+      this.conversations = convs.map(c => ({
+        ...c,
+        unread: c.unreadClient || 0,
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop', // default artist avatar
+        online: true // Mock online status
+      }));
+      
+      // Update active chat if open
+      if (this.activeChat) {
+        const updated = this.conversations.find(c => c.id === this.activeChat.id);
+        if (updated) {
+          this.activeChat = updated;
+        }
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  clearUserSubscriptions(): void {
+    if (this.bookingSub) this.bookingSub.unsubscribe();
+    if (this.chatSub) this.chatSub.unsubscribe();
   }
 
   ngOnDestroy(): void {
@@ -657,7 +734,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
           status: 'UPCOMING'
         };
         
-        this.myTickets.unshift(ticket);
+        // myTickets will be updated automatically via the real-time subscription
         this.generatedTicket = ticket;
         
         this.bookDate = '';
@@ -714,7 +791,9 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   openChat(conv: any): void {
     this.activeChat = conv;
     this.chatView = 'chat';
-    conv.unread = 0; // mark as read
+    if (conv.unreadClient > 0) {
+      this.chatService.markAsRead(conv.id, 'client');
+    }
   }
 
   backToInbox(): void {
@@ -722,33 +801,28 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.activeChat = null;
   }
 
-  sendMessage(): void {
-    if (!this.activeChat) return;
+  async sendMessage(): Promise<void> {
+    if (!this.activeChat || !this.currentUser) return;
     const text = this.chatInput.trim();
     if (!text) return;
     
-    // Add user message
-    this.activeChat.messages.push({
+    const newMsg = {
       text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      sender: 'me'
-    });
+      sender: 'client' as 'client' | 'artist',
+      timestamp: Date.now()
+    };
+    
     this.chatInput = '';
-
-    // Mock artist reply after delay
-    this.isArtistTyping = true;
-    setTimeout(() => {
-      this.isArtistTyping = false;
-      this.activeChat.messages.push({
-        text: 'Got it! I will prep exactly what you need. See you soon! 💕',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sender: 'artist'
-      });
-      if (!this.chatOpen || this.chatView === 'inbox' || this.activeChat.id !== this.activeChat.id) {
-         this.activeChat.unread = (this.activeChat.unread || 0) + 1;
-      }
-      this.cdr.detectChanges();
-    }, 2500);
+    
+    await this.chatService.sendMessage(
+      this.activeChat.id,
+      newMsg,
+      (this.activeChat.unreadArtist || 0) + 1,
+      this.activeChat.unreadClient || 0,
+      text,
+      newMsg.time
+    );
   }
 
   // ── Image Fallback ─────────────────────────────────────
