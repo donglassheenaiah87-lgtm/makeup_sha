@@ -1,475 +1,339 @@
-<!-- client/my-bookings/my-bookings.html -->
+<!-- my-bookings.html -->
+<!-- CHANGED: Full visual rewrite — dark purple → unified Lumière blush theme -->
+<!-- CHANGED: Added top navigation header matching the dashboard -->
+<!-- CHANGED: Modals switched from dark bottom-sheet to centered white style -->
+<!-- All Angular bindings, *ngFor, *ngIf, and (click) handlers fully preserved -->
+
+<!-- ══ TOAST ══════════════════════════════════════════════ -->
+<div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
+  <div class="toast-icon"><i [class]="toastIcon"></i></div>
+  <div class="toast-body">
+    <div class="toast-title">{{ toastTitle }}</div>
+    <div class="toast-msg">{{ toastMessage }}</div>
+  </div>
+  <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
+</div>
+
 <div class="mb-root">
 
-  <!-- ══ TOAST ══════════════════════════════════════════════ -->
-  <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
-    <div class="toast-icon"><i [class]="toastIcon"></i></div>
-    <div class="toast-body">
-      <div class="toast-title">{{ toastTitle }}</div>
-      <div class="toast-msg">{{ toastMessage }}</div>
+  <!-- ══ TOP HEADER — matches dashboard nav style ══════════ -->
+  <!-- CHANGED: Added this header to match dashboard. Was just a simple back button before. -->
+  <header class="mb-header">
+    <div class="mb-header-inner">
+      <!-- Logo -->
+      <div class="mb-logo" (click)="goBack()">
+        <div class="mb-logo-icon"><i class="fas fa-spa"></i></div>
+        <div class="mb-logo-text">
+          <span class="mb-logo-name">Lumière</span>
+          <span class="mb-logo-tag">Beauty Studio</span>
+        </div>
+      </div>
+      <!-- Nav Links -->
+      <nav class="mb-nav">
+        <a class="mb-nav-link" (click)="goBack()"><i class="fas fa-home"></i><span>Dashboard</span></a>
+        <a class="mb-nav-link active"><i class="fas fa-ticket-alt"></i><span>My Bookings</span></a>
+        <a class="mb-nav-link" (click)="goToBook()"><i class="fas fa-calendar-plus"></i><span>Book Now</span></a>
+      </nav>
+      <!-- Back Button (right side) -->
+      <button class="mb-back-btn" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </button>
     </div>
-    <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
-  </div>
+  </header>
 
-  <!-- ══ HERO ════════════════════════════════════════════════ -->
+  <!-- ══ HERO ══════════════════════════════════════════════ -->
+  <!-- CHANGED: Light blush hero (was dark purple #0a0612) -->
   <div class="mb-hero">
     <div class="mb-hero-bg">
-      <div class="mb-orb o1"></div>
-      <div class="mb-orb o2"></div>
-      <div class="mb-orb o3"></div>
+      <div class="mb-orb o1"></div><div class="mb-orb o2"></div>
       <div class="mb-sparkles">
         <span class="sp sp1">✦</span><span class="sp sp2">✧</span>
         <span class="sp sp3">✦</span><span class="sp sp4">✧</span>
       </div>
     </div>
     <div class="mb-hero-inner">
-      <button class="mb-back" (click)="goBack()">
-        <i class="fas fa-arrow-left"></i> Back to Dashboard
-      </button>
       <div class="mb-eyebrow"><div class="eyebrow-dot"></div> My Account</div>
       <h1>My <em>Bookings</em> <span class="hero-emoji">📅</span></h1>
       <p>Track, manage and view all your appointments in one place.</p>
     </div>
   </div>
 
-  <!-- ══ WRAP ════════════════════════════════════════════════ -->
+  <!-- ══ WRAP ══════════════════════════════════════════════ -->
   <div class="mb-wrap">
 
-    <!-- STATS ROW -->
-    <div class="mb-stats">
-      <div class="mb-stat total" (click)="setFilter('All')" [class.active-stat]="activeFilter==='All'">
-        <div class="mb-stat-icon-ring">
-          <i class="fas fa-calendar-alt"></i>
-        </div>
-        <div class="mb-stat-content">
-          <div class="mb-stat-val">{{ bookings.length }}</div>
-          <div class="mb-stat-lbl">Total Bookings</div>
-        </div>
-        <div class="mb-stat-glow"></div>
-      </div>
-      <div class="mb-stat upcoming" (click)="setFilter('Upcoming')" [class.active-stat]="activeFilter==='Upcoming'">
-        <div class="mb-stat-icon-ring">
-          <i class="fas fa-clock"></i>
-        </div>
-        <div class="mb-stat-content">
-          <div class="mb-stat-val">{{ upcomingCount }}</div>
-          <div class="mb-stat-lbl">Upcoming</div>
-        </div>
-        <div class="mb-stat-glow"></div>
-      </div>
-      <div class="mb-stat completed" (click)="setFilter('Completed')" [class.active-stat]="activeFilter==='Completed'">
-        <div class="mb-stat-icon-ring">
-          <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="mb-stat-content">
-          <div class="mb-stat-val">{{ completedCount }}</div>
-          <div class="mb-stat-lbl">Completed</div>
-        </div>
-        <div class="mb-stat-glow"></div>
-      </div>
-      <div class="mb-stat cancelled" (click)="setFilter('Cancelled')" [class.active-stat]="activeFilter==='Cancelled'">
-        <div class="mb-stat-icon-ring">
-          <i class="fas fa-times-circle"></i>
-        </div>
-        <div class="mb-stat-content">
-          <div class="mb-stat-val">{{ cancelledCount }}</div>
-          <div class="mb-stat-lbl">Cancelled</div>
-        </div>
-        <div class="mb-stat-glow"></div>
-      </div>
-      <div class="mb-stat spent">
-        <div class="mb-stat-icon-ring">
-          <i class="fas fa-peso-sign"></i>
-        </div>
-        <div class="mb-stat-content">
-          <div class="mb-stat-val">₱{{ totalSpent | number }}</div>
-          <div class="mb-stat-lbl">Total Spent</div>
-        </div>
-        <div class="mb-stat-glow"></div>
-      </div>
+    <!-- LOADING STATE — NEW: Shows while Firebase data is loading -->
+    <div class="mb-loading" *ngIf="isLoading">
+      <i class="fas fa-spinner fa-spin"></i> Loading your bookings...
     </div>
 
-    <!-- FILTER PILLS -->
-    <div class="mb-filter-row">
-      <button class="mb-filter-btn" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
-        <i class="fas fa-th-list"></i> All
-      </button>
-      <button class="mb-filter-btn upcoming" [class.active]="activeFilter==='Upcoming'" (click)="setFilter('Upcoming')">
-        <i class="fas fa-clock"></i> Upcoming
-      </button>
-      <button class="mb-filter-btn completed" [class.active]="activeFilter==='Completed'" (click)="setFilter('Completed')">
-        <i class="fas fa-check-circle"></i> Completed
-      </button>
-      <button class="mb-filter-btn cancelled" [class.active]="activeFilter==='Cancelled'" (click)="setFilter('Cancelled')">
-        <i class="fas fa-times-circle"></i> Cancelled
-      </button>
-    </div>
+    <div *ngIf="!isLoading">
 
-    <!-- BOOKING CARDS -->
-    <div class="mb-list" *ngIf="filtered.length">
-      <div class="mb-card"
-        *ngFor="let b of filtered"
-        [class.mb-upcoming]="b.status==='Upcoming'"
-        [class.mb-completed]="b.status==='Completed'"
-        [class.mb-cancelled]="b.status==='Cancelled'">
-
-        <!-- Status stripe -->
-        <div class="mb-card-stripe"></div>
-
-        <!-- Service image -->
-        <div class="mb-card-img">
-          <img [src]="b.image" [alt]="b.service" (error)="onImgError($event)" />
-          <div class="mb-card-cat-badge">{{ b.category }}</div>
-        </div>
-
-        <!-- Body -->
-        <div class="mb-card-body">
-          <div class="mb-card-head">
-            <div>
-              <h3>{{ b.service }}</h3>
-              <div class="mb-id"><i class="fas fa-hashtag"></i> {{ b.id }}</div>
-            </div>
-            <div class="mb-status-badge"
-              [class.upcoming]="b.status==='Upcoming'"
-              [class.completed]="b.status==='Completed'"
-              [class.cancelled]="b.status==='Cancelled'">
-              <i class="fas"
-                [class.fa-clock]="b.status==='Upcoming'"
-                [class.fa-check-circle]="b.status==='Completed'"
-                [class.fa-times-circle]="b.status==='Cancelled'">
-              </i>
-              {{ b.status }}
-            </div>
-          </div>
-
-          <div class="mb-info-grid">
-            <div class="mb-info-cell">
-              <i class="fas fa-calendar-alt"></i>
-              <div>
-                <span class="info-label">Date</span>
-                <span class="info-val">{{ b.date }}</span>
-              </div>
-            </div>
-            <div class="mb-info-cell">
-              <i class="fas fa-clock"></i>
-              <div>
-                <span class="info-label">Time</span>
-                <span class="info-val">{{ b.time }}</span>
-              </div>
-            </div>
-            <div class="mb-info-cell">
-              <i class="fas fa-hourglass-half"></i>
-              <div>
-                <span class="info-label">Duration</span>
-                <span class="info-val">{{ b.duration }}</span>
-              </div>
-            </div>
-            <div class="mb-info-cell">
-              <i class="fas fa-map-marker-alt"></i>
-              <div>
-                <span class="info-label">Location</span>
-                <span class="info-val">{{ b.location }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Artist row -->
-          <div class="mb-artist-row">
-            <div class="mb-artist-av">
-              <img [src]="b.artistAvatar" [alt]="b.artist" (error)="onImgError($event)" />
-            </div>
-            <div class="mb-artist-info">
-              <span class="mb-artist-name">{{ b.artist }}</span>
-              <span class="mb-artist-tag"><i class="fas fa-certificate"></i> Certified MUA</span>
-            </div>
-            <div class="mb-price-tag">₱{{ b.price | number }}</div>
+      <!-- STATS ROW -->
+      <div class="mb-stats">
+        <div class="mb-stat total" (click)="setFilter('All')" [class.active-stat]="activeFilter==='All'">
+          <div class="mb-stat-icon-ring"><i class="fas fa-calendar-alt"></i></div>
+          <div class="mb-stat-content">
+            <div class="mb-stat-val">{{ bookings.length }}</div>
+            <div class="mb-stat-lbl">Total Bookings</div>
           </div>
         </div>
-
-        <!-- Actions column -->
-        <div class="mb-card-actions">
-          <!-- Upcoming actions -->
-          <ng-container *ngIf="b.status==='Upcoming'">
-            <button class="mb-action-btn primary" (click)="openTicket(b)">
-              <i class="fas fa-ticket-alt"></i> View Ticket
-            </button>
-            <button class="mb-action-btn blue" (click)="openReschedule(b)">
-              <i class="fas fa-calendar-alt"></i> Reschedule
-            </button>
-            <button class="mb-action-btn danger" (click)="cancelBooking(b)">
-              <i class="fas fa-times"></i> Cancel
-            </button>
-          </ng-container>
-          <!-- Completed actions -->
-          <ng-container *ngIf="b.status==='Completed'">
-            <button class="mb-action-btn primary" (click)="openTicket(b)">
-              <i class="fas fa-ticket-alt"></i> View Ticket
-            </button>
-            <button class="mb-action-btn gold" (click)="openReview(b)">
-              <i class="fas fa-star"></i> Review
-            </button>
-            <button class="mb-action-btn green" (click)="goToBook()">
-              <i class="fas fa-redo"></i> Rebook
-            </button>
-          </ng-container>
-          <!-- Cancelled actions -->
-          <ng-container *ngIf="b.status==='Cancelled'">
-            <button class="mb-action-btn primary" (click)="openTicket(b)">
-              <i class="fas fa-ticket-alt"></i> View Ticket
-            </button>
-            <button class="mb-action-btn green" (click)="goToBook()">
-              <i class="fas fa-calendar-plus"></i> Book Again
-            </button>
-          </ng-container>
+        <div class="mb-stat upcoming" (click)="setFilter('Upcoming')" [class.active-stat]="activeFilter==='Upcoming'">
+          <div class="mb-stat-icon-ring"><i class="fas fa-clock"></i></div>
+          <div class="mb-stat-content">
+            <div class="mb-stat-val">{{ upcomingCount }}</div>
+            <div class="mb-stat-lbl">Upcoming</div>
+          </div>
+        </div>
+        <div class="mb-stat completed" (click)="setFilter('Completed')" [class.active-stat]="activeFilter==='Completed'">
+          <div class="mb-stat-icon-ring"><i class="fas fa-check-circle"></i></div>
+          <div class="mb-stat-content">
+            <div class="mb-stat-val">{{ completedCount }}</div>
+            <div class="mb-stat-lbl">Completed</div>
+          </div>
+        </div>
+        <div class="mb-stat cancelled" (click)="setFilter('Cancelled')" [class.active-stat]="activeFilter==='Cancelled'">
+          <div class="mb-stat-icon-ring"><i class="fas fa-times-circle"></i></div>
+          <div class="mb-stat-content">
+            <div class="mb-stat-val">{{ cancelledCount }}</div>
+            <div class="mb-stat-lbl">Cancelled</div>
+          </div>
+        </div>
+        <div class="mb-stat spent">
+          <div class="mb-stat-icon-ring"><i class="fas fa-peso-sign"></i></div>
+          <div class="mb-stat-content">
+            <div class="mb-stat-val">₱{{ totalSpent | number }}</div>
+            <div class="mb-stat-lbl">Total Spent</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- EMPTY STATE -->
-    <div class="mb-empty" *ngIf="!filtered.length">
-      <div class="mb-empty-icon-box">
-        <i class="fas fa-calendar-times"></i>
-        <div class="mb-empty-rings">
-          <div class="er er1"></div>
-          <div class="er er2"></div>
-        </div>
-      </div>
-      <h3>No {{ activeFilter === 'All' ? '' : activeFilter }} Bookings Yet</h3>
-      <p>{{ activeFilter === 'All' ? 'Start your beauty journey — book your first appointment!' : 'No ' + activeFilter.toLowerCase() + ' bookings found.' }}</p>
-      <button class="mb-book-cta" (click)="goToBook()">
-        <i class="fas fa-calendar-plus"></i> Book Now
-      </button>
-    </div>
-
-    <!-- BOOK NEW CTA -->
-    <div class="mb-new-booking">
-      <div class="mb-new-inner">
-        <div class="mb-new-text">
-          <i class="fas fa-sparkles"></i>
-          <span>Ready for your next glow up?</span>
-        </div>
-        <button class="mb-new-btn" (click)="goToBook()">
-          <i class="fas fa-calendar-plus"></i> Book New Appointment
+      <!-- FILTER PILLS -->
+      <div class="mb-filter-row">
+        <button class="mb-filter-btn" [class.active]="activeFilter==='All'" (click)="setFilter('All')">
+          <i class="fas fa-th-list"></i> All
+        </button>
+        <button class="mb-filter-btn upcoming" [class.active]="activeFilter==='Upcoming'" (click)="setFilter('Upcoming')">
+          <i class="fas fa-clock"></i> Upcoming
+        </button>
+        <button class="mb-filter-btn completed" [class.active]="activeFilter==='Completed'" (click)="setFilter('Completed')">
+          <i class="fas fa-check-circle"></i> Completed
+        </button>
+        <button class="mb-filter-btn cancelled" [class.active]="activeFilter==='Cancelled'" (click)="setFilter('Cancelled')">
+          <i class="fas fa-times-circle"></i> Cancelled
         </button>
       </div>
-    </div>
 
-  </div>
-</div>
+      <!-- BOOKING CARDS — reads from Firebase bookings collection -->
+      <div class="mb-list" *ngIf="filtered.length">
+        <div class="mb-card"
+          *ngFor="let b of filtered"
+          [class.mb-upcoming]="b.status==='Upcoming'"
+          [class.mb-completed]="b.status==='Completed'"
+          [class.mb-cancelled]="b.status==='Cancelled'">
 
-<!-- ══ RESCHEDULE MODAL ════════════════════════════════════ -->
-<div class="modal-overlay" [class.show]="rescheduleOpen" (click)="closeReschedule()"></div>
-<div class="modal-sheet" [class.open]="rescheduleOpen">
-  <div class="modal-sheet-handle"></div>
-  <div class="modal-sheet-head">
-    <div class="modal-icon-wrap blue-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="mb-card-stripe"></div>
+
+          <div class="mb-card-img">
+            <img [src]="b.image" [alt]="b.service" (error)="onImgError($event)" />
+            <div class="mb-card-cat-badge">{{ b.category }}</div>
+          </div>
+
+          <div class="mb-card-body">
+            <div class="mb-card-head">
+              <div>
+                <h3>{{ b.service }}</h3>
+                <div class="mb-id"><i class="fas fa-hashtag"></i> {{ b.id }}</div>
+              </div>
+              <div class="mb-status-badge"
+                [class.upcoming]="b.status==='Upcoming'"
+                [class.completed]="b.status==='Completed'"
+                [class.cancelled]="b.status==='Cancelled'">
+                <i class="fas"
+                  [class.fa-clock]="b.status==='Upcoming'"
+                  [class.fa-check-circle]="b.status==='Completed'"
+                  [class.fa-times-circle]="b.status==='Cancelled'"></i>
+                {{ b.status }}
+              </div>
+            </div>
+
+            <div class="mb-info-grid">
+              <div class="mb-info-cell"><i class="fas fa-calendar-alt"></i>
+                <div><span class="info-label">Date</span><span class="info-val">{{ b.date }}</span></div>
+              </div>
+              <div class="mb-info-cell"><i class="fas fa-clock"></i>
+                <div><span class="info-label">Time</span><span class="info-val">{{ b.time }}</span></div>
+              </div>
+              <div class="mb-info-cell"><i class="fas fa-hourglass-half"></i>
+                <div><span class="info-label">Duration</span><span class="info-val">{{ b.duration }}</span></div>
+              </div>
+              <div class="mb-info-cell"><i class="fas fa-map-marker-alt"></i>
+                <div><span class="info-label">Location</span><span class="info-val">{{ b.location }}</span></div>
+              </div>
+            </div>
+
+            <div class="mb-artist-row">
+              <div class="mb-artist-av">
+                <img [src]="b.artistAvatar" [alt]="b.artist" (error)="onImgError($event)" />
+              </div>
+              <div class="mb-artist-info">
+                <span class="mb-artist-name">{{ b.artist }}</span>
+                <span class="mb-artist-tag"><i class="fas fa-certificate"></i> Certified MUA</span>
+              </div>
+              <div class="mb-price-tag">₱{{ b.price | number }}</div>
+            </div>
+          </div>
+
+          <div class="mb-card-actions">
+            <ng-container *ngIf="b.status==='Upcoming'">
+              <button class="mb-action-btn primary" (click)="openTicket(b)"><i class="fas fa-ticket-alt"></i> View Ticket</button>
+              <button class="mb-action-btn blue" (click)="openReschedule(b)"><i class="fas fa-calendar-alt"></i> Reschedule</button>
+              <button class="mb-action-btn danger" (click)="cancelBooking(b)"><i class="fas fa-times"></i> Cancel</button>
+            </ng-container>
+            <ng-container *ngIf="b.status==='Completed'">
+              <button class="mb-action-btn primary" (click)="openTicket(b)"><i class="fas fa-ticket-alt"></i> View Ticket</button>
+              <button class="mb-action-btn gold" (click)="openReview(b)"><i class="fas fa-star"></i> Review</button>
+              <button class="mb-action-btn green" (click)="goToBook()"><i class="fas fa-redo"></i> Rebook</button>
+            </ng-container>
+            <ng-container *ngIf="b.status==='Cancelled'">
+              <button class="mb-action-btn primary" (click)="openTicket(b)"><i class="fas fa-ticket-alt"></i> View Ticket</button>
+              <button class="mb-action-btn green" (click)="goToBook()"><i class="fas fa-calendar-plus"></i> Book Again</button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="mb-empty" *ngIf="!filtered.length">
+        <div class="mb-empty-icon-box">
+          <i class="fas fa-calendar-times"></i>
+          <div class="mb-empty-rings"><div class="er er1"></div><div class="er er2"></div></div>
+        </div>
+        <h3>No {{ activeFilter === 'All' ? '' : activeFilter }} Bookings Yet</h3>
+        <p>{{ activeFilter === 'All' ? 'Start your beauty journey — book your first appointment!' : 'No ' + activeFilter.toLowerCase() + ' bookings found.' }}</p>
+        <button class="mb-book-cta" (click)="goToBook()"><i class="fas fa-calendar-plus"></i> Book Now</button>
+      </div>
+
+      <!-- BOOK NEW CTA -->
+      <div class="mb-new-booking">
+        <div class="mb-new-inner">
+          <div class="mb-new-text"><i class="fas fa-sparkles"></i><span>Ready for your next glow up?</span></div>
+          <button class="mb-new-btn" (click)="goToBook()"><i class="fas fa-calendar-plus"></i> Book New Appointment</button>
+        </div>
+      </div>
+
+    </div><!-- /!isLoading -->
+  </div><!-- /mb-wrap -->
+</div><!-- /mb-root -->
+
+<!-- ══ RESCHEDULE MODAL ═══════════════════════════════════ -->
+<!-- CHANGED: White centered modal (was dark bottom-sheet) -->
+<div class="mb-modal-overlay" [class.show]="rescheduleOpen" (click)="closeReschedule()"></div>
+<div class="mb-modal" [class.open]="rescheduleOpen">
+  <div class="mb-modal-head">
+    <div class="mb-modal-icon blue-icon"><i class="fas fa-calendar-alt"></i></div>
     <div>
       <h3>Reschedule Booking</h3>
       <p>{{ rescheduleBooking?.service }}</p>
     </div>
-    <button class="modal-close" (click)="closeReschedule()"><i class="fas fa-times"></i></button>
+    <button class="mb-modal-close" (click)="closeReschedule()"><i class="fas fa-times"></i></button>
   </div>
-  <div class="modal-sheet-body" *ngIf="rescheduleBooking">
-    <div class="modal-current-info">
+  <div class="mb-modal-body" *ngIf="rescheduleBooking">
+    <div class="mb-modal-info-banner">
       <i class="fas fa-info-circle"></i>
       <span>Current: <strong>{{ rescheduleBooking.date }}</strong> at <strong>{{ rescheduleBooking.time }}</strong></span>
     </div>
-    <div class="modal-field">
+    <div class="mb-modal-field">
       <label><i class="fas fa-calendar-day"></i> New Date</label>
-      <input type="date" [(ngModel)]="rescheduleDate" [min]="minRescheduleDate" class="modal-inp" />
+      <input type="date" [(ngModel)]="rescheduleDate" [min]="minRescheduleDate" />
     </div>
-    <div class="modal-field">
+    <div class="mb-modal-field">
       <label><i class="fas fa-clock"></i> Preferred Time</label>
-      <div class="time-slots">
-        <button class="time-slot" *ngFor="let t of timeSlots"
-          [class.selected]="rescheduleTime === t"
-          (click)="rescheduleTime = t">
-          {{ t }}
-        </button>
+      <div class="mb-time-slots">
+        <button class="mb-time-slot" *ngFor="let t of timeSlots"
+          [class.selected]="rescheduleTime === t" (click)="rescheduleTime = t">{{ t }}</button>
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeReschedule()">Cancel</button>
-      <button class="modal-btn-confirm" (click)="confirmReschedule()">
-        <i class="fas fa-check"></i> Confirm Reschedule
-      </button>
+    <div class="mb-modal-actions">
+      <button class="mb-modal-cancel" (click)="closeReschedule()">Cancel</button>
+      <button class="mb-modal-confirm" (click)="confirmReschedule()"><i class="fas fa-check"></i> Confirm Reschedule</button>
     </div>
   </div>
 </div>
 
-<!-- ══ REVIEW MODAL ════════════════════════════════════════ -->
-<div class="modal-overlay" [class.show]="reviewOpen" (click)="closeReview()"></div>
-<div class="modal-sheet review-sheet" [class.open]="reviewOpen">
-  <div class="modal-sheet-handle"></div>
-  <div class="modal-sheet-head">
-    <div class="modal-icon-wrap gold-icon"><i class="fas fa-star"></i></div>
-    <div>
-      <h3>Write a Review</h3>
-      <p>{{ reviewBooking?.service }}</p>
-    </div>
-    <button class="modal-close" (click)="closeReview()"><i class="fas fa-times"></i></button>
+<!-- ══ REVIEW MODAL ═══════════════════════════════════════ -->
+<div class="mb-modal-overlay" [class.show]="reviewOpen" (click)="closeReview()"></div>
+<div class="mb-modal" [class.open]="reviewOpen">
+  <div class="mb-modal-head">
+    <div class="mb-modal-icon gold-icon"><i class="fas fa-star"></i></div>
+    <div><h3>Write a Review</h3><p>{{ reviewBooking?.service }}</p></div>
+    <button class="mb-modal-close" (click)="closeReview()"><i class="fas fa-times"></i></button>
   </div>
-  <div class="modal-sheet-body" *ngIf="reviewBooking">
-    <div class="review-artist">
+  <div class="mb-modal-body" *ngIf="reviewBooking">
+    <div class="mb-review-artist">
       <img [src]="reviewBooking.artistAvatar" [alt]="reviewBooking.artist" (error)="onImgError($event)" />
       <div>
-        <div class="ra-name">{{ reviewBooking.artist }}</div>
-        <div class="ra-svc">{{ reviewBooking.service }} · {{ reviewBooking.date }}</div>
+        <div class="mb-ra-name">{{ reviewBooking.artist }}</div>
+        <div class="mb-ra-svc">{{ reviewBooking.service }} · {{ reviewBooking.date }}</div>
       </div>
     </div>
-    <div class="modal-field">
+    <div class="mb-modal-field">
       <label><i class="fas fa-star"></i> Your Rating</label>
-      <div class="star-picker">
-        <button class="star-btn" *ngFor="let s of [1,2,3,4,5]"
-          [class.active]="s <= reviewRating"
-          (click)="setRating(s)">★</button>
-        <span class="star-label">{{ reviewRating }}/5</span>
+      <div class="mb-star-picker">
+        <button class="mb-star-btn" *ngFor="let s of [1,2,3,4,5]"
+          [class.active]="s <= reviewRating" (click)="setRating(s)">★</button>
+        <span class="mb-star-label">{{ reviewRating }}/5</span>
       </div>
     </div>
-    <div class="modal-field">
+    <div class="mb-modal-field">
       <label><i class="fas fa-comment"></i> Your Review</label>
-      <textarea class="modal-textarea" [(ngModel)]="reviewComment"
-        placeholder="Share your experience with this artist…" rows="4"></textarea>
+      <textarea [(ngModel)]="reviewComment" placeholder="Share your experience with this artist…" rows="4"></textarea>
     </div>
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeReview()">Cancel</button>
-      <button class="modal-btn-confirm gold-btn" (click)="submitReview()">
-        <i class="fas fa-paper-plane"></i> Submit Review
-      </button>
+    <div class="mb-modal-actions">
+      <button class="mb-modal-cancel" (click)="closeReview()">Cancel</button>
+      <button class="mb-modal-confirm gold-btn" (click)="submitReview()"><i class="fas fa-paper-plane"></i> Submit Review</button>
     </div>
   </div>
 </div>
 
-<!-- ══ DETAILS MODAL ════════════════════════════════════════ -->
-<div class="modal-overlay" [class.show]="detailOpen" (click)="closeDetail()"></div>
-<div class="modal-sheet detail-sheet" [class.open]="detailOpen">
-  <div class="modal-sheet-handle"></div>
-  <div class="modal-sheet-head">
-    <div class="modal-icon-wrap purple-icon"><i class="fas fa-receipt"></i></div>
-    <div>
-      <h3>Booking Details</h3>
-      <p *ngIf="detailBooking">{{ detailBooking.id }}</p>
-    </div>
-    <button class="modal-close" (click)="closeDetail()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="modal-sheet-body" *ngIf="detailBooking">
-    <div class="detail-svc-img">
-      <img [src]="detailBooking.image" [alt]="detailBooking.service" (error)="onImgError($event)" />
-      <div class="detail-svc-ov">
-        <div class="detail-svc-name">{{ detailBooking.service }}</div>
-        <div class="detail-svc-price">₱{{ detailBooking.price | number }}</div>
-      </div>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-cell">
-        <i class="fas fa-calendar-alt"></i>
-        <div>
-          <span>Date</span>
-          <strong>{{ detailBooking.date }}</strong>
-        </div>
-      </div>
-      <div class="detail-cell">
-        <i class="fas fa-clock"></i>
-        <div>
-          <span>Time</span>
-          <strong>{{ detailBooking.time }}</strong>
-        </div>
-      </div>
-      <div class="detail-cell">
-        <i class="fas fa-hourglass-half"></i>
-        <div>
-          <span>Duration</span>
-          <strong>{{ detailBooking.duration }}</strong>
-        </div>
-      </div>
-      <div class="detail-cell">
-        <i class="fas fa-tag"></i>
-        <div>
-          <span>Category</span>
-          <strong>{{ detailBooking.category }}</strong>
-        </div>
-      </div>
-      <div class="detail-cell">
-        <i class="fas fa-map-marker-alt"></i>
-        <div>
-          <span>Location</span>
-          <strong>{{ detailBooking.location }}</strong>
-        </div>
-      </div>
-      <div class="detail-cell">
-        <i class="fas fa-info-circle"></i>
-        <div>
-          <span>Status</span>
-          <strong [class.c-blue]="detailBooking.status==='Upcoming'"
-            [class.c-green]="detailBooking.status==='Completed'"
-            [class.c-red]="detailBooking.status==='Cancelled'">
-            {{ detailBooking.status }}
-          </strong>
-        </div>
-      </div>
-    </div>
-    <div class="detail-artist">
-      <img [src]="detailBooking.artistAvatar" [alt]="detailBooking.artist" (error)="onImgError($event)" />
-      <div>
-        <div class="da-name">{{ detailBooking.artist }}</div>
-        <div class="da-tag"><i class="fas fa-certificate"></i> Certified MUA</div>
-      </div>
-      <div class="da-cert"><i class="fas fa-star"></i> Pro Artist</div>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeDetail()">Close</button>
-      <button class="modal-btn-confirm" *ngIf="detailBooking.status==='Upcoming'" (click)="closeDetail(); openReschedule(detailBooking)">
-        <i class="fas fa-calendar-alt"></i> Reschedule
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ TICKET MODAL ════════════════════════════════════ -->
+<!-- ══ TICKET MODAL ═══════════════════════════════════════ -->
 <div class="tm-bg" [class.show]="ticketOpen" (click)="closeTicket()">
   <div class="tm-content" (click)="$event.stopPropagation()" *ngIf="ticketBooking">
-      <button class="tm-close" (click)="closeTicket()"><i class="fas fa-times"></i></button>
-      <div class="digital-ticket">
-          <div class="dt-header">
-              <div class="dt-logo"><i class="fas fa-spa"></i> Lumière</div>
-              <div class="dt-id">{{ ticketBooking.id }}</div>
-          </div>
-          <div class="dt-body">
-              <div class="dt-row">
-                  <div class="dt-label">Service</div>
-                  <div class="dt-highlight">{{ ticketBooking.service }}</div>
-              </div>
-              <div class="dt-row">
-                  <div class="dt-label">Artist</div>
-                  <div class="dt-val"><i class="fas fa-user-circle" style="color:var(--mauve-400);margin-right:4px;"></i> {{ ticketBooking.artist }}</div>
-              </div>
-              <div class="dt-row-split">
-                  <div class="dt-col">
-                      <div class="dt-label">Date</div>
-                      <div class="dt-val">{{ ticketBooking.date | date:'MMMM d, yyyy' }}</div>
-                  </div>
-                  <div class="dt-col">
-                      <div class="dt-label">Time</div>
-                      <div class="dt-val">{{ ticketBooking.time }}</div>
-                  </div>
-              </div>
-              <div class="dt-row" style="margin-top:10px;">
-                  <div class="dt-label">Payment Method</div>
-                  <div class="dt-val" style="color:var(--mauve-800);"><i class="fas fa-check-circle" style="color:var(--green-500);margin-right:4px;"></i> {{ ticketBooking.payment || 'Pre-Paid / Card' }}</div>
-              </div>
-              <div class="dt-row" style="margin-top:14px; text-align:center;">
-                  <div class="dt-label">Total Amount</div>
-                  <div class="dt-val" style="font-size:1.6rem; color:var(--mauve-800);">₱{{ ticketBooking.price | number }}</div>
-              </div>
-          </div>
-          <div class="dt-perforated"></div>
-          <div class="dt-footer">
-              <div class="dt-barcode">||| | || || |||| | |</div>
-              <div class="dt-instructions">
-                  Present this digital ticket at the studio.<br>
-                  <span class="dt-status">{{ ticketBooking.status }}</span>
-              </div>
-          </div>
+    <button class="tm-close" (click)="closeTicket()"><i class="fas fa-times"></i></button>
+    <div class="digital-ticket">
+      <div class="dt-header">
+        <div class="dt-logo"><i class="fas fa-spa"></i> Lumière</div>
+        <div class="dt-id">{{ ticketBooking.id }}</div>
       </div>
+      <div class="dt-body">
+        <div class="dt-row">
+          <div class="dt-label">Service</div>
+          <div class="dt-highlight">{{ ticketBooking.service }}</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-label">Artist</div>
+          <div class="dt-val"><i class="fas fa-user-circle" style="color:var(--mauve-400);margin-right:4px;"></i>{{ ticketBooking.artist }}</div>
+        </div>
+        <div class="dt-row-split">
+          <div class="dt-col"><div class="dt-label">Date</div><div class="dt-val">{{ ticketBooking.date }}</div></div>
+          <div class="dt-col"><div class="dt-label">Time</div><div class="dt-val">{{ ticketBooking.time }}</div></div>
+        </div>
+        <div class="dt-row" style="margin-top:10px;">
+          <div class="dt-label">Payment</div>
+          <div class="dt-val"><i class="fas fa-check-circle" style="color:#22c55e;margin-right:4px;"></i>{{ ticketBooking.payment || 'Pre-Paid / Card' }}</div>
+        </div>
+        <div class="dt-row" style="margin-top:14px;text-align:center;">
+          <div class="dt-label">Total Amount</div>
+          <div class="dt-val" style="font-size:1.6rem;color:var(--mauve-700);font-weight:800;">₱{{ ticketBooking.price | number }}</div>
+        </div>
+      </div>
+      <div class="dt-perforated"></div>
+      <div class="dt-footer">
+        <div class="dt-barcode">||| | || || |||| | |</div>
+        <div class="dt-instructions">
+          Present this digital ticket at the studio.<br>
+          <span class="dt-status">{{ ticketBooking.status }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

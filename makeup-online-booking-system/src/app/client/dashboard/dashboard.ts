@@ -50,6 +50,8 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   profilePanelOpen = false;
   activeSection = 'home';
+  darkMode = false;
+  profileDropdownOpen = false;
 
   // ── Toast ──────────────────────────────────────────────
   toastVisible = false;
@@ -199,8 +201,20 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     { icon: 'fas fa-heart', title: 'Premium Products', sub: 'Luxury-grade cosmetics' },
   ];
 
+  promotions = [
+    { title: 'Bridal Glow Package', desc: 'Book 3 months in advance and get 20% off your entire entourage.', badge: '20% OFF', img: 'https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=500&h=300&fit=crop' },
+    { title: 'First Time Client', desc: 'Enjoy a sweet discount on your very first glam session with us.', badge: '₱500 OFF', img: 'https://images.unsplash.com/photo-1516975080661-46bfa2022453?w=500&h=300&fit=crop' }
+  ];
+
+  inspirations = [
+    { title: 'The Natural Glow', img: 'https://images.unsplash.com/photo-1512413914565-eb738f6d5526?w=400&h=500&fit=crop' },
+    { title: 'Soft Glam', img: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=500&fit=crop' },
+    { title: 'Bridal Elegance', img: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=500&fit=crop' },
+    { title: 'Bold Editorial', img: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=500&fit=crop' }
+  ];
+
   constructor(
-    private router: Router,
+    public router: Router,
     private authService: AuthService,
     private userService: UserService,
     private bookingService: BookingService,
@@ -214,12 +228,21 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
+    // Restore dark mode preference
+    const savedDark = localStorage.getItem('lumiere-dark-mode');
+    if (savedDark === 'true') this.darkMode = true;
 
     // Fetch all users with role == 'artist' from Firestore via UserService
     this.artistSub = this.userService.getUsersByRoleRealtime('artist').subscribe({
       next: (artistUsers) => {
         console.log('Raw artist data fetched:', artistUsers);
         
+        // FIX EXPLANATION (by Ana): 
+        // Error: Previously, the code filtered artists by checking if `u.status === 'active'`. 
+        // This caused artists without an explicit 'active' status in the database to be completely hidden, 
+        // and also triggered unwanted error toasts ("No users found..." or "none have status: 'active'").
+        // Fix: Removed the `status === 'active'` filter and the error toasts. 
+        // Now, it maps and connects *all* fetched artists directly to the dashboard, ensuring no one is missing.
         this.artists = artistUsers.map((u: any) => {
           let sp = Array.isArray(u.services) ? u.services.map((s:any) => s.name).filter((n:any) => !!n) : [];
           if (sp.length === 0) sp = [u.specialty || 'General'];
@@ -536,6 +559,22 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   // ── Profile Panel ──────────────────────────────────────
   openProfilePanel(): void { this.profilePanelOpen = true; document.body.style.overflow = 'hidden'; }
   closeProfilePanel(): void { this.profilePanelOpen = false; document.body.style.overflow = ''; }
+
+  // ── Profile Dropdown ──────────────────────────────────
+  toggleProfileDropdown(): void { this.profileDropdownOpen = !this.profileDropdownOpen; }
+  closeProfileDropdown(): void { this.profileDropdownOpen = false; }
+
+  // ── Dark Mode ─────────────────────────────────────────
+  toggleDarkMode(): void {
+    this.darkMode = !this.darkMode;
+    localStorage.setItem('lumiere-dark-mode', String(this.darkMode));
+  }
+
+  // ── Settings ──────────────────────────────────────────
+  showSettings(): void {
+    this.closeProfileDropdown();
+    this.showToast('Settings', 'Settings panel coming soon! Stay tuned ✨', 'fas fa-cog', 'success');
+  }
 
   // ── Service Modal ──────────────────────────────────────
   openServiceModal(s: Service): void {

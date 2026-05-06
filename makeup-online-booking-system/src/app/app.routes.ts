@@ -49,6 +49,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./client/my-bookings/my-bookings').then(m => m.ClientMyBookingsComponent)
   },
+  {
+    path: 'client/profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./client/profile/profile').then(m => m.ProfileComponent)
+  },
 
   // ── Artist ──
   {

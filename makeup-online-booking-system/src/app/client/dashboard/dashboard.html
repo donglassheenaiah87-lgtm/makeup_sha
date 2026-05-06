@@ -1,5 +1,5 @@
-<!-- dashboard.html -->
-<div class="root" [class.profile-open]="profilePanelOpen" [class.sidebar-open]="!sidebarCollapsed">
+<!-- dashboard.html - Redesigned with top header navigation -->
+<div class="root" [class.profile-open]="profilePanelOpen" [class.dark-mode]="darkMode">
 
     <!-- ══ TOAST ════════════════════════════════════════════ -->
     <div class="toast" [class.show]="toastVisible" [class.toast-error]="toastType==='error'">
@@ -11,187 +11,133 @@
         <button class="toast-x" (click)="toastVisible=false"><i class="fas fa-times"></i></button>
     </div>
 
-    <!-- ══ SIDEBAR OVERLAY (mobile) ══════════════════════════ -->
-    <div class="sb-mobile-overlay" [class.show]="!sidebarCollapsed" (click)="sidebarCollapsed=true"></div>
+    <!-- ══ TOP HEADER NAVIGATION ══════════════════════════ -->
+    <header class="site-header" [class.scrolled]="isScrolled">
+        <div class="header-inner">
 
-    <!-- ══ PERSISTENT LEFT SIDEBAR ══════════════════════════ -->
-    <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
-
-        <!-- Logo -->
-        <div class="sb-logo">
-            <div class="sb-logo-icon">
-                <i class="fas fa-spa"></i>
-                <div class="sb-logo-shine"></div>
+            <!-- ─ Logo (left) ─────────────────────────────── -->
+            <div class="hdr-logo" (click)="scrollToSection('home')">
+                <div class="hdr-logo-icon"><i class="fas fa-spa"></i></div>
+                <div class="hdr-logo-text">
+                    <span class="hdr-logo-name">Lumière</span>
+                    <span class="hdr-logo-tag">Beauty Studio</span>
+                </div>
             </div>
-            <div class="sb-logo-text">
-                <span class="sb-logo-name">Lumière</span>
-                <span class="sb-logo-tagline">Beauty Studio</span>
-            </div>
-            <!-- Integrated Toggle -->
-            <button class="sb-in-collapse-btn" (click)="sidebarCollapsed=!sidebarCollapsed"
-                [title]="sidebarCollapsed?'Expand sidebar':'Collapse sidebar'">
-                <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
-            </button>
-        </div>
 
-        <!-- Main nav -->
-        <div class="sb-section">
-            <div class="sb-label">MAIN MENU</div>
-            <nav class="sb-nav">
-                <a class="sb-item" [class.active]="activeSection==='home'" (click)="scrollToSection('home')">
-                    <div class="sb-item-icon"><i class="fas fa-home"></i></div>
-                    <span class="sb-item-label">Home</span>
-                    <div class="sb-item-bar"></div>
+            <!-- ─ Nav Center ───────────────────────────────── -->
+            <nav class="hdr-nav">
+                <a class="hdr-link" [class.active]="activeSection==='home'" (click)="scrollToSection('home')">
+                    <i class="fas fa-home"></i><span>Home</span>
                 </a>
-                <a class="sb-item" [class.active]="activeSection==='services'" (click)="scrollToSection('services')">
-                    <div class="sb-item-icon"><i class="fas fa-magic"></i></div>
-                    <span class="sb-item-label">Services</span>
-                    <span class="sb-pill">4</span>
-                    <div class="sb-item-bar"></div>
+                <a class="hdr-link" [class.active]="activeSection==='book'" (click)="goToBook()">
+                    <i class="fas fa-calendar-plus"></i><span>Book Now</span>
                 </a>
-                <a class="sb-item" [class.active]="activeSection==='artists'" (click)="scrollToSection('artists')">
-                    <div class="sb-item-icon"><i class="fas fa-user-circle"></i></div>
-                    <span class="sb-item-label">Our Artists</span>
-                    <div class="sb-item-bar"></div>
+
+                <a class="hdr-link" [class.active]="activeSection==='artists'" (click)="scrollToSection('artists')">
+                    <i class="fas fa-user-circle"></i><span>Artists</span>
                 </a>
-                <a class="sb-item" [class.active]="activeSection==='portfolio'" (click)="scrollToSection('portfolio')">
-                    <div class="sb-item-icon"><i class="fas fa-images"></i></div>
-                    <span class="sb-item-label">Portfolio</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item" [class.active]="activeSection==='book'" (click)="scrollToSection('book')">
-                    <div class="sb-item-icon"><i class="fas fa-calendar-plus"></i></div>
-                    <span class="sb-item-label">Book Now</span>
-                    <span class="sb-hot-badge">HOT</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item" [class.active]="activeSection==='testimonials'"
-                    (click)="scrollToSection('testimonials')">
-                    <div class="sb-item-icon"><i class="fas fa-star"></i></div>
-                    <span class="sb-item-label">Reviews</span>
-                    <div class="sb-item-bar"></div>
-                </a>
-                <a class="sb-item" [class.active]="activeSection==='contact'" (click)="scrollToSection('contact')">
-                    <div class="sb-item-icon"><i class="fas fa-envelope"></i></div>
-                    <span class="sb-item-label">Contact</span>
-                    <div class="sb-item-bar"></div>
+                <a class="hdr-link" (click)="scrollToSection('promos')" *ngIf="currentUser">
+                    <i class="fas fa-tags"></i><span>Offers</span>
                 </a>
             </nav>
-        </div>
 
-        <div class="sb-section">
-            <div class="sb-label">ACCOUNT</div>
-            <nav class="sb-nav">
-                <ng-container *ngIf="currentUser">
-                    <a class="sb-item" (click)="openProfilePanel()">
-                        <div class="sb-item-icon"><i class="fas fa-id-card"></i></div>
-                        <span class="sb-item-label">My Profile</span>
-                        <div class="sb-item-bar"></div>
-                    </a>
-                    <a class="sb-item" (click)="navigateTo('bookings')">
-                        <div class="sb-item-icon"><i class="fas fa-calendar-check"></i></div>
-                        <span class="sb-item-label">My Bookings</span>
-                        <span class="sb-pill" *ngIf="currentUser.bookingCount">{{ currentUser.bookingCount }}</span>
-                        <div class="sb-item-bar"></div>
-                    </a>
-                    <a class="sb-item sb-item-danger" (click)="logout()">
-                        <div class="sb-item-icon"><i class="fas fa-sign-out-alt"></i></div>
-                        <span class="sb-item-label">Logout</span>
-                        <div class="sb-item-bar"></div>
-                    </a>
-                </ng-container>
-                <ng-container *ngIf="!currentUser">
-                    <a class="sb-item" (click)="goToLogin()">
-                        <div class="sb-item-icon"><i class="fas fa-sign-in-alt"></i></div>
-                        <span class="sb-item-label">Login</span>
-                        <div class="sb-item-bar"></div>
-                    </a>
-                    <a class="sb-item" (click)="goToSignup()">
-                        <div class="sb-item-icon"><i class="fas fa-user-plus"></i></div>
-                        <span class="sb-item-label">Sign Up</span>
-                        <div class="sb-item-bar"></div>
-                    </a>
-                </ng-container>
-            </nav>
-        </div>
+            <!-- ─ Right Side ────────────────────────────────── -->
+            <div class="hdr-right">
 
-        <!-- Book CTA -->
-        <div class="sb-cta">
-            <button class="btn-sb-book" (click)="goToBook()">
-                <div class="btn-sb-glow"></div>
-                <i class="fas fa-calendar-heart"></i>
-                <span>Book Now</span>
-            </button>
-        </div>
+                <!-- Search -->
+                <div class="hdr-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search…" [(ngModel)]="searchQuery" (input)="onSearch()" (blur)="clearSearchDelay()" />
+                    <div class="hdr-search-results" *ngIf="searchResults.length && searchQuery">
+                        <div class="hsr-item" *ngFor="let r of searchResults" (mousedown)="scrollToSection(r.section); searchQuery=''">
+                            <i [class]="r.icon"></i><span>{{ r.name }}</span>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Footer -->
-        <div class="sb-bottom">
-            <div class="sb-socials">
-                <a class="sb-soc" href="#"><i class="fab fa-instagram"></i></a>
-                <a class="sb-soc" href="#"><i class="fab fa-facebook-f"></i></a>
-                <a class="sb-soc" href="#"><i class="fab fa-tiktok"></i></a>
+                <!-- Dark Mode Toggle -->
+                <button class="hdr-dark-btn" (click)="toggleDarkMode()" [title]="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+                    <i class="fas" [class.fa-moon]="!darkMode" [class.fa-sun]="darkMode"></i>
+                </button>
+
+                <!-- ── Profile Avatar Dropdown (logged in) ── -->
+                <div class="hdr-profile" *ngIf="currentUser">
+                    <button class="hdr-avatar-btn" (click)="toggleProfileDropdown()" [class.open]="profileDropdownOpen">
+                        <div class="hdr-av">
+                            <img *ngIf="currentUser.avatar" [src]="currentUser.avatar" [alt]="currentUser.name" (error)="onImgError($event)" />
+                            <span *ngIf="!currentUser.avatar">{{ currentUser.name.charAt(0).toUpperCase() }}</span>
+                        </div>
+                        <span class="hdr-av-name">{{ currentUser.name.split(' ')[0] }}</span>
+                        <i class="fas fa-chevron-down hdr-av-caret" [class.rotated]="profileDropdownOpen"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="hdr-dropdown" [class.open]="profileDropdownOpen">
+                        <!-- User Info -->
+                        <div class="hdd-header">
+                            <div class="hdd-av">
+                                <img *ngIf="currentUser.avatar" [src]="currentUser.avatar" [alt]="currentUser.name" (error)="onImgError($event)" />
+                                <span *ngIf="!currentUser.avatar">{{ currentUser.name.charAt(0).toUpperCase() }}</span>
+                            </div>
+                            <div class="hdd-info">
+                                <div class="hdd-name">{{ currentUser.name }}</div>
+                                <div class="hdd-email">{{ currentUser.email }}</div>
+                                <div class="hdd-tier"><i class="fas fa-crown"></i> {{ currentUser.memberTier || 'Silver' }} Member</div>
+                            </div>
+                        </div>
+                        <!-- Quick Links -->
+                        <div class="hdd-menu">
+                            <a class="hdd-item" (click)="router.navigate(['/client/profile']); closeProfileDropdown()">
+                                <div class="hdd-item-icon"><i class="fas fa-user"></i></div>
+                                <span>My Profile</span><i class="fas fa-chevron-right hdd-arr"></i>
+                            </a>
+                            <a class="hdd-item" (click)="navigateTo('bookings'); closeProfileDropdown()">
+                                <div class="hdd-item-icon"><i class="fas fa-ticket-alt"></i></div>
+                                <span>My Bookings</span><i class="fas fa-chevron-right hdd-arr"></i>
+                            </a>
+                            <a class="hdd-item" (click)="goToBook(); closeProfileDropdown()">
+                                <div class="hdd-item-icon"><i class="fas fa-calendar-plus"></i></div>
+                                <span>Book Appointment</span><i class="fas fa-chevron-right hdd-arr"></i>
+                            </a>
+                        </div>
+                        <div class="hdd-divider"></div>
+                        <!-- Preferences -->
+                        <div class="hdd-menu">
+                            <div class="hdd-item hdd-toggle-row" (click)="toggleDarkMode()">
+                                <div class="hdd-item-icon dark-icon"><i class="fas" [class.fa-moon]="!darkMode" [class.fa-sun]="darkMode"></i></div>
+                                <span>{{ darkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+                                <div class="hdd-toggle" [class.on]="darkMode"><div class="hdd-toggle-thumb"></div></div>
+                            </div>
+                            <a class="hdd-item" (click)="showSettings()">
+                                <div class="hdd-item-icon"><i class="fas fa-cog"></i></div>
+                                <span>Settings</span><i class="fas fa-chevron-right hdd-arr"></i>
+                            </a>
+                        </div>
+                        <div class="hdd-divider"></div>
+                        <!-- Logout -->
+                        <div class="hdd-menu">
+                            <a class="hdd-item hdd-logout" (click)="logout(); closeProfileDropdown()">
+                                <div class="hdd-item-icon logout-icon"><i class="fas fa-sign-out-alt"></i></div>
+                                <span>Logout</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guest Buttons -->
+                <div class="hdr-guest" *ngIf="!currentUser">
+                    <button class="btn-hdr-login" (click)="goToLogin()">Login</button>
+                    <button class="btn-hdr-signup" (click)="goToSignup()">Sign Up</button>
+                </div>
             </div>
         </div>
-    </aside>
+
+        <!-- Backdrop to close dropdown -->
+        <div class="hdr-dd-backdrop" *ngIf="profileDropdownOpen" (click)="closeProfileDropdown()"></div>
+    </header>
 
     <!-- ══ MAIN ══════════════════════════════════════════════ -->
-    <main class="main" [class.sb-collapsed]="sidebarCollapsed">
-
-        <!-- TOPBAR -->
-        <nav class="topbar" [class.scrolled]="isScrolled">
-            <div class="topbar-inner">
-                <button class="tb-menu" (click)="sidebarCollapsed=!sidebarCollapsed"
-                    [title]="sidebarCollapsed?'Open menu':'Close menu'">
-                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
-                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
-                    <span class="tb-menu-bar" [class.open]="!sidebarCollapsed"></span>
-                </button>
-                <div class="tb-brand-mini" *ngIf="sidebarCollapsed">
-                    <i class="fas fa-spa"></i> Lumière
-                </div>
-                <div class="tb-search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search services, looks, artists…" [(ngModel)]="searchQuery"
-                        (input)="onSearch()" (blur)="clearSearchDelay()" />
-                    <div class="tb-search-results" *ngIf="searchResults.length && searchQuery">
-                        <div class="tsr-item" *ngFor="let r of searchResults"
-                            (mousedown)="scrollToSection(r.section); searchQuery=''">
-                            <div class="tsr-icon"><i [class]="r.icon"></i></div>
-                            <div>
-                                <div class="tsr-name">{{ r.name }}</div>
-                                <div class="tsr-cat">{{ r.category }}</div>
-                            </div>
-                            <i class="fas fa-arrow-right tsr-arrow"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="tb-actions">
-                    <button class="tb-btn" [class.active]="wishlistCount>0" (click)="showWishlistToast()"
-                        title="Wishlist">
-                        <i class="fas fa-heart"></i>
-                        <span class="tb-badge" *ngIf="wishlistCount">{{ wishlistCount }}</span>
-                    </button>
-                    <button class="tb-btn" title="Notifications"
-                        (click)="showToast('Notifications','No new notifications.','fas fa-bell','success')">
-                        <i class="fas fa-bell"></i>
-                        <span class="tb-notif-dot"></span>
-                    </button>
-                    <div class="tb-user" *ngIf="currentUser" (click)="openProfilePanel()">
-                        <div class="tb-user-av">
-                            <img *ngIf="currentUser.avatar" [src]="currentUser.avatar" [alt]="currentUser.name"
-                                (error)="onImgError($event)" />
-                            <span *ngIf="!currentUser.avatar">{{ currentUser.name.charAt(0) }}</span>
-                        </div>
-                        <span class="tb-user-name">{{ currentUser.name.split(' ')[0] }}</span>
-                        <i class="fas fa-chevron-down tb-caret"></i>
-                    </div>
-                    <div class="tb-guest" *ngIf="!currentUser">
-                        <button class="btn-tb-login" (click)="goToLogin()">Login</button>
-                        <button class="btn-tb-signup" (click)="goToSignup()">Sign Up</button>
-                    </div>
-                </div>
-            </div>
-        </nav>
+    <main class="main">
 
         <!-- HERO -->
         <section id="home" class="hero">
@@ -219,12 +165,20 @@
                         <div class="eyebrow-gem">✦</div>
                         Premier Beauty Studio · Est. 2019
                     </div>
-                    <h1 class="hero-h1 fade-up d1">
+                    <h1 class="hero-h1 fade-up d1" *ngIf="currentUser">
+                        Welcome back,<br>
+                        <em class="hero-em">{{ currentUser.name.split(' ')[0] }}</em>
+                        <span class="hero-lp">💄</span>
+                    </h1>
+                    <h1 class="hero-h1 fade-up d1" *ngIf="!currentUser">
                         Enhance Your<br>
                         <em class="hero-em">Natural</em> <span class="hero-accent">Beauty</span>
                         <span class="hero-lp">💄</span>
                     </h1>
-                    <p class="hero-p fade-up d2">
+                    <p class="hero-p fade-up d2" *ngIf="currentUser">
+                        Ready to book your next glow? Your beauty, our passion. ✨
+                    </p>
+                    <p class="hero-p fade-up d2" *ngIf="!currentUser">
                         Book professional makeup services for any occasion. From bridal glow to editorial masterpieces —
                         every client leaves feeling radiant.
                     </p>
@@ -247,28 +201,14 @@
                 </div>
                 <div class="hero-visual fade-up d2">
                     <div class="hero-photo-wrap">
-                        <div class="hero-photo-ring r1"></div>
-                        <div class="hero-photo-ring r2"></div>
                         <div class="hero-photo-glow"></div>
                         <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=520&h=640&fit=crop&crop=face"
                             alt="Lumière Beauty" class="hero-photo" (error)="onImgError($event)" />
-                        <div class="hero-photo-card hpc-tl">
-                            <div class="hpc-icon"><i class="fas fa-certificate"></i></div>
+                        <div class="hero-photo-card hpc-simple">
+                            <i class="fas fa-certificate hpc-icon"></i>
                             <div>
-                                <div class="hpc-v">Certified</div>
-                                <div class="hpc-s">Professional MUAs</div>
+                                <div class="hpc-v">Certified MUA</div>
                             </div>
-                        </div>
-                        <div class="hero-photo-card hpc-br">
-                            <div class="hpc-icon star"><i class="fas fa-star"></i></div>
-                            <div>
-                                <div class="hpc-v">4.9★</div>
-                                <div class="hpc-s">100+ Reviews</div>
-                            </div>
-                        </div>
-                        <div class="hero-photo-card hpc-bm">
-                            <i class="fas fa-heart hpc-heart"></i>
-                            <span>500+ Happy Clients</span>
                         </div>
                     </div>
                     <div class="hero-service-pills">
@@ -305,7 +245,150 @@
             </div>
         </div>
 
-        <!-- ABOUT -->
+        <!-- QUICK ACTIONS -->
+        <section class="quick-actions-section" *ngIf="currentUser">
+            <div class="wrap">
+                <div class="qa-head">
+                    <div class="section-eyebrow"><div class="eyebrow-dot"></div> Your Dashboard</div>
+                    <h2 class="qa-title">Quick Actions ✨</h2>
+                    <p class="qa-sub">Everything you need, right at your fingertips</p>
+                </div>
+                <div class="qa-grid">
+                    <div class="qa-card" (click)="goToBook()">
+                        <div class="qa-icon-wrap">
+                            <div class="qa-icon" style="background:var(--grad-primary)"><i class="fas fa-calendar-plus"></i></div>
+                        </div>
+                        <div class="qa-label">Book Appointment</div>
+                        <div class="qa-sub-text">Reserve your slot now</div>
+                        <div class="qa-footer-row">
+                            <span class="qa-cta">Book Now <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="qa-card" (click)="navigateTo('bookings')">
+                        <div class="qa-icon-wrap">
+                            <div class="qa-icon" style="background:linear-gradient(135deg,#d4af37,#c89a30)"><i class="fas fa-ticket-alt"></i></div>
+                        </div>
+                        <div class="qa-label">My Bookings</div>
+                        <div class="qa-sub-text">{{ currentUser.bookingCount || 0 }} total bookings</div>
+                        <div class="qa-footer-row">
+                            <span class="qa-cta">View <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="qa-card" (click)="scrollToSection('artists')">
+                        <div class="qa-icon-wrap">
+                            <div class="qa-icon" style="background:linear-gradient(135deg,#c9848e,#a8596a)"><i class="fas fa-user-circle"></i></div>
+                        </div>
+                        <div class="qa-label">Explore Artists</div>
+                        <div class="qa-sub-text">Find your perfect MUA</div>
+                        <div class="qa-footer-row">
+                            <span class="qa-cta">Browse <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="qa-card" (click)="router.navigate(['/client/profile'])">
+                        <div class="qa-icon-wrap">
+                            <div class="qa-icon" style="background:linear-gradient(135deg,#9b8dca,#7a6fb0)"><i class="fas fa-user-edit"></i></div>
+                        </div>
+                        <div class="qa-label">My Profile</div>
+                        <div class="qa-sub-text">Update your preferences</div>
+                        <div class="qa-footer-row">
+                            <span class="qa-cta">Edit <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                    <div class="qa-card" (click)="scrollToSection('promos')">
+                        <div class="qa-icon-wrap">
+                            <div class="qa-icon" style="background:linear-gradient(135deg,#80cba9,#5aaa88)"><i class="fas fa-tags"></i></div>
+                        </div>
+                        <div class="qa-label">Promotions</div>
+                        <div class="qa-sub-text">Exclusive deals for you</div>
+                        <div class="qa-footer-row">
+                            <span class="qa-cta">See Offers <i class="fas fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- UPCOMING APPOINTMENT -->
+        <section class="upcoming-section" *ngIf="currentUser && myTickets.length > 0">
+            <div class="wrap">
+                <div class="up-section-label">
+                    <div class="section-eyebrow"><div class="eyebrow-dot"></div> Next Appointment</div>
+                </div>
+                <div class="upcoming-card">
+                    <div class="upcoming-glow-orb"></div>
+                    <div class="upcoming-left">
+                        <div class="upcoming-badge"><i class="fas fa-clock"></i> Upcoming</div>
+                        <h3 class="upcoming-title">{{ myTickets[0].serviceName }}</h3>
+                        <p class="upcoming-artist">with <strong>{{ myTickets[0].artistName }}</strong></p>
+                        <div class="upcoming-meta">
+                            <span><i class="fas fa-calendar-alt"></i> {{ myTickets[0].date }}</span>
+                            <span><i class="fas fa-clock"></i> {{ myTickets[0].time }}</span>
+                            <span class="upcoming-status" [ngClass]="{
+                                'status-pending': myTickets[0].status === 'PENDING',
+                                'status-upcoming': myTickets[0].status === 'UPCOMING',
+                                'status-confirmed': myTickets[0].status === 'CONFIRMED'
+                            }">{{ myTickets[0].status }}</span>
+                        </div>
+                    </div>
+                    <div class="upcoming-right">
+                        <div class="upcoming-price-label">Total Amount</div>
+                        <div class="upcoming-price">₱{{ myTickets[0].price | number }}</div>
+                        <button class="btn-upcoming-view" (click)="openTicket(myTickets[0])">
+                            <i class="fas fa-eye"></i> View Ticket
+                        </button>
+                        <button class="btn-upcoming-book" (click)="navigateTo('bookings')">
+                            <i class="fas fa-list"></i> All Bookings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RECENT ACTIVITY / BOOKING HISTORY -->
+        <section class="recent-activity-section" *ngIf="currentUser && myTickets.length > 0">
+            <div class="wrap">
+                <div class="sec-head-row">
+                    <div>
+                        <div class="section-eyebrow"><div class="eyebrow-dot"></div> Activity</div>
+                        <h2 class="section-h2">Recent Bookings</h2>
+                    </div>
+                    <div class="sec-head-right">
+                        <p class="sec-sub">Your latest booking history</p>
+                        <button class="btn-view-all" (click)="navigateTo('bookings')">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="recent-list">
+                    <div class="recent-item" *ngFor="let t of myTickets.slice(0,4)" (click)="openTicket(t)">
+                        <div class="ri-icon" [ngClass]="{
+                            'ri-done': t.status === 'COMPLETED',
+                            'ri-up': t.status === 'UPCOMING' || t.status === 'CONFIRMED',
+                            'ri-pending': t.status === 'PENDING'
+                        }">
+                            <i class="fas" [ngClass]="{
+                                'fa-check': t.status === 'COMPLETED',
+                                'fa-clock': t.status === 'UPCOMING' || t.status === 'CONFIRMED',
+                                'fa-hourglass-half': t.status === 'PENDING'
+                            }"></i>
+                        </div>
+                        <div class="ri-body">
+                            <div class="ri-service">{{ t.serviceName }}</div>
+                            <div class="ri-meta">with {{ t.artistName }} &bull; {{ t.date }}</div>
+                        </div>
+                        <div class="ri-right">
+                            <div class="ri-amount">₱{{ t.price | number }}</div>
+                            <div class="ri-status" [ngClass]="{
+                                'ris-done': t.status === 'COMPLETED',
+                                'ris-up': t.status === 'UPCOMING' || t.status === 'CONFIRMED',
+                                'ris-pending': t.status === 'PENDING'
+                            }">{{ t.status }}</div>
+                        </div>
+                        <div class="ri-chevron"><i class="fas fa-chevron-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <section class="about-section">
             <div class="wrap">
                 <div class="about-layout">
@@ -461,6 +544,61 @@
                 </div>
             </div>
         </div>
+
+        <!-- PROMOTIONS SECTION -->
+        <section id="promos" class="promos-section" *ngIf="currentUser">
+            <div class="wrap">
+                <div class="sec-head-row">
+                    <div>
+                        <div class="section-eyebrow">
+                            <div class="eyebrow-dot"></div> Exclusive Offers
+                        </div>
+                        <h2 class="section-h2">Current Promotions</h2>
+                    </div>
+                </div>
+                <div class="promos-grid">
+                    <div class="promo-card" *ngFor="let promo of promotions">
+                        <div class="promo-img-wrap">
+                            <img [src]="promo.img" [alt]="promo.title" class="promo-img"/>
+                            <div class="promo-badge">{{ promo.badge }}</div>
+                        </div>
+                        <div class="promo-body">
+                            <h3>{{ promo.title }}</h3>
+                            <p>{{ promo.desc }}</p>
+                            <button class="btn-ghost btn-sm" (click)="goToBook()">Claim Offer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INSPIRATION SECTION -->
+        <section class="inspiration-section">
+            <div class="wrap">
+                <div class="sec-head-row">
+                    <div>
+                        <div class="section-eyebrow">
+                            <div class="eyebrow-dot"></div> Lookbook
+                        </div>
+                        <h2 class="section-h2">Makeup Inspiration</h2>
+                    </div>
+                    <div class="sec-head-right">
+                        <button class="btn-view-all" (click)="scrollToSection('portfolio')">
+                            Full Gallery <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="inspo-grid">
+                    <div class="inspo-card" *ngFor="let inspo of inspirations">
+                        <img [src]="inspo.img" [alt]="inspo.title" />
+                        <div class="inspo-ov">
+                            <h4>{{ inspo.title }}</h4>
+                            <button class="btn-inspo-book" (click)="goToBook()">Book This Style</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- ARTISTS -->
         <section id="artists" class="artists-section">

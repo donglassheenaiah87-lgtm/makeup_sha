@@ -10,7 +10,13 @@ import {
   deleteDoc,
   query,
   where,
-  onSnapshot
+  onSnapshot,
+  // ── NEW: arrayUnion/arrayRemove used for Favorites feature ──
+  // Why: These are Firestore atomic array operations.
+  // ACID - Atomic: arrayUnion/arrayRemove are single-document atomic writes.
+  // They will never leave the array in a partial state.
+  arrayUnion,
+  arrayRemove
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -42,6 +48,23 @@ export interface UserData {
   favoriteService?: string;
   notes?: string;
   loyaltyPoints?: number;
+  
+  // FIX: Added missing properties here so TypeScript knows they exist in `Partial<UserData>`.
+  // Error: TS2353 'inspirations' does not exist in type 'Partial<UserData>'.
+  // Fix: Explicitly declare them below to prevent TS compilation errors when using `updateUser()`.
+  inspirations?: string[];
+  skinType?: string;
+  allergies?: string;
+  preferredArtist?: string;
+  preferredSchedule?: string;
+  memberTier?: string;
+
+  // ── NEW: Favorites feature fields ──
+  // Stored in: Firebase 'users' collection under the client's document
+  // Why: Client can save favorite artists and services for quick access on their profile.
+  // Format: array of strings (IDs or names) for simple lookup
+  favoriteArtists?: string[];
+  favoriteServices?: string[];
 }
 
 @Injectable({
@@ -130,6 +153,24 @@ export class UserService {
   async updateUser(uid: string, data: Partial<UserData>) {
     const userRef = doc(this.firestore, `users/${uid}`);
     return updateDoc(userRef, { ...data });
+  }
+
+  // ── NEW: Add a value to a favorites array field (e.g. favoriteArtists, favoriteServices) ──
+  // Writes to: Firebase 'users/{uid}' document
+  // ACID - Atomic: arrayUnion guarantees no duplicates and is a single atomic write.
+  // ACID - Consistent: If write fails, the local UI should NOT reflect the change until retried.
+  async addToFavorites(uid: string, field: 'favoriteArtists' | 'favoriteServices', value: string): Promise<void> {
+    const userRef = doc(this.firestore, `users/${uid}`);
+    return updateDoc(userRef, { [field]: arrayUnion(value) });
+  }
+
+  // ── NEW: Remove a value from a favorites array field ──
+  // Writes to: Firebase 'users/{uid}' document
+  // ACID - Atomic: arrayRemove is a single atomic write, no partial removals.
+  // ACID - Durable: Once written to Firestore, the removal is permanent.
+  async removeFromFavorites(uid: string, field: 'favoriteArtists' | 'favoriteServices', value: string): Promise<void> {
+    const userRef = doc(this.firestore, `users/${uid}`);
+    return updateDoc(userRef, { [field]: arrayRemove(value) });
   }
 
   async deleteUser(uid: string) {

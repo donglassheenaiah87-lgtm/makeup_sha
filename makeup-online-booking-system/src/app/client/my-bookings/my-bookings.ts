@@ -1,14 +1,25 @@
-// client/my-bookings/my-bookings.ts
-import { Component, OnInit } from '@angular/core';
+// my-bookings.ts
+// CHANGED: Connected to Firebase via BookingService + AuthService (replaced hardcoded data)
+// CHANGED: Added ngOnDestroy to unsubscribe and prevent memory leaks (ACID compliance)
+// ACID - Isolated: Real-time listener only reads this client's bookings
+// ACID - Durable: Cancel/Reschedule writes persist to Firestore
+
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+// NEW: Import services for Firebase connectivity
+import { AuthService } from '../../core/auth.service';
+import { BookingService, BookingData } from '../../core/booking.service';
 
+// Local display interface — maps Firebase BookingData to UI-friendly format
 interface Booking {
   id: string; service: string; date: string; time: string;
-  artist: string; status: 'Upcoming' | 'Completed' | 'Cancelled';
+  artist: string; status: 'Upcoming' | 'Completed' | 'Cancelled' | 'Pending';
   price: number; image: string; duration: string; location: string;
   artistAvatar: string; category: string; payment?: string;
+  firebaseId?: string; // tracks the Firestore document ID for updates
 }
 
 @Component({
@@ -18,180 +29,163 @@ interface Booking {
   templateUrl: './my-bookings.html',
   styleUrls: ['./my-bookings.css']
 })
-export class ClientMyBookingsComponent implements OnInit {
+export class ClientMyBookingsComponent implements OnInit, OnDestroy {
   activeFilter: 'All' | 'Upcoming' | 'Completed' | 'Cancelled' = 'All';
-  toastVisible = false;
-  toastTitle = '';
-  toastMessage = '';
-  toastIcon = 'fas fa-check-circle';
-  toastType: 'success' | 'error' = 'success';
+  toastVisible = false; toastTitle = ''; toastMessage = '';
+  toastIcon = 'fas fa-check-circle'; toastType: 'success' | 'error' = 'success';
   private toastTimer: any;
 
-  // ── Reschedule Modal ─────────────────────────────────────
-  rescheduleOpen = false;
-  rescheduleBooking: Booking | null = null;
-  rescheduleDate = '';
-  rescheduleTime = '';
-  minRescheduleDate = '';
+  // ── NEW: Firebase bookings data — replaces hardcoded array
+  // Reads from: Firebase 'bookings' collection filtered by clientId
+  bookings: Booking[] = [];
+  isLoading = true;
 
-  // ── Review Modal ─────────────────────────────────────────
-  reviewOpen = false;
-  reviewBooking: Booking | null = null;
-  reviewRating = 5;
-  reviewComment = '';
+  // ── Subscription handlers — prevents memory leaks on destroy
+  private authSub?: Subscription;
+  private bookingsSub?: Subscription;
 
-  // ── View Details Modal ──────────────────────────────────
-  detailOpen = false;
-  detailBooking: Booking | null = null;
-  
-  // ── Digital Ticket Modal ────────────────────────────────
-  ticketOpen = false;
-  ticketBooking: Booking | null = null;
+  // ── Modal State ──────────────────────────────────────────
+  rescheduleOpen = false; rescheduleBooking: Booking | null = null;
+  rescheduleDate = ''; rescheduleTime = ''; minRescheduleDate = '';
+  reviewOpen = false; reviewBooking: Booking | null = null;
+  reviewRating = 5; reviewComment = '';
+  detailOpen = false; detailBooking: Booking | null = null;
+  ticketOpen = false; ticketBooking: Booking | null = null;
 
-  timeSlots = [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
-  ];
-
-  bookings: Booking[] = [
-    {
-      id: 'LMR-2026-001', service: 'Bridal Makeup', date: 'Mar 15, 2026', time: '9:00 AM',
-      artist: 'Anika Reyes', status: 'Upcoming', price: 4500,
-      duration: '2–3 hrs', location: 'Quezon City Studio', category: 'Bridal',
-      artistAvatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face',
-      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=200&h=200&fit=crop&crop=face'
-    },
-    {
-      id: 'LMR-2026-002', service: 'Event Glam', date: 'Feb 20, 2026', time: '2:00 PM',
-      artist: 'Leila Torres', status: 'Completed', price: 2200,
-      duration: '1–2 hrs', location: 'Quezon City Studio', category: 'Event',
-      artistAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
-      image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200&h=200&fit=crop&crop=face'
-    },
-    {
-      id: 'LMR-2025-089', service: 'Natural Glow', date: 'Nov 12, 2025', time: '11:00 AM',
-      artist: 'Mia Santos', status: 'Completed', price: 1800,
-      duration: '1 hr', location: 'Client Location', category: 'Natural',
-      artistAvatar: 'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=80&h=80&fit=crop&crop=face',
-      image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&h=200&fit=crop&crop=face'
-    },
-    {
-      id: 'LMR-2025-065', service: 'Photoshoot Look', date: 'Sep 5, 2025', time: '1:00 PM',
-      artist: 'Sofia Cruz', status: 'Cancelled', price: 2500,
-      duration: '1.5–2 hrs', location: 'Quezon City Studio', category: 'Editorial',
-      artistAvatar: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=80&h=80&fit=crop&crop=face',
-      image: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=200&h=200&fit=crop&crop=face'
-    },
-  ];
+  timeSlots = ['8:00 AM','9:00 AM','10:00 AM','11:00 AM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'];
 
   get filtered(): Booking[] {
-    return this.activeFilter === 'All' ? this.bookings : this.bookings.filter(b => b.status === this.activeFilter);
+    if (this.activeFilter === 'All') return this.bookings;
+    return this.bookings.filter(b => b.status === this.activeFilter);
   }
+  get upcomingCount() { return this.bookings.filter(b => b.status === 'Upcoming').length; }
+  get completedCount() { return this.bookings.filter(b => b.status === 'Completed').length; }
+  get cancelledCount() { return this.bookings.filter(b => b.status === 'Cancelled').length; }
+  get totalSpent() { return this.bookings.filter(b => b.status === 'Completed').reduce((s, b) => s + b.price, 0); }
 
-  get upcomingCount(): number { return this.bookings.filter(b => b.status === 'Upcoming').length; }
-  get completedCount(): number { return this.bookings.filter(b => b.status === 'Completed').length; }
-  get cancelledCount(): number { return this.bookings.filter(b => b.status === 'Cancelled').length; }
-  get totalSpent(): number { return this.bookings.filter(b => b.status === 'Completed').reduce((s, b) => s + b.price, 0); }
-
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,       // NEW: For getting current user
+    private bookingService: BookingService, // NEW: For real-time Firebase bookings
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     window.scrollTo(0, 0);
     const today = new Date();
     today.setDate(today.getDate() + 1);
     this.minRescheduleDate = today.toISOString().split('T')[0];
+
+    // NEW: Subscribe to auth state, then load real Firebase bookings
+    // ACID - Isolated: Each user only sees their own bookings (filtered by clientId)
+    this.authSub = this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.loadBookings(user.uid, user.displayName || '');
+      } else {
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    // CHANGED: Added cleanup to prevent memory leaks (was missing before)
+    if (this.authSub) this.authSub.unsubscribe();
+    if (this.bookingsSub) this.bookingsSub.unsubscribe();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+  }
+
+  // NEW: Load bookings from Firebase in real-time
+  // Reads from: Firebase 'bookings' collection, filtered by clientId
+  loadBookings(uid: string, name: string): void {
+    this.bookingsSub = this.bookingService.getBookingsByClientRealtime(name, uid).subscribe(data => {
+      this.bookings = data.map(b => this.mapBooking(b));
+      this.isLoading = false;
+      this.cdr.detectChanges();
+    });
+  }
+
+  // NEW: Maps Firestore BookingData to local Booking display format
+  mapBooking(b: BookingData): Booking {
+    const status = this.mapStatus(b.status);
+    return {
+      id: b.id || 'LMR-' + Date.now(),
+      service: b.serviceName || 'Unknown Service',
+      date: b.date || '',
+      time: b.date?.split(' ')[1] || '10:00 AM',
+      artist: b.artistName || 'Unknown Artist',
+      status,
+      price: parseFloat(b.amount) || 0,
+      image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=200&h=200&fit=crop',
+      duration: '1-2 hrs',
+      location: 'Quezon City Studio',
+      artistAvatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face',
+      category: b.serviceName?.split(' ')[0] || 'Beauty',
+      payment: b.paymentMethod || 'Pre-Paid',
+      firebaseId: b.id
+    };
+  }
+
+  mapStatus(s: string): 'Upcoming' | 'Completed' | 'Cancelled' | 'Pending' {
+    const m: any = { pending:'Upcoming', confirmed:'Upcoming', completed:'Completed', cancelled:'Cancelled' };
+    return m[s?.toLowerCase()] || 'Upcoming';
   }
 
   setFilter(f: 'All' | 'Upcoming' | 'Completed' | 'Cancelled'): void { this.activeFilter = f; }
 
-  cancelBooking(b: Booking): void {
+  // CHANGED: Now writes cancel to Firebase (was local-only before)
+  // Writes to: Firebase 'bookings/{id}' document — status field
+  // ACID - Atomic: Single document field update
+  async cancelBooking(b: Booking): Promise<void> {
     if (b.status !== 'Upcoming') return;
     if (!confirm(`Cancel "${b.service}" on ${b.date}?`)) return;
-    b.status = 'Cancelled';
-    this.showToast('Booking Cancelled', `${b.service} on ${b.date} has been cancelled.`, 'fas fa-times-circle', 'error');
+    try {
+      if (b.firebaseId) {
+        await this.bookingService.updateBookingStatus(b.firebaseId, 'cancelled');
+      }
+      b.status = 'Cancelled';
+      this.showToast('Cancelled', `${b.service} has been cancelled.`, 'fas fa-times-circle', 'error');
+    } catch {
+      this.showToast('Error', 'Could not cancel booking. Try again.', 'fas fa-times', 'error');
+    }
+    this.cdr.detectChanges();
   }
 
-  // ── Reschedule ─────────────────────────────────────────
-  openReschedule(b: Booking): void {
-    this.rescheduleBooking = b;
-    this.rescheduleDate = '';
-    this.rescheduleTime = b.time;
-    this.rescheduleOpen = true;
-    document.body.style.overflow = 'hidden';
-  }
+  openReschedule(b: Booking): void { this.rescheduleBooking = b; this.rescheduleDate = ''; this.rescheduleTime = b.time; this.rescheduleOpen = true; document.body.style.overflow = 'hidden'; }
+  closeReschedule(): void { this.rescheduleOpen = false; this.rescheduleBooking = null; document.body.style.overflow = ''; }
 
-  closeReschedule(): void {
-    this.rescheduleOpen = false;
-    this.rescheduleBooking = null;
-    document.body.style.overflow = '';
-  }
-
-  confirmReschedule(): void {
+  // CHANGED: Writes reschedule to Firebase
+  // Writes to: Firebase 'bookings/{id}' — date and status fields
+  async confirmReschedule(): Promise<void> {
     if (!this.rescheduleDate || !this.rescheduleTime) {
-      this.showToast('Missing Info', 'Please select a new date and time.', 'fas fa-exclamation-circle', 'error');
-      return;
+      this.showToast('Missing Info', 'Please select a new date and time.', 'fas fa-exclamation-circle', 'error'); return;
     }
     if (this.rescheduleBooking) {
-      const dateObj = new Date(this.rescheduleDate);
-      const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-      this.rescheduleBooking.date = dateObj.toLocaleDateString('en-US', options);
-      this.rescheduleBooking.time = this.rescheduleTime;
-      this.showToast('Rescheduled! ✨', `${this.rescheduleBooking.service} moved to ${this.rescheduleBooking.date} at ${this.rescheduleBooking.time}.`, 'fas fa-calendar-check', 'success');
+      try {
+        const dateObj = new Date(this.rescheduleDate);
+        const formatted = dateObj.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        if (this.rescheduleBooking.firebaseId) {
+          await this.bookingService.updateBooking(this.rescheduleBooking.firebaseId, { date: formatted + ' ' + this.rescheduleTime });
+        }
+        this.rescheduleBooking.date = formatted;
+        this.rescheduleBooking.time = this.rescheduleTime;
+        this.showToast('Rescheduled! ✨', `Moved to ${formatted} at ${this.rescheduleTime}.`, 'fas fa-calendar-check', 'success');
+      } catch { this.showToast('Error', 'Could not reschedule.', 'fas fa-times', 'error'); }
     }
     this.closeReschedule();
   }
 
-  // ── Review ─────────────────────────────────────────────
-  openReview(b: Booking): void {
-    this.reviewBooking = b;
-    this.reviewRating = 5;
-    this.reviewComment = '';
-    this.reviewOpen = true;
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeReview(): void {
-    this.reviewOpen = false;
-    this.reviewBooking = null;
-    document.body.style.overflow = '';
-  }
-
+  openReview(b: Booking): void { this.reviewBooking = b; this.reviewRating = 5; this.reviewComment = ''; this.reviewOpen = true; document.body.style.overflow = 'hidden'; }
+  closeReview(): void { this.reviewOpen = false; this.reviewBooking = null; document.body.style.overflow = ''; }
   submitReview(): void {
-    if (!this.reviewComment.trim()) {
-      this.showToast('Missing Review', 'Please write a short review.', 'fas fa-pen', 'error');
-      return;
-    }
+    if (!this.reviewComment.trim()) { this.showToast('Missing Review', 'Please write a review.', 'fas fa-pen', 'error'); return; }
     this.showToast('Review Submitted! 💕', `Thank you for your ${this.reviewRating}★ review!`, 'fas fa-star', 'success');
     this.closeReview();
   }
-
   setRating(r: number): void { this.reviewRating = r; }
-
-  // ── View Details ────────────────────────────────────────
-  openDetail(b: Booking): void {
-    this.detailBooking = b;
-    this.detailOpen = true;
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeDetail(): void {
-    this.detailOpen = false;
-    this.detailBooking = null;
-    document.body.style.overflow = '';
-  }
-
-  // ── Digital Ticket ────────────────────────────────────────
-  openTicket(b: Booking): void {
-    this.ticketBooking = b;
-    this.ticketOpen = true;
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeTicket(): void {
-    this.ticketOpen = false;
-    this.ticketBooking = null;
-    document.body.style.overflow = '';
-  }
+  openDetail(b: Booking): void { this.detailBooking = b; this.detailOpen = true; document.body.style.overflow = 'hidden'; }
+  closeDetail(): void { this.detailOpen = false; this.detailBooking = null; document.body.style.overflow = ''; }
+  openTicket(b: Booking): void { this.ticketBooking = b; this.ticketOpen = true; document.body.style.overflow = 'hidden'; }
+  closeTicket(): void { this.ticketOpen = false; this.ticketBooking = null; document.body.style.overflow = ''; }
 
   showToast(title: string, msg: string, icon = 'fas fa-check-circle', type: 'success' | 'error' = 'success'): void {
     this.toastTitle = title; this.toastMessage = msg; this.toastIcon = icon; this.toastType = type;
@@ -199,10 +193,8 @@ export class ClientMyBookingsComponent implements OnInit {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.toastVisible = false, 3500);
   }
-
   goBack(): void { this.router.navigate(['/client/dashboard']); }
   goToBook(): void { this.router.navigate(['/client/dashboard']); }
-
   onImgError(e: Event): void {
     const img = e.target as HTMLImageElement;
     img.style.display = 'none';
