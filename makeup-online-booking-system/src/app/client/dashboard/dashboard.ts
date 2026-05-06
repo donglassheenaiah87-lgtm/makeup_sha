@@ -136,41 +136,6 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
   artists: Artist[] = [];
   private artistSub?: Subscription;
 
-  dummyArtists: Artist[] = [
-    {
-      name: 'Sophia Rivera', firstName: 'Sophia',
-      role: 'Bridal Makeup Specialist',
-      bio: 'Award-winning bridal artist with 7 years of experience creating timeless, photo-ready looks.',
-      image: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=460&fit=crop&crop=face',
-      rating: '4.9', exp: '7 yrs', clients: 320, specialties: ['Bridal', 'Editorial']
-    },
-    {
-      name: 'Mia Santos', firstName: 'Mia',
-      role: 'Glam & Editorial Artist',
-      bio: 'Passionate about bold glam, editorial concepts, and making every client feel like a star.',
-      image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=460&fit=crop&crop=face',
-      rating: '4.8', exp: '5 yrs', clients: 210, specialties: ['Glam', 'Events']
-    },
-    {
-      name: 'Luna Reyes', firstName: 'Luna',
-      role: 'Natural & Soft Glam Expert',
-      bio: 'Specializing in natural, skin-first beauty that enhances your unique features effortlessly.',
-      image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=460&fit=crop&crop=face',
-      rating: '5.0', exp: '4 yrs', clients: 180, specialties: ['Natural', 'Everyday']
-    },
-    {
-      name: 'Cara Mendez', firstName: 'Cara',
-      role: 'SFX & Creative Makeup Artist',
-      bio: 'Creative visionary specializing in transformative looks from avant-garde to special effects.',
-      image: 'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=400&h=460&fit=crop&crop=face',
-      rating: '4.7', exp: '6 yrs', clients: 145, specialties: ['SFX', 'Creative']
-    }
-  ];
-
-  get displayedArtists(): Artist[] {
-    return this.artists.length > 0 ? this.artists : this.dummyArtists;
-  }
-
   allPortfolio: PortfolioImage[] = [];
   private portfolioSub?: Subscription;
 
@@ -254,7 +219,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
     this.artistSub = this.userService.getUsersByRoleRealtime('artist').subscribe({
       next: (artistUsers) => {
         console.log('Raw artist data fetched:', artistUsers);
-        // Show ALL artists with role === 'artist' — no status filter
+        
         this.artists = artistUsers.map((u: any) => {
           let sp = Array.isArray(u.services) ? u.services.map((s:any) => s.name).filter((n:any) => !!n) : [];
           if (sp.length === 0) sp = [u.specialty || 'General'];
@@ -279,8 +244,7 @@ export class ClientDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        // Silently log — dummy artists will still show via displayedArtists getter
-        console.error('Artist fetch error (dummy artists will display):', err);
+        console.error('Artist fetch error:', err);
       }
     });
 
