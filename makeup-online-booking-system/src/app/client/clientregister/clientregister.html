@@ -1,200 +1,363 @@
-<!-- clientregister.html — Enhanced Split-Screen Registration -->
-<div class="reg-root">
-
-  <!-- ═══ LEFT PANEL ═══ -->
-  <div class="reg-left">
-    <div class="reg-left-inner">
-      <!-- Floating decorations -->
-      <div class="reg-orb o1"></div>
-      <div class="reg-orb o2"></div>
-      <div class="reg-orb o3"></div>
-      <div class="reg-sparkle sp1">✦</div>
-      <div class="reg-sparkle sp2">✧</div>
-      <div class="reg-sparkle sp3">✦</div>
-
-      <!-- Logo -->
-      <div class="reg-logo fade-in">
-        <div class="reg-logo-icon"><i class="fas fa-spa"></i></div>
-        <div>
-          <div class="reg-logo-name">Lumière</div>
-          <div class="reg-logo-tagline">Beauty Studio</div>
-        </div>
+<div class="reg-page">
+  <!-- LEFT PANEL -->
+  <div class="reg-hero">
+    <div class="rh-overlay"></div>
+    <div class="rh-orb rh-orb1"></div>
+    <div class="rh-orb rh-orb2"></div>
+    <div class="rh-content">
+      <div class="rh-brand">
+        <span class="rh-logo-l">L</span><span class="rh-logo-rest">UMIÈRE</span>
       </div>
-
-      <!-- Hero copy -->
-      <div class="reg-hero-text fade-in d1">
-        <h2 class="reg-left-h">Your Beauty<br><em>Journey</em> Starts Here ✨</h2>
-        <p class="reg-left-p">Join thousands of clients who trust Lumière for their most beautiful moments — bridal, events, editorial & everyday glam.</p>
+      <h2 class="rh-h2">Begin Your<br><em>Beauty Journey</em></h2>
+      <p class="rh-desc">Join Lumière Beauty Studio and unlock exclusive access to Davao's most luxurious makeup artistry experience.</p>
+      <div class="rh-perks">
+        <div class="rh-perk"><span class="rh-pk-icon">✦</span><span>Free bridal consultation</span></div>
+        <div class="rh-perk"><span class="rh-pk-icon">✦</span><span>Priority booking access</span></div>
+        <div class="rh-perk"><span class="rh-pk-icon">✦</span><span>Loyalty rewards program</span></div>
+        <div class="rh-perk"><span class="rh-pk-icon">✦</span><span>Exclusive member promos</span></div>
       </div>
-
-      <!-- Feature bullets -->
-      <div class="reg-features fade-in d2">
-        <div class="reg-feat" *ngFor="let f of features">
-          <div class="reg-feat-icon"><i [class]="f.icon"></i></div>
-          <div>
-            <div class="reg-feat-title">{{ f.title }}</div>
-            <div class="reg-feat-desc">{{ f.desc }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Social proof -->
-      <div class="reg-proof fade-in d3">
-        <div class="reg-proof-avs">
-          <div class="reg-proof-av" *ngFor="let i of [1,2,3,4]">
-            <i class="fas fa-user"></i>
-          </div>
-        </div>
-        <div class="reg-proof-txt"><strong>500+</strong> happy clients already</div>
+      <div class="rh-stats">
+        <div class="rhs-item"><span class="rhs-num">500+</span><span class="rhs-lbl">Happy Clients</span></div>
+        <div class="rhs-div"></div>
+        <div class="rhs-item"><span class="rhs-num">8+</span><span class="rhs-lbl">Years of Art</span></div>
+        <div class="rhs-div"></div>
+        <div class="rhs-item"><span class="rhs-num">5★</span><span class="rhs-lbl">Rating</span></div>
       </div>
     </div>
+    <span class="rh-sp sp1">✦</span>
+    <span class="rh-sp sp2">✦</span>
+    <span class="rh-sp sp3">✦</span>
   </div>
 
-  <!-- ═══ RIGHT PANEL (form) ═══ -->
-  <div class="reg-right">
-    <div class="reg-card fade-up">
+  <!-- RIGHT PANEL -->
+  <div class="reg-form-panel">
+    <div class="rfp-orb rfp-orb1"></div>
+    <div class="rfp-orb rfp-orb2"></div>
 
-      <!-- Back to login link -->
-      <a routerLink="/login" class="reg-back-link">
-        <i class="fas fa-arrow-left"></i> Back to Login
-      </a>
+    <div class="reg-card">
+      <!-- Logo mobile -->
+      <div class="mob-logo">
+        <span class="rh-logo-l">L</span><span class="rh-logo-rest">UMIÈRE</span>
+      </div>
 
       <!-- Header -->
-      <div class="reg-card-head">
-        <div class="reg-card-icon"><i class="fas fa-user-plus"></i></div>
-        <div>
-          <h1 class="reg-card-title">Create Account</h1>
-          <p class="reg-card-sub">Fill in the details below to get started</p>
-        </div>
+      <div class="rc-head" *ngIf="!successMessage">
+        <h2 class="rc-title">Create Your Account</h2>
+        <p class="rc-sub">Step {{ currentStep }} of {{ totalSteps }} — {{ steps[currentStep-1].label }}</p>
       </div>
 
-      <!-- Progress steps -->
-      <div class="reg-steps">
-        <div class="reg-step" [class.done]="name && email" [class.active]="!(name && email)">
-          <div class="reg-step-n"><i class="fas" [class.fa-check]="name && email" [class.fa-user]="!(name && email)"></i></div>
-          <span>Info</span>
-        </div>
-        <div class="reg-step-line" [class.done]="name && email"></div>
-        <div class="reg-step" [class.done]="password && confirmPassword && password === confirmPassword" [class.active]="name && email && !(password && confirmPassword)">
-          <div class="reg-step-n"><i class="fas" [class.fa-check]="password && confirmPassword && password === confirmPassword" [class.fa-lock]="!(password && confirmPassword && password === confirmPassword)"></i></div>
-          <span>Security</span>
-        </div>
-        <div class="reg-step-line" [class.done]="password && confirmPassword && password === confirmPassword"></div>
-        <div class="reg-step" [class.done]="agreedToTerms" [class.active]="password && confirmPassword && !agreedToTerms">
-          <div class="reg-step-n"><i class="fas" [class.fa-check]="agreedToTerms" [class.fa-check-circle]="!agreedToTerms"></i></div>
-          <span>Agree</span>
-        </div>
-      </div>
-
-      <!-- Form -->
-      <form (ngSubmit)="onRegister()" class="reg-form">
-
-        <!-- Full Name -->
-        <div class="reg-field" [class.focused]="nameFocus" [class.filled]="name" [class.has-error]="nameError">
-          <label class="reg-label"><i class="fas fa-user"></i> Full Name</label>
-          <div class="reg-inp-wrap">
-            <input type="text" [(ngModel)]="name" name="name"
-              placeholder="e.g., Maria Santos"
-              (focus)="nameFocus=true" (blur)="nameFocus=false; validateName()" required />
-            <span class="reg-inp-check" *ngIf="name && !nameError"><i class="fas fa-check-circle"></i></span>
-            <span class="reg-inp-x" *ngIf="nameError"><i class="fas fa-times-circle"></i></span>
-          </div>
-          <div class="reg-field-err" *ngIf="nameError">{{ nameError }}</div>
-        </div>
-
-        <!-- Email -->
-        <div class="reg-field" [class.focused]="emailFocus" [class.filled]="email" [class.has-error]="emailError">
-          <label class="reg-label"><i class="fas fa-envelope"></i> Email Address</label>
-          <div class="reg-inp-wrap">
-            <input type="email" [(ngModel)]="email" name="email"
-              placeholder="yourname@gmail.com"
-              (focus)="emailFocus=true" (blur)="emailFocus=false; validateEmail()" required />
-            <span class="reg-inp-check" *ngIf="email && !emailError"><i class="fas fa-check-circle"></i></span>
-            <span class="reg-inp-x" *ngIf="emailError"><i class="fas fa-times-circle"></i></span>
-          </div>
-          <div class="reg-field-err" *ngIf="emailError">{{ emailError }}</div>
-        </div>
-
-        <!-- Phone -->
-        <div class="reg-field" [class.focused]="phoneFocus" [class.filled]="phone">
-          <label class="reg-label"><i class="fas fa-phone"></i> Phone Number</label>
-          <div class="reg-inp-wrap">
-            <input type="tel" [(ngModel)]="phone" name="phone"
-              placeholder="e.g., 0912 345 6789"
-              (focus)="phoneFocus=true" (blur)="phoneFocus=false" required />
-            <span class="reg-inp-check" *ngIf="phone"><i class="fas fa-check-circle"></i></span>
-          </div>
-        </div>
-
-        <!-- Password -->
-        <div class="reg-field" [class.focused]="pwFocus" [class.filled]="password" [class.has-error]="pwError">
-          <label class="reg-label"><i class="fas fa-lock"></i> Password</label>
-          <div class="reg-inp-wrap">
-            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
-              placeholder="Min. 6 characters"
-              (focus)="pwFocus=true" (blur)="pwFocus=false"
-              (input)="onPasswordInput()" required />
-            <button type="button" class="reg-eye" (click)="showPassword=!showPassword">
-              <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
-            </button>
-          </div>
-          <!-- Strength bar -->
-          <div class="reg-strength" *ngIf="password">
-            <div class="reg-str-bar">
-              <div class="reg-str-fill" [class.weak]="pwStrength===1" [class.fair]="pwStrength===2" [class.strong]="pwStrength===3" [style.width]="(pwStrength/3*100)+'%'"></div>
+      <!-- Step Bar -->
+      <div class="step-bar" *ngIf="!successMessage">
+        <ng-container *ngFor="let s of steps; let i = index">
+          <div class="step-item"
+            [class.active]="currentStep >= s.num"
+            [class.done]="currentStep > s.num">
+            <div class="si-circle">
+              <span *ngIf="currentStep <= s.num">{{ s.num }}</span>
+              <svg *ngIf="currentStep > s.num" class="si-check" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
-            <span class="reg-str-lbl" [class.weak]="pwStrength===1" [class.fair]="pwStrength===2" [class.strong]="pwStrength===3">
-              {{ pwStrength===1?'Weak':pwStrength===2?'Fair':'Strong' }}
-            </span>
+            <span class="si-label">{{ s.label }}</span>
           </div>
-          <div class="reg-field-err" *ngIf="pwError">{{ pwError }}</div>
-        </div>
+          <div class="step-line" *ngIf="i < steps.length - 1" [class.done]="currentStep > s.num"></div>
+        </ng-container>
+      </div>
 
-        <!-- Confirm Password -->
-        <div class="reg-field" [class.focused]="cpwFocus" [class.filled]="confirmPassword" [class.has-error]="confirmPassword && password !== confirmPassword">
-          <label class="reg-label"><i class="fas fa-shield-alt"></i> Confirm Password</label>
-          <div class="reg-inp-wrap">
-            <input [type]="showConfirm ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPassword"
-              placeholder="Re-enter your password"
-              (focus)="cpwFocus=true" (blur)="cpwFocus=false" required />
-            <button type="button" class="reg-eye" (click)="showConfirm=!showConfirm">
-              <i class="fas" [class.fa-eye]="!showConfirm" [class.fa-eye-slash]="showConfirm"></i>
-            </button>
-            <span class="reg-inp-check" *ngIf="confirmPassword && password===confirmPassword"><i class="fas fa-check-circle"></i></span>
-            <span class="reg-inp-x" *ngIf="confirmPassword && password!==confirmPassword"><i class="fas fa-times-circle"></i></span>
+      <!-- SUCCESS -->
+      <div class="success-box" *ngIf="successMessage">
+        <div class="sb-anim">✨</div>
+        <h3 class="sb-title">Welcome to Lumière!</h3>
+        <p>{{ successMessage }}</p>
+        <p class="sb-hint">Redirecting you to login…</p>
+      </div>
+
+      <!-- ERROR -->
+      <div class="err-box" *ngIf="errorMessage">
+        <span>⚠</span><span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- ═══ STEP 1: Personal Info ═══ -->
+      <form class="reg-form" (ngSubmit)="nextStep()" *ngIf="currentStep === 1 && !successMessage">
+        <div class="step-section-title">Personal Information</div>
+
+        <div class="rf-row">
+          <div class="rf-field">
+            <label>First Name <span class="req">*</span></label>
+            <div class="rf-inp" [class.focused]="firstFocused" [class.filled]="firstName">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="text" [(ngModel)]="firstName" name="firstName" placeholder="Maria"
+                (focus)="firstFocused=true" (blur)="firstFocused=false" required />
+            </div>
           </div>
-          <div class="reg-field-err" *ngIf="confirmPassword && password !== confirmPassword">Passwords do not match</div>
+          <div class="rf-field">
+            <label>Last Name <span class="req">*</span></label>
+            <div class="rf-inp" [class.focused]="lastFocused" [class.filled]="lastName">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="text" [(ngModel)]="lastName" name="lastName" placeholder="Santos"
+                (focus)="lastFocused=true" (blur)="lastFocused=false" required />
+            </div>
+          </div>
         </div>
 
-        <!-- Terms -->
-        <label class="reg-terms">
-          <input type="checkbox" [(ngModel)]="agreedToTerms" name="agreedToTerms" />
-          <span class="reg-terms-box" [class.checked]="agreedToTerms">
-            <i class="fas fa-check" *ngIf="agreedToTerms"></i>
-          </span>
-          <span>I agree to the <a href="#" (click)="$event.preventDefault()">Terms of Service</a> and <a href="#" (click)="$event.preventDefault()">Privacy Policy</a></span>
-        </label>
-
-        <!-- Error / Success messages -->
-        <div class="reg-alert reg-alert-error" *ngIf="errorMessage">
-          <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
-        </div>
-        <div class="reg-alert reg-alert-success" *ngIf="successMessage">
-          <i class="fas fa-check-circle"></i> {{ successMessage }}
+        <div class="rf-field">
+          <label>Email Address <span class="req">*</span></label>
+          <div class="rf-inp" [class.focused]="emailFocused" [class.filled]="email">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M2 4h16v12H2V4zm0 0l8 7 8-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <input type="email" [(ngModel)]="email" name="email" placeholder="your@email.com"
+              (focus)="emailFocused=true" (blur)="emailFocused=false" required />
+          </div>
         </div>
 
-        <!-- Submit -->
-        <button type="submit" class="reg-submit-btn" [disabled]="isLoading || !agreedToTerms">
-          <span class="reg-btn-glow"></span>
-          <i class="fas" [class.fa-spin]="isLoading" [class.fa-spinner]="isLoading" [class.fa-user-plus]="!isLoading"></i>
-          {{ isLoading ? 'Creating Account…' : 'Create My Account' }}
+        <div class="rf-field">
+          <label>Contact Number <span class="req">*</span></label>
+          <div class="rf-inp" [class.focused]="phoneFocused" [class.filled]="phone">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M6 2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm4 14h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="tel" [(ngModel)]="phone" name="phone" placeholder="+63 9XX XXX XXXX"
+              (focus)="phoneFocused=true" (blur)="phoneFocused=false" required />
+          </div>
+        </div>
+
+        <div class="rf-row">
+          <div class="rf-field">
+            <label>Birthday</label>
+            <div class="rf-inp" [class.focused]="bdFocused" [class.filled]="birthday">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h16M6 2v4M14 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="date" [(ngModel)]="birthday" name="birthday"
+                (focus)="bdFocused=true" (blur)="bdFocused=false" />
+            </div>
+          </div>
+          <div class="rf-field">
+            <label>Gender</label>
+            <div class="rf-inp rf-select-wrap">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M10 14v4M8 16h4M10 6V2M14 4l-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <select [(ngModel)]="gender" name="gender">
+                <option value="">Select gender</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="prefer-not">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-next">
+          <span>Continue</span><span class="btn-arr">→</span>
         </button>
       </form>
 
-      <!-- Footer -->
-      <div class="reg-card-foot">
-        <span>Already have an account?</span>
-        <a routerLink="/login" class="reg-signin-link">Sign In <i class="fas fa-arrow-right"></i></a>
+      <!-- ═══ STEP 2: Account Setup ═══ -->
+      <form class="reg-form" (ngSubmit)="nextStep()" *ngIf="currentStep === 2 && !successMessage">
+        <div class="step-section-title">Secure Your Account</div>
+
+        <div class="rf-field">
+          <label>Password <span class="req">*</span></label>
+          <div class="rf-inp" [class.focused]="pwFocused" [class.filled]="password">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="8" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8V6a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
+              placeholder="Create a strong password"
+              (focus)="pwFocused=true" (blur)="pwFocused=false" required />
+            <button type="button" class="eye-btn" (click)="showPassword=!showPassword">
+              {{ showPassword ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <div class="pw-strength" *ngIf="password">
+            <div class="pws-bar"><div class="pws-fill"
+              [style.width]="(getPasswordStrength().level / 4 * 100) + '%'"
+              [style.background]="getPasswordStrength().color"></div></div>
+            <span class="pws-label" [style.color]="getPasswordStrength().color">{{ getPasswordStrength().label }}</span>
+          </div>
+          <div class="pw-hints">
+            <span [class.hint-ok]="password.length >= 8">✓ At least 8 characters</span>
+            <span [class.hint-ok]="/[A-Z]/.test(password)">✓ Uppercase letter</span>
+            <span [class.hint-ok]="/[0-9]/.test(password)">✓ Number</span>
+            <span [class.hint-ok]="/[^A-Za-z0-9]/.test(password)">✓ Special character</span>
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>Confirm Password <span class="req">*</span></label>
+          <div class="rf-inp" [class.focused]="cfFocused" [class.filled]="confirmPassword"
+            [class.error]="confirmPassword && confirmPassword !== password">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="4" y="8" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8V6a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="13" r="1" fill="currentColor"/></svg>
+            <input [type]="showConfirm ? 'text' : 'password'" [(ngModel)]="confirmPassword" name="confirmPassword"
+              placeholder="Re-enter your password"
+              (focus)="cfFocused=true" (blur)="cfFocused=false" required />
+            <button type="button" class="eye-btn" (click)="showConfirm=!showConfirm">
+              {{ showConfirm ? '🙈' : '👁' }}
+            </button>
+          </div>
+          <span class="match-hint" *ngIf="confirmPassword && confirmPassword !== password">⚠ Passwords do not match</span>
+          <span class="match-ok" *ngIf="confirmPassword && confirmPassword === password">✓ Passwords match</span>
+        </div>
+
+        <div class="rf-actions">
+          <button type="button" class="btn-back" (click)="backStep()">← Back</button>
+          <button type="submit" class="btn-next">Continue <span class="btn-arr">→</span></button>
+        </div>
+      </form>
+
+      <!-- ═══ STEP 3: Profile Setup ═══ -->
+      <form class="reg-form" (ngSubmit)="nextStep()" *ngIf="currentStep === 3 && !successMessage">
+        <div class="step-section-title">Beauty Profile</div>
+
+        <div class="rf-field">
+          <label>City / Municipality <span class="req">*</span></label>
+          <div class="rf-inp" [class.focused]="cityFocused" [class.filled]="city">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M10 2a6 6 0 016 6c0 5-6 10-6 10S4 13 4 8a6 6 0 016-6zm0 4a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="1.5"/></svg>
+            <input type="text" [(ngModel)]="city" name="city" placeholder="Davao City"
+              (focus)="cityFocused=true" (blur)="cityFocused=false" required />
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>Full Address</label>
+          <div class="rf-inp" [class.focused]="addressFocused" [class.filled]="address">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 4V3a1 1 0 011-1h6a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.5"/></svg>
+            <input type="text" [(ngModel)]="address" name="address" placeholder="Brgy., Street, City"
+              (focus)="addressFocused=true" (blur)="addressFocused=false" />
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>Skin Type</label>
+          <div class="skin-options">
+            <button type="button" class="skin-opt" *ngFor="let t of ['Normal','Dry','Oily','Combination','Sensitive']"
+              [class.selected]="skinType === t" (click)="skinType = t">{{ t }}</button>
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>Skin Allergies / Sensitivities</label>
+          <div class="rf-inp" [class.focused]="allergyFocused" [class.filled]="allergies">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" [(ngModel)]="allergies" name="allergies" placeholder="e.g. latex, fragrance (leave blank if none)"
+              (focus)="allergyFocused=true" (blur)="allergyFocused=false" />
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>Interested Event Types</label>
+          <div class="event-chips">
+            <button type="button" class="chip" *ngFor="let t of eventTypeOptions"
+              [class.active]="hasEventType(t)" (click)="toggleEventType(t)">{{ t }}</button>
+          </div>
+        </div>
+
+        <div class="rf-field">
+          <label>How did you hear about us?</label>
+          <div class="rf-inp rf-select-wrap">
+            <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M2 10a8 8 0 1016 0A8 8 0 002 10zm8-3v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <select [(ngModel)]="referral" name="referral">
+              <option value="">Select one</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="tiktok">TikTok</option>
+              <option value="friend">Friend / Family</option>
+              <option value="google">Google Search</option>
+              <option value="event">Event / Expo</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="rf-actions">
+          <button type="button" class="btn-back" (click)="backStep()">← Back</button>
+          <button type="submit" class="btn-next">Continue <span class="btn-arr">→</span></button>
+        </div>
+      </form>
+
+      <!-- ═══ STEP 4: Payment Method ═══ -->
+      <form class="reg-form" (ngSubmit)="nextStep()" *ngIf="currentStep === 4 && !successMessage">
+        <div class="step-section-title">Payment Preference <span class="optional-tag">Optional</span></div>
+        <p class="step-note">Set your preferred payment method for faster checkout. You can update this anytime.</p>
+
+        <div class="payment-options">
+          <button type="button" class="pay-opt" [class.active]="preferredPayment === 'gcash'" (click)="preferredPayment='gcash'">
+            <span class="pay-icon">📱</span>
+            <span class="pay-label">GCash</span>
+          </button>
+          <button type="button" class="pay-opt" [class.active]="preferredPayment === 'card'" (click)="preferredPayment='card'">
+            <span class="pay-icon">💳</span>
+            <span class="pay-label">Credit/Debit Card</span>
+          </button>
+          <button type="button" class="pay-opt" [class.active]="preferredPayment === 'cash'" (click)="preferredPayment='cash'">
+            <span class="pay-icon">💵</span>
+            <span class="pay-label">Cash on Day</span>
+          </button>
+          <button type="button" class="pay-opt" [class.active]="preferredPayment === 'bank'" (click)="preferredPayment='bank'">
+            <span class="pay-icon">🏦</span>
+            <span class="pay-label">Bank Transfer</span>
+          </button>
+        </div>
+
+        <!-- GCash fields -->
+        <div class="pay-detail" *ngIf="preferredPayment === 'gcash'">
+          <div class="rf-field">
+            <label>GCash Number</label>
+            <div class="rf-inp" [class.focused]="gcashFocused" [class.filled]="gcashNumber">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M6 2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm4 14h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="tel" [(ngModel)]="gcashNumber" name="gcashNumber" placeholder="09XX XXX XXXX"
+                (focus)="gcashFocused=true" (blur)="gcashFocused=false" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Card fields (UI only — actual card data should go through a payment gateway in production) -->
+        <div class="pay-detail" *ngIf="preferredPayment === 'card'">
+          <div class="card-preview">
+            <div class="cp-chip">▣</div>
+            <div class="cp-number">{{ cardNumber || '•••• •••• •••• ••••' }}</div>
+            <div class="cp-bottom">
+              <span class="cp-name">{{ cardName || 'FULL NAME' }}</span>
+              <span class="cp-exp">{{ cardExpiry || 'MM/YY' }}</span>
+            </div>
+          </div>
+          <div class="rf-field">
+            <label>Cardholder Name</label>
+            <div class="rf-inp" [class.focused]="cardNameFocused" [class.filled]="cardName">
+              <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="text" [(ngModel)]="cardName" name="cardName" placeholder="MARIA SANTOS"
+                style="text-transform:uppercase"
+                (focus)="cardNameFocused=true" (blur)="cardNameFocused=false" />
+            </div>
+          </div>
+          <div class="rf-row">
+            <div class="rf-field">
+              <label>Card Number</label>
+              <div class="rf-inp" [class.focused]="cardNumFocused" [class.filled]="cardNumber">
+                <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M1 8h18" stroke="currentColor" stroke-width="1.5"/></svg>
+                <input type="text" [(ngModel)]="cardNumber" name="cardNumber" placeholder="•••• •••• •••• ••••" maxlength="19"
+                  (focus)="cardNumFocused=true" (blur)="cardNumFocused=false" />
+              </div>
+            </div>
+            <div class="rf-field">
+              <label>Expiry Date</label>
+              <div class="rf-inp" [class.focused]="cardExpFocused" [class.filled]="cardExpiry">
+                <svg class="rf-svg-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h16M6 2v4M14 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <input type="text" [(ngModel)]="cardExpiry" name="cardExpiry" placeholder="MM/YY" maxlength="5"
+                  (focus)="cardExpFocused=true" (blur)="cardExpFocused=false" />
+              </div>
+            </div>
+          </div>
+          <p class="card-note">🔒 This information is stored securely for booking convenience.</p>
+        </div>
+
+        <div class="rf-actions">
+          <button type="button" class="btn-back" (click)="backStep()">← Back</button>
+          <button type="submit" class="btn-next" [disabled]="isLoading">
+            <span class="btn-spinner" *ngIf="isLoading"></span>
+            <span>{{ isLoading ? 'Creating Account…' : 'Create Account' }}</span>
+            <span class="btn-arr" *ngIf="!isLoading">✦</span>
+          </button>
+        </div>
+        <p class="skip-link" (click)="nextStep()">Skip and finish later →</p>
+      </form>
+
+      <div class="reg-footer" *ngIf="!successMessage">
+        <p>Already have an account? <a routerLink="/login">Sign in →</a></p>
+        <p class="reg-artist">Are you an artist? <a routerLink="/artist/register">Apply here →</a></p>
       </div>
     </div>
   </div>

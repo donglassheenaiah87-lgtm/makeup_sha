@@ -33,7 +33,7 @@ export class LoginComponent {
   // ── Guest Access ──
   continueAsGuest() {
     sessionStorage.setItem('guestMode', 'true');
-    this.router.navigate(['/client/dashboard']);
+    this.router.navigate(['/client/homepage']);
   }
 
   async onLogin() {
@@ -93,7 +93,7 @@ export class LoginComponent {
         }
         this.router.navigate(['/artist/dashboard']);
       } else {
-        this.router.navigate(['/client/dashboard']);
+        this.router.navigate(['/client/homepage']);
       }
 
     } catch (error: any) {

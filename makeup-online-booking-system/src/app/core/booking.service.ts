@@ -28,6 +28,8 @@ export interface BookingData {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   phone?: string;
   notes?: string;
+  eventType?: string;
+  venue?: string;
   createdAt: Date;
 }
 

@@ -1,0 +1,545 @@
+<div class="lum-page" [attr.data-theme]="isDarkMode ? 'dark' : 'light'">
+
+  <!-- ═══ ANNOUNCEMENT STRIP ═══ -->
+  <div class="announce-strip">
+    <div class="announce-inner">
+      <span class="announce-gem">✦</span>
+      <span class="announce-text">{{ announcements[currentAnnouncement] }}</span>
+      <span class="announce-gem">✦</span>
+    </div>
+  </div>
+
+  <!-- ═══ NAVBAR ═══ -->
+  <header class="navbar" [class.scrolled]="isNavbarScrolled">
+    <div class="nav-container">
+      <!-- Logo -->
+      <div class="nav-logo" (click)="scrollTo('hero')">
+        <span class="logo-l">L</span><span class="logo-rest">UMIÈRE</span>
+        <span class="logo-sub">Beauty Studio</span>
+      </div>
+
+      <!-- Desktop Nav Links -->
+      <nav class="nav-links">
+        <button class="nav-link" (click)="scrollTo('services')">Services</button>
+        <button class="nav-link" (click)="scrollTo('artists')">Artists</button>
+        <button class="nav-link" (click)="scrollTo('pricing')">Pricing</button>
+        <button class="nav-link" (click)="scrollTo('reviews')">Reviews</button>
+        <button class="nav-link" (click)="scrollTo('faq')">FAQ</button>
+        <button class="nav-link" (click)="scrollTo('contact')">Contact</button>
+      </nav>
+
+      <!-- Nav Actions -->
+      <div class="nav-actions">
+        <button class="btn-theme" (click)="toggleTheme()" [title]="isDarkMode ? 'Light Mode' : 'Dark Mode'">
+          {{ isDarkMode ? '☀️' : '🌙' }}
+        </button>
+        <div class="profile-wrap">
+          <!-- Circle avatar trigger -->
+          <button class="btn-avatar" (click)="toggleProfileDropdown()" [class.active]="isProfileDropdownOpen" title="Account">
+            <svg class="avatar-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <!-- Dropdown Panel -->
+          <div class="guest-dropdown" [class.open]="isProfileDropdownOpen">
+            
+            <!-- ── GUEST STATE ── -->
+            <ng-container *ngIf="!isLoggedIn">
+              <div class="gd-header">
+                <div class="gd-avatar-large">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <p class="gd-welcome">Welcome, Guest</p>
+                <p class="gd-sub">Sign in to manage your bookings</p>
+              </div>
+              <div class="gd-body">
+                <a routerLink="/login" class="gd-signin-btn">Sign In</a>
+                <a routerLink="/client/register" class="gd-register-link">Don't have an account? <span>Register</span></a>
+              </div>
+            </ng-container>
+
+            <!-- ── LOGGED IN STATE ── -->
+            <ng-container *ngIf="isLoggedIn">
+              <div class="gd-header" style="background: linear-gradient(160deg, rgba(198,163,93,0.15) 0%, var(--card2) 100%);">
+                <div class="gd-avatar-large" style="background: var(--grad); border: none;">
+                  <span style="font-size: 1.4rem; color: #100D0C; font-weight: 700; font-family: 'Jost', sans-serif;">
+                    {{ userInitial }}
+                  </span>
+                </div>
+                <p class="gd-welcome">Hi, {{ firstName }} ✨</p>
+                <p class="gd-sub" style="opacity: 0.8;">{{ currentUser?.email }}</p>
+              </div>
+              <div class="gd-body" style="padding: 12px;">
+                <a routerLink="/client/my-bookings" class="dd-item">📅 My Bookings</a>
+                <a routerLink="/client/profile" class="dd-item">👤 Profile Settings</a>
+                <div style="height: 1px; background: var(--border); margin: 6px 8px;"></div>
+                <button (click)="logout()" class="dd-item" style="width: 100%; text-align: left; background: transparent; border: none; color: #e74c3c; cursor: pointer; font-family: 'Jost', sans-serif; font-size: .85rem; font-weight: 500;">🚪 Sign Out</button>
+              </div>
+            </ng-container>
+
+          </div>
+        </div>
+        <button class="btn-book-nav" (click)="scrollTo('booking')">Book Now →</button>
+        <button class="btn-hamburger" (click)="toggleMobileMenu()" [class.active]="isMobileMenuOpen">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" [class.open]="isMobileMenuOpen">
+      <button class="mob-link" (click)="scrollTo('services')">Services</button>
+      <button class="mob-link" (click)="scrollTo('artists')">Artists</button>
+      <button class="mob-link" (click)="scrollTo('pricing')">Pricing</button>
+      <button class="mob-link" (click)="scrollTo('reviews')">Reviews</button>
+      <button class="mob-link" (click)="scrollTo('faq')">FAQ</button>
+      <button class="mob-link" (click)="scrollTo('contact')">Contact</button>
+      <div class="mob-divider"></div>
+      <a routerLink="/login" class="mob-link">🔑 Sign In</a>
+      <a routerLink="/client/register" class="mob-link">✨ Register</a>
+      <button class="mob-book-btn" (click)="scrollTo('booking')">Book an Appointment →</button>
+    </div>
+  </header>
+
+  <!-- ═══ HERO ═══ -->
+  <section id="hero" class="hero-section">
+    <div class="hero-bg-orb orb1"></div>
+    <div class="hero-bg-orb orb2"></div>
+    <div class="hero-container">
+      <div class="hero-left reveal">
+        <span class="hero-badge">✦ Davao's Premier Beauty Studio</span>
+        <h1 class="hero-h1">Your Most<br><em>Radiant Look,</em><br>Crafted For You.</h1>
+        <p class="hero-desc">Luxury makeup artistry for weddings, debuts, editorial shoots, and every moment that deserves to be unforgettable.</p>
+        <div class="hero-ctas">
+          <button class="btn-primary" (click)="scrollTo('booking')">
+            <span>Reserve Your Date</span><span class="btn-arrow">→</span>
+          </button>
+          <button class="btn-outline" (click)="scrollTo('services')">Explore Services</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item"><span class="stat-num">500+</span><span class="stat-lbl">Happy Clients</span></div>
+          <div class="stat-div"></div>
+          <div class="stat-item"><span class="stat-num">8+</span><span class="stat-lbl">Years of Art</span></div>
+          <div class="stat-div"></div>
+          <div class="stat-item"><span class="stat-num">5.0 ⭐</span><span class="stat-lbl">Avg. Rating</span></div>
+        </div>
+      </div>
+      <div class="hero-right reveal">
+        <div class="hero-img-wrap">
+          <div class="hero-img-placeholder">
+            <div class="hero-img-text">💄</div>
+            <div class="hero-img-label">Lumière Artistry</div>
+          </div>
+          <div class="float-card card-a">
+            <span class="fc-icon">⭐</span>
+            <div><div class="fc-title">5.0 Rating</div><div class="fc-sub">500+ Reviews</div></div>
+          </div>
+          <div class="float-card card-b">
+            <span class="fc-icon">👰</span>
+            <div><div class="fc-title">Bridal Expert</div><div class="fc-sub">Since 2016</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Scroll hint -->
+    <div class="scroll-hint" (click)="scrollTo('services')">
+      <span class="scroll-hint-text">Scroll to explore</span>
+      <span class="scroll-hint-arrow">↓</span>
+    </div>
+  </section>
+
+  <!-- ═══ MARQUEE ═══ -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span *ngFor="let item of [
+        'Bridal Elegance','Editorial Glam','Airbrush Mastery','Special Events','VIP Home Service','Luxury Studio',
+        'Bridal Elegance','Editorial Glam','Airbrush Mastery','Special Events','VIP Home Service','Luxury Studio'
+      ]">✦ {{ item }} </span>
+    </div>
+  </div>
+
+  <!-- ═══ SERVICES ═══ -->
+  <section id="services" class="section services-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ What We Offer</span>
+      <h2 class="section-h2">Our Signature Services</h2>
+      <p class="section-desc">Each service is crafted with intention, expertise, and the finest luxury products.</p>
+    </div>
+    <!-- Loading State -->
+    <div *ngIf="isServicesLoading" style="text-align: center; padding: 40px; color: var(--gold); font-family: 'Jost', sans-serif; font-size: 1.1rem; letter-spacing: 0.1em;">
+      Loading Signature Services ✨
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="hasServicesError" style="text-align: center; padding: 40px; color: #e74c3c; font-family: 'Jost', sans-serif; font-size: 1.1rem; letter-spacing: 0.05em;">
+      Failed to load services. Please check your connection or try again later.
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isServicesLoading && !hasServicesError && services.length === 0" style="text-align: center; padding: 40px; color: var(--text3); font-family: 'Jost', sans-serif; font-size: 1.1rem;">
+      No services are currently available. Check back soon!
+    </div>
+
+    <!-- Success State -->
+    <div class="services-grid" *ngIf="!isServicesLoading && !hasServicesError && services.length > 0">
+      <div class="service-card reveal" *ngFor="let s of services" [class.popular]="s.popular">
+        <div class="sc-badge" *ngIf="s.popular">⭐ Most Popular</div>
+        <div class="sc-img-wrap">
+          <img [src]="s.image" alt="{{ s.name }}" class="sc-img">
+        </div>
+        <div class="sc-content">
+          <h3 class="sc-name">{{ s.name }}</h3>
+          <p class="sc-desc">{{ s.desc }}</p>
+          <div class="sc-footer">
+            <span class="sc-price">{{ s.price }}</span>
+            <span class="sc-dur">⏱ {{ s.duration }}</span>
+          </div>
+          <button class="sc-btn" (click)="scrollTo('booking')">Book This Service →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ARTISTS ═══ -->
+  <section id="artists" class="section artists-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ Meet The Team</span>
+      <h2 class="section-h2">Your Beauty Visionaries</h2>
+      <p class="section-desc">Talented artists dedicated to making you look and feel your absolute best.</p>
+    </div>
+    <!-- Loading State -->
+    <div *ngIf="isArtistsLoading" style="text-align: center; padding: 40px; color: var(--gold); font-family: 'Jost', sans-serif; font-size: 1.1rem; letter-spacing: 0.1em;">
+      Loading Artists ✨
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="hasArtistsError" style="text-align: center; padding: 40px; color: #e74c3c; font-family: 'Jost', sans-serif; font-size: 1.1rem; letter-spacing: 0.05em;">
+      Failed to load artists. Please check your connection or try again later.
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isArtistsLoading && !hasArtistsError && artists.length === 0" style="text-align: center; padding: 40px; color: var(--text3); font-family: 'Jost', sans-serif; font-size: 1.1rem;">
+      No artists are currently available. Check back soon!
+    </div>
+
+    <!-- Success State -->
+    <div class="artists-grid" *ngIf="!isArtistsLoading && !hasArtistsError && artists.length > 0">
+      <div class="artist-card reveal" *ngFor="let a of artists; let i = index">
+        <div class="ac-photo">
+          <img [src]="a.profilePicture || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop'" alt="{{ a.name }}" class="ac-img">
+        </div>
+        <div class="ac-body">
+          <span class="ac-title">{{ a.specialty || 'Professional Artist' }}</span>
+          <h3 class="ac-name">{{ a.name }}</h3>
+          <p class="ac-bio">{{ a.bio || 'A talented artist dedicated to making you look your best.' }}</p>
+          <div class="ac-stats">
+            <div class="acs-item"><span class="acs-val">{{ a.years || '3+' }}</span><span class="acs-lbl">Exp.</span></div>
+            <div class="acs-item"><span class="acs-val">{{ a.ratingCount || '50+' }}</span><span class="acs-lbl">Bookings</span></div>
+            <div class="acs-item"><span class="acs-val">{{ a.rating || '5.0' }}⭐</span><span class="acs-lbl">Rating</span></div>
+          </div>
+          <div class="ac-pills" *ngIf="a.services?.length">
+            <span class="ac-pill" *ngFor="let sp of a.services | slice:0:3">{{ getServiceName(sp) }}</span>
+          </div>
+        </div>
+        <div class="ac-footer">
+          <button class="btn-primary" (click)="scrollTo('booking')">Book {{ getArtistFirstName(a) }} →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PROCESS ═══ -->
+  <section id="process" class="section process-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ How It Works</span>
+      <h2 class="section-h2">From Inquiry to Radiance</h2>
+      <p class="section-desc">Our simple 4-step process ensures your experience is seamless from start to finish.</p>
+    </div>
+    <div class="process-row">
+      <div class="process-step reveal" *ngFor="let step of [
+        {num:'1', icon:'💬', title:'Inquire', desc:'Submit your booking request with your event details.'},
+        {num:'2', icon:'📋', title:'Consult', desc:'We discuss your vision, style, and preferences for free.'},
+        {num:'3', icon:'🪞', title:'Trial', desc:'Bridal clients enjoy a complimentary trial session.'},
+        {num:'4', icon:'✨', title:'Shine', desc:'We arrive early on your big day and make you radiant.'}
+      ]">
+        <div class="ps-icon">{{ step.icon }}</div>
+        <div class="ps-num">Step {{ step.num }}</div>
+        <h4 class="ps-title">{{ step.title }}</h4>
+        <p class="ps-desc">{{ step.desc }}</p>
+        <div class="ps-connector" *ngIf="step.num !== '4'"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PRICING ═══ -->
+  <section id="pricing" class="section pricing-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ Investment</span>
+      <h2 class="section-h2">Choose Your Experience</h2>
+      <p class="section-desc">Transparent pricing with no hidden fees. Each package is an investment in your confidence.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal" *ngFor="let p of pricing" [class.featured]="p.badge === 'Best Value'">
+        <div class="pc-badge" *ngIf="p.badge">{{ p.badge }}</div>
+        <h3 class="pc-name">{{ p.name }}</h3>
+        <div class="pc-price">{{ p.price }}</div>
+        <ul class="pc-features">
+          <li *ngFor="let f of p.features"><span class="pc-check">✓</span> {{ f }}</li>
+        </ul>
+        <button class="pc-btn" [class.featured-btn]="p.badge === 'Best Value'" (click)="scrollTo('booking')">
+          Book This Package →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TESTIMONIALS ═══ -->
+  <section id="reviews" class="section reviews-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ Client Love</span>
+      <h2 class="section-h2">What Our Clients Say</h2>
+    </div>
+    <div class="reviews-grid">
+      <div class="review-card reveal" *ngFor="let t of testimonials">
+        <div class="rc-stars">
+          <span *ngFor="let s of getStars(t.rating)">⭐</span>
+        </div>
+        <p class="rc-text">"{{ t.quote }}"</p>
+        <div class="rc-client">
+          <div class="rc-avatar">{{ t.initials }}</div>
+          <div>
+            <div class="rc-name">{{ t.name }}</div>
+            <div class="rc-event">{{ t.event }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ ═══ -->
+  <section id="faq" class="section faq-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ Questions</span>
+      <h2 class="section-h2">Frequently Asked</h2>
+      <p class="section-desc">Everything you need to know before booking.</p>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal" *ngFor="let faq of faqs; let i = index" [class.open]="openFaqIndex === i">
+        <button class="faq-q" (click)="toggleFaq(i)">
+          <span>{{ faq.q }}</span>
+          <span class="faq-icon" [class.rotated]="openFaqIndex === i">＋</span>
+        </button>
+        <div class="faq-a" [class.visible]="openFaqIndex === i">
+          <p>{{ faq.a }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CONTACT ═══ -->
+  <section id="contact" class="section contact-section">
+    <div class="section-header reveal">
+      <span class="section-eyebrow">✦ Find Us</span>
+      <h2 class="section-h2">Get In Touch</h2>
+      <p class="section-desc">We'd love to hear from you. Reach out anytime!</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-card reveal">
+        <div class="cc-icon">📍</div>
+        <h4 class="cc-title">Studio Location</h4>
+        <p class="cc-text">Davao City, Philippines<br>Nationwide Home Service Available</p>
+      </div>
+      <div class="contact-card reveal">
+        <div class="cc-icon">📞</div>
+        <h4 class="cc-title">Call or Message Us</h4>
+        <p class="cc-text">+63 917 123 4567<br>lumiere&#64;beautyph.com<br>Mon–Sat · 9AM–7PM</p>
+      </div>
+      <div class="contact-card reveal">
+        <div class="cc-icon">📲</div>
+        <h4 class="cc-title">Follow Us</h4>
+        <p class="cc-text">&#64;lumierebeautyph<br>TikTok · Instagram · Facebook</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ BOOKING FORM ═══ -->
+  <section id="booking" class="section booking-section">
+    <div class="booking-inner">
+      <div class="booking-info reveal">
+        <span class="section-eyebrow">✦ Reserve Your Date</span>
+        <h2 class="booking-h2">Book Your Experience</h2>
+        <p class="booking-desc">Fill in the form and we'll confirm your appointment within 24 hours. All bookings are handled with care and discretion.</p>
+        <div class="booking-perks">
+          <div class="bp-item"><span class="bp-icon">✓</span><span>Free bridal trial session</span></div>
+          <div class="bp-item"><span class="bp-icon">✓</span><span>Confirmation within 24 hrs</span></div>
+          <div class="bp-item"><span class="bp-icon">✓</span><span>Flexible rescheduling</span></div>
+          <div class="bp-item"><span class="bp-icon">✓</span><span>Home service available</span></div>
+        </div>
+      </div>
+      <div class="booking-card reveal">
+        <div class="booking-success" *ngIf="bookingSubmitted">
+          <div class="bs-icon">🎉</div>
+          <h3>Booking Request Sent!</h3>
+          <p>Thank you! We'll reach out to confirm your appointment within 24 hours. ✨</p>
+          <button class="btn-outline" style="margin-top:20px" (click)="scrollTo('hero')">Back to Top</button>
+        </div>
+        <form class="booking-form" (ngSubmit)="submitBooking()" *ngIf="!bookingSubmitted">
+          <h3 class="bf-title">Your Details</h3>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Full Name *</label>
+              <input type="text" [(ngModel)]="bookingForm.fullName" name="fullName" placeholder="e.g. Maria Santos" required />
+            </div>
+            <div class="bf-field">
+              <label>Contact Number *</label>
+              <input type="tel" [(ngModel)]="bookingForm.contactNumber" name="contactNumber" placeholder="+63 9XX XXX XXXX" required />
+            </div>
+          </div>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Email Address *</label>
+              <input type="email" [(ngModel)]="bookingForm.email" name="email" placeholder="your@email.com" required />
+            </div>
+            <div class="bf-field">
+              <label>Event Date *</label>
+              <input type="date" [(ngModel)]="bookingForm.eventDate" name="eventDate" required />
+            </div>
+          </div>
+          <h3 class="bf-title" style="margin-top:8px">Booking Details</h3>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Service *</label>
+              <select [(ngModel)]="bookingForm.service" name="service" required>
+                <option value="">Select a service</option>
+                <option *ngFor="let s of services" [value]="s.name">{{ s.name }} — {{ s.price }}</option>
+              </select>
+            </div>
+            <div class="bf-field">
+              <label>Event Type *</label>
+              <select [(ngModel)]="bookingForm.eventType" name="eventType" required>
+                <option value="">Select event type</option>
+                <option>Wedding / Bridal</option>
+                <option>Debut / 18th Birthday</option>
+                <option>Birthday Party</option>
+                <option>Photo / Video Shoot</option>
+                <option>Corporate Event</option>
+                <option>Everyday / Personal</option>
+              </select>
+            </div>
+          </div>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Preferred Artist</label>
+              <select [(ngModel)]="bookingForm.preferredArtist" name="preferredArtist">
+                <option value="">No preference</option>
+                <option *ngFor="let a of artists" [value]="a.name">{{ a.name }}</option>
+              </select>
+            </div>
+            <div class="bf-field">
+              <label>Venue / Location</label>
+              <input type="text" [(ngModel)]="bookingForm.venue" name="venue" placeholder="Event venue or home address" />
+            </div>
+          </div>
+          <div class="bf-field">
+            <label>Message / Vision</label>
+            <textarea [(ngModel)]="bookingForm.message" name="message" rows="4" placeholder="Tell us about your vision, inspiration, or any special requests..."></textarea>
+          </div>
+          <button class="bf-submit" type="submit" [disabled]="isBookingLoading">
+            <span *ngIf="isBookingLoading" class="bf-spinner"></span>
+            <span>{{ isBookingLoading ? 'Sending…' : 'Send Booking Request ✦' }}</span>
+          </button>
+          <p class="bf-note">By submitting, you agree to be contacted by our team within 24 hours. No payment required at this stage.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="fg-brand">
+        <div class="footer-logo"><span class="logo-l">L</span><span class="logo-rest">UMIÈRE</span></div>
+        <p class="footer-tagline">Where beauty becomes art.<br>Davao City · Nationwide.</p>
+        <div class="footer-socials">
+          <span class="fs-icon" title="Instagram">📷</span>
+          <span class="fs-icon" title="TikTok">🎵</span>
+          <span class="fs-icon" title="Facebook">👍</span>
+        </div>
+      </div>
+      <div class="fg-col">
+        <h5 class="fg-title">Services</h5>
+        <a class="fg-link" *ngFor="let s of services" (click)="scrollTo('services')">{{ s.name }}</a>
+      </div>
+      <div class="fg-col">
+        <h5 class="fg-title">Navigate</h5>
+        <a class="fg-link" (click)="scrollTo('artists')">Our Artists</a>
+        <a class="fg-link" (click)="scrollTo('process')">How It Works</a>
+        <a class="fg-link" (click)="scrollTo('pricing')">Pricing</a>
+        <a class="fg-link" (click)="scrollTo('reviews')">Reviews</a>
+        <a class="fg-link" routerLink="/client/register">Register</a>
+        <a class="fg-link" routerLink="/login">Sign In</a>
+      </div>
+      <div class="fg-col">
+        <h5 class="fg-title">Contact</h5>
+        <p class="fg-text">📍 Davao City, Philippines</p>
+        <p class="fg-text">📞 +63 917 123 4567</p>
+        <p class="fg-text">✉️ lumiere&#64;beautyph.com</p>
+        <p class="fg-text">🕐 Mon–Sat · 9AM–7PM</p>
+      </div>
+    </div>
+    <div class="footer-bar">
+      <span>© 2026 Lumière Beauty Studio. All rights reserved.</span>
+      <div class="footer-links">
+        <a class="fg-link">Privacy Policy</a>
+        <a class="fg-link">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ STICKY BOOK BUTTON ═══ -->
+  <button class="sticky-book" (click)="scrollTo('booking')" [class.visible]="isNavbarScrolled">
+    💄 Book Now
+  </button>
+
+  <!-- ═══ CHAT WIDGET ═══ -->
+  <div class="chat-widget">
+    <div class="chat-panel" [class.open]="isChatOpen">
+      <div class="cp-header">
+        <div class="cp-artist">
+          <div class="cp-avatar">💄</div>
+          <div>
+            <div class="cp-name">Lumière Studio</div>
+            <div class="cp-status"><span class="cp-dot"></span> Online</div>
+          </div>
+        </div>
+        <button class="cp-close" (click)="toggleChat()">✕</button>
+      </div>
+      <div class="cp-messages">
+        <div class="cp-msg" *ngFor="let msg of chatMessages" [class.user]="msg.isUser">
+          <div class="cp-bubble">{{ msg.text }}</div>
+          <div class="cp-time">{{ msg.time }}</div>
+        </div>
+      </div>
+      <div class="cp-suggestions">
+        <button class="cp-sug" (click)="sendQuickMessage('Bridal Packages')">Bridal 💍</button>
+        <button class="cp-sug" (click)="sendQuickMessage('Check Availability')">Availability 📅</button>
+        <button class="cp-sug" (click)="sendQuickMessage('Pricing Info')">Pricing 💰</button>
+        <button class="cp-sug" (click)="sendQuickMessage('Home Service')">Home Service 🏠</button>
+      </div>
+      <div class="cp-input-row">
+        <input class="cp-input" [(ngModel)]="chatMessage" placeholder="Ask us anything…" (keyup.enter)="sendChatMessage()" />
+        <button class="cp-send" (click)="sendChatMessage()">➤</button>
+      </div>
+    </div>
+    <button class="chat-bubble" (click)="toggleChat()">
+      <span *ngIf="!isChatOpen">💬</span>
+      <span *ngIf="isChatOpen">✕</span>
+    </button>
+  </div>
+
+</div>
