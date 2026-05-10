@@ -137,7 +137,7 @@ export class ClientRegisterComponent {
     this.errorMessage = '';
 
     try {
-      const result = await this.authService.register(this.email.trim(), this.password);
+      const result = await this.authService.register(this.email.trim(), this.password, `${this.firstName.trim()} ${this.lastName.trim()}`); // Fixed: include displayName for auth user, `${this.firstName.trim()} ${this.lastName.trim()}`);
       const uid = result.user.uid;
 
       await this.userService.createUser(uid, {

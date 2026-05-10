@@ -72,8 +72,6 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
   scheduleSaved = false;
   messageSearch = '';
   newMessage = '';
-  showServiceModal = false;
-  editingServiceIndex = -1;
   showPayoutSuccess = false;
   showReportModal = false;
 
@@ -188,17 +186,6 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
   // ── Reviews ──
   reviews: Review[] = [];
 
-  // ── Services ──
-  services: Service[] = [
-    { name: 'Bridal Makeup', description: 'Complete bridal look with airbrush finish', price: 3500, duration: '3-4 hours' },
-    { name: 'Glam Makeup', description: 'Full glam for events, parties & celebrations', price: 1800, duration: '1.5-2 hours' },
-    { name: 'Natural Makeup', description: 'Soft and dewy everyday natural look', price: 1200, duration: '1-1.5 hours' },
-    { name: 'SFX Makeup', description: 'Special effects for films, shoots & events', price: 2500, duration: '2-3 hours' },
-    { name: 'Debut Makeup', description: 'Elegant debut look for your special 18th', price: 4000, duration: '3-4 hours' },
-    { name: 'Editorial Look', description: 'Fashion-forward looks for photoshoots', price: 2200, duration: '2-2.5 hours' },
-  ];
-
-  serviceForm: Service = { name: '', description: '', price: 0, duration: '' };
 
   // ── Messages / Conversations ──
   conversations: Conversation[] = [];
@@ -280,7 +267,6 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
         // Restore Portfolio, Schedule, Services
         if (data['portfolioItems'] && data['portfolioItems'].length > 0) this.portfolioItems = data['portfolioItems'];
-        if (data['services'] && data['services'].length > 0) this.services = data['services'];
         if (data['weekDays']) this.weekDays = data['weekDays'];
         if (data['blockedDates']) this.blockedDates = data['blockedDates'];
       }
@@ -331,7 +317,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     const map: Record<string, string> = {
       overview: 'Overview', bookings: 'Bookings', messages: 'Messages',
       portfolio: 'Portfolio', schedule: 'Schedule', earnings: 'Earnings',
-      reviews: 'Reviews', services: 'My Services', profile: 'My Profile',
+      reviews: 'Reviews', profile: 'My Profile',
       emergency: '🚨 Emergency'
     };
     return map[this.activeTab] || 'Dashboard';
@@ -346,7 +332,6 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       schedule: 'Set your availability',
       earnings: 'Track your income',
       reviews: 'See what clients say about you',
-      services: 'Manage your service offerings',
       profile: 'Update your artist profile',
       emergency: 'Declare emergency & find a replacement artist'
     };
@@ -668,36 +653,6 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     return Math.round((this.getRatingCount(star) / this.reviews.length) * 100);
   }
 
-  // ── Services ──
-  addService() {
-    this.editingServiceIndex = -1;
-    this.serviceForm = { name: '', description: '', price: 0, duration: '' };
-    this.showServiceModal = true;
-  }
-
-  editService(i: number) {
-    this.editingServiceIndex = i;
-    this.serviceForm = { ...this.services[i] };
-    this.showServiceModal = true;
-  }
-
-  async saveService() {
-    if (!this.serviceForm.name) return;
-    if (this.editingServiceIndex >= 0) {
-      this.services[this.editingServiceIndex] = { ...this.serviceForm };
-    } else {
-      this.services.push({ ...this.serviceForm });
-    }
-    const user = this.auth.currentUser;
-    if (user) await this.userService.updateUser(user.uid, { services: this.services });
-    this.showServiceModal = false;
-  }
-  
-  async deleteService(i: number) {
-    this.services.splice(i, 1);
-    const user = this.auth.currentUser;
-    if (user) await this.userService.updateUser(user.uid, { services: this.services });
-  }
 
   // ── Profile ──
   profileForm = {
