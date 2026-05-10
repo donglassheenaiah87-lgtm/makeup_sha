@@ -199,7 +199,9 @@
             <span class="sc-price">{{ s.price }}</span>
             <span class="sc-dur">⏱ {{ s.duration }}</span>
           </div>
-          <button class="sc-btn" (click)="scrollTo('booking')">Book This Service →</button>
+          <button class="sc-btn" (click)="isLoggedIn ? openQuickServiceBooking(s) : scrollTo('booking')">
+            {{ isLoggedIn ? 'Quick Book →' : 'Book This Service →' }}
+          </button>
         </div>
       </div>
     </div>
@@ -247,7 +249,9 @@
           </div>
         </div>
         <div class="ac-footer">
-          <button class="btn-primary" (click)="scrollTo('booking')">Book {{ getArtistFirstName(a) }} →</button>
+          <button class="btn-primary" (click)="isLoggedIn ? openQuickArtistBooking(a) : scrollTo('booking')">
+            {{ isLoggedIn ? 'Book ' + getArtistFirstName(a) + ' →' : 'Book ' + getArtistFirstName(a) + ' →' }}
+          </button>
         </div>
       </div>
     </div>
@@ -367,8 +371,8 @@
     </div>
   </section>
 
-  <!-- ═══ BOOKING FORM ═══ -->
-  <section id="booking" class="section booking-section">
+  <!-- ═══ BOOKING FORM (GUESTS ONLY) ═══ -->
+  <section id="booking" class="section booking-section" *ngIf="!isLoggedIn">
     <div class="booking-inner">
       <div class="booking-info reveal">
         <span class="section-eyebrow">✦ Reserve Your Date</span>
@@ -382,79 +386,233 @@
         </div>
       </div>
       <div class="booking-card reveal">
-        <div class="booking-success" *ngIf="bookingSubmitted">
-          <div class="bs-icon">🎉</div>
-          <h3>Booking Request Sent!</h3>
-          <p>Thank you! We'll reach out to confirm your appointment within 24 hours. ✨</p>
-          <button class="btn-outline" style="margin-top:20px" (click)="scrollTo('hero')">Back to Top</button>
+        
+        <!-- Step Progress Indicator -->
+        <div class="booking-wizard-steps" *ngIf="currentBookingStep < 4">
+          <div class="bw-step" [class.active]="currentBookingStep >= 1" [class.done]="currentBookingStep > 1">
+            <span class="bw-num">1</span><span class="bw-lbl">Personal</span>
+          </div>
+          <div class="bw-line"></div>
+          <div class="bw-step" [class.active]="currentBookingStep >= 2" [class.done]="currentBookingStep > 2">
+            <span class="bw-num">2</span><span class="bw-lbl">Service</span>
+          </div>
+          <div class="bw-line"></div>
+          <div class="bw-step" [class.active]="currentBookingStep >= 3" [class.done]="currentBookingStep > 3">
+            <span class="bw-num">3</span><span class="bw-lbl">Payment</span>
+          </div>
         </div>
-        <form class="booking-form" (ngSubmit)="submitBooking()" *ngIf="!bookingSubmitted">
-          <h3 class="bf-title">Your Details</h3>
+
+        <!-- STEP 1: Personal Details -->
+        <div class="wizard-step-content" *ngIf="currentBookingStep === 1">
+          <h3 class="bf-title">Step 1: Personal Details</h3>
           <div class="bf-row">
             <div class="bf-field">
-              <label>Full Name *</label>
-              <input type="text" [(ngModel)]="bookingForm.fullName" name="fullName" placeholder="e.g. Maria Santos" required />
+              <label>First Name *</label>
+              <input type="text" [(ngModel)]="bookingForm.firstName" placeholder="e.g. Maria" />
             </div>
             <div class="bf-field">
-              <label>Contact Number *</label>
-              <input type="tel" [(ngModel)]="bookingForm.contactNumber" name="contactNumber" placeholder="+63 9XX XXX XXXX" required />
+              <label>Last Name *</label>
+              <input type="text" [(ngModel)]="bookingForm.lastName" placeholder="e.g. Santos" />
             </div>
           </div>
           <div class="bf-row">
             <div class="bf-field">
               <label>Email Address *</label>
-              <input type="email" [(ngModel)]="bookingForm.email" name="email" placeholder="your@email.com" required />
+              <input type="email" [(ngModel)]="bookingForm.email" placeholder="maria@email.com" />
             </div>
             <div class="bf-field">
-              <label>Event Date *</label>
-              <input type="date" [(ngModel)]="bookingForm.eventDate" name="eventDate" required />
-            </div>
-          </div>
-          <h3 class="bf-title" style="margin-top:8px">Booking Details</h3>
-          <div class="bf-row">
-            <div class="bf-field">
-              <label>Service *</label>
-              <select [(ngModel)]="bookingForm.service" name="service" required>
-                <option value="">Select a service</option>
-                <option *ngFor="let s of services" [value]="s.name">{{ s.name }} — {{ s.price }}</option>
-              </select>
-            </div>
-            <div class="bf-field">
-              <label>Event Type *</label>
-              <select [(ngModel)]="bookingForm.eventType" name="eventType" required>
-                <option value="">Select event type</option>
-                <option>Wedding / Bridal</option>
-                <option>Debut / 18th Birthday</option>
-                <option>Birthday Party</option>
-                <option>Photo / Video Shoot</option>
-                <option>Corporate Event</option>
-                <option>Everyday / Personal</option>
-              </select>
-            </div>
-          </div>
-          <div class="bf-row">
-            <div class="bf-field">
-              <label>Preferred Artist</label>
-              <select [(ngModel)]="bookingForm.preferredArtist" name="preferredArtist">
-                <option value="">No preference</option>
-                <option *ngFor="let a of artists" [value]="a.name">{{ a.name }}</option>
-              </select>
-            </div>
-            <div class="bf-field">
-              <label>Venue / Location</label>
-              <input type="text" [(ngModel)]="bookingForm.venue" name="venue" placeholder="Event venue or home address" />
+              <label>Contact Number *</label>
+              <input type="tel" [(ngModel)]="bookingForm.contactNumber" placeholder="+63 9XX XXX XXXX" />
             </div>
           </div>
           <div class="bf-field">
-            <label>Message / Vision</label>
-            <textarea [(ngModel)]="bookingForm.message" name="message" rows="4" placeholder="Tell us about your vision, inspiration, or any special requests..."></textarea>
+            <label>Address / Event Location *</label>
+            <input type="text" [(ngModel)]="bookingForm.venue" placeholder="Full address for home service or venue name" />
           </div>
-          <button class="bf-submit" type="submit" [disabled]="isBookingLoading">
-            <span *ngIf="isBookingLoading" class="bf-spinner"></span>
-            <span>{{ isBookingLoading ? 'Sending…' : 'Send Booking Request ✦' }}</span>
-          </button>
-          <p class="bf-note">By submitting, you agree to be contacted by our team within 24 hours. No payment required at this stage.</p>
-        </form>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Age (Optional)</label>
+              <input type="number" [(ngModel)]="bookingForm.age" placeholder="25" />
+            </div>
+            <div class="bf-field">
+              <label>Gender (Optional)</label>
+              <select [(ngModel)]="bookingForm.gender">
+                <option value="">Select gender</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="bf-actions">
+            <button class="bf-btn-next" (click)="nextStep()">Proceed to Step 2 →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Service & Health -->
+        <div class="wizard-step-content" *ngIf="currentBookingStep === 2">
+          <h3 class="bf-title">Step 2: Service & Health</h3>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Select Service *</label>
+              <select [(ngModel)]="bookingForm.service">
+                <option value="">Choose a service</option>
+                <option *ngFor="let s of services" [value]="s.name">{{ s.name }}</option>
+              </select>
+            </div>
+            <div class="bf-field">
+              <label>Select Package (Optional)</label>
+              <select [(ngModel)]="bookingForm.package">
+                <option value="">Choose a package</option>
+                <option *ngFor="let p of pricing" [value]="p.name">{{ p.name }} ({{ p.price }})</option>
+              </select>
+            </div>
+          </div>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Event Date *</label>
+              <input type="date" [(ngModel)]="bookingForm.eventDate" />
+            </div>
+            <div class="bf-field">
+              <label>Preferred Time *</label>
+              <select [(ngModel)]="bookingForm.time">
+                <option value="">Select time</option>
+                <option>08:00 AM</option>
+                <option>09:00 AM</option>
+                <option>10:00 AM</option>
+                <option>11:00 AM</option>
+                <option>01:00 PM</option>
+                <option>02:00 PM</option>
+                <option>03:00 PM</option>
+                <option>04:00 PM</option>
+                <option>05:00 PM</option>
+              </select>
+            </div>
+          </div>
+          <div class="bf-field">
+            <label>Preferred Artist (Optional)</label>
+            <select [(ngModel)]="bookingForm.preferredArtist">
+              <option value="">No Preference</option>
+              <option *ngFor="let a of artists" [value]="a.name">{{ a.name }}</option>
+            </select>
+          </div>
+          
+          <h4 class="bf-subtitle">Health & Preferences</h4>
+          <div class="bf-row">
+            <div class="bf-field">
+              <label>Allergies</label>
+              <input type="text" [(ngModel)]="bookingForm.allergies" placeholder="e.g. Latex, certain brands..." />
+            </div>
+            <div class="bf-field">
+              <label>Skin Sensitivity</label>
+              <select [(ngModel)]="bookingForm.skinSensitivity">
+                <option value="">Select sensitivity</option>
+                <option>Normal</option>
+                <option>Sensitive</option>
+                <option>Very Sensitive</option>
+                <option>Dry / Oily</option>
+              </select>
+            </div>
+          </div>
+          <div class="bf-field">
+            <label>Medical Concerns (Optional)</label>
+            <textarea [(ngModel)]="bookingForm.medicalConcerns" rows="2" placeholder="e.g. Pregnancy, eye infections, skin conditions..."></textarea>
+          </div>
+          <div class="bf-field">
+            <label>Notes / Inspiration</label>
+            <textarea [(ngModel)]="bookingForm.message" rows="2" placeholder="Tell us more about your vision..."></textarea>
+          </div>
+
+          <div class="bf-actions">
+            <button class="bf-btn-back" (click)="prevStep()">← Back</button>
+            <button class="bf-btn-next" (click)="nextStep()">Proceed to Step 3 →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Payment -->
+        <div class="wizard-step-content" *ngIf="currentBookingStep === 3">
+          <h3 class="bf-title">Step 3: Secure Payment</h3>
+          <p class="payment-summary">Total Amount: <strong>{{ bookingForm.amount }}</strong></p>
+          
+          <div class="payment-options">
+            <label class="pay-option" [class.selected]="bookingForm.paymentMethod === 'GCash'">
+              <input type="radio" name="pay" [(ngModel)]="bookingForm.paymentMethod" value="GCash" />
+              <span class="pay-icon">📱</span>
+              <span class="pay-label">GCash</span>
+            </label>
+            <label class="pay-option" [class.selected]="bookingForm.paymentMethod === 'Maya'">
+              <input type="radio" name="pay" [(ngModel)]="bookingForm.paymentMethod" value="Maya" />
+              <span class="pay-icon">💳</span>
+              <span class="pay-label">Maya</span>
+            </label>
+            <label class="pay-option" [class.selected]="bookingForm.paymentMethod === 'Card'">
+              <input type="radio" name="pay" [(ngModel)]="bookingForm.paymentMethod" value="Card" />
+              <span class="pay-icon">🏧</span>
+              <span class="pay-label">Card</span>
+            </label>
+            <label class="pay-option" [class.selected]="bookingForm.paymentMethod === 'Walk-in'">
+              <input type="radio" name="pay" [(ngModel)]="bookingForm.paymentMethod" value="Walk-in" />
+              <span class="pay-icon">🏪</span>
+              <span class="pay-label">Walk-in</span>
+            </label>
+          </div>
+
+          <!-- QR Display for GCash/Maya -->
+          <div class="payment-details-box" *ngIf="bookingForm.paymentMethod === 'GCash' || bookingForm.paymentMethod === 'Maya'">
+            <div class="qr-placeholder">
+              <span style="font-size: 3rem;">📸</span>
+              <p>Scan QR to Pay</p>
+            </div>
+            <p class="qr-text">Please send payment to: <br><strong>0917 123 4567 (Sophia R.)</strong></p>
+          </div>
+
+          <!-- Card Fields -->
+          <div class="payment-details-box" *ngIf="bookingForm.paymentMethod === 'Card'">
+            <div class="bf-field">
+              <label>Card Number</label>
+              <input type="text" placeholder="XXXX XXXX XXXX XXXX" />
+            </div>
+            <div class="bf-row" style="margin-top: 10px;">
+              <input type="text" placeholder="MM/YY" />
+              <input type="text" placeholder="CVV" />
+            </div>
+          </div>
+
+          <div class="bf-actions">
+            <button class="bf-btn-back" (click)="prevStep()">← Back</button>
+            <button class="bf-submit" (click)="submitBooking()" [disabled]="isBookingLoading">
+              <span *ngIf="isBookingLoading" class="bf-spinner"></span>
+              <span>{{ isBookingLoading ? 'Processing...' : 'Confirm Booking ✦' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Success -->
+        <div class="booking-success-wizard" *ngIf="currentBookingStep === 4">
+          <div class="bs-icon">🎉</div>
+          <h3 class="bs-title">Booking Successful!</h3>
+          <p class="bs-desc">Your beauty session has been reserved. Please stay tuned and keep your lines open.</p>
+          
+          <div class="receipt-card">
+            <div class="rc-header">
+              <span class="rc-ref">REF: {{ bookingRef }}</span>
+              <span class="rc-status">PENDING CONFIRMATION</span>
+            </div>
+            <div class="rc-item"><span>Client:</span> <strong>{{ bookingForm.firstName }} {{ bookingForm.lastName }}</strong></div>
+            <div class="rc-item"><span>Service:</span> <strong>{{ bookingForm.service }}</strong></div>
+            <div class="rc-item"><span>Date:</span> <strong>{{ formatDate(bookingForm.eventDate) }}</strong></div>
+            <div class="rc-item"><span>Artist:</span> <strong>{{ bookingForm.preferredArtist || 'Any Artist' }}</strong></div>
+            <div class="rc-divider"></div>
+            <div class="rc-item rc-total"><span>Total Paid:</span> <strong>{{ bookingForm.amount }}</strong></div>
+          </div>
+
+          <p class="bs-note">The artist/team will contact you through your provided number or email for confirmation and scheduling updates.</p>
+          
+          <div class="bs-actions">
+            <button class="btn-primary">Download Receipt ↓</button>
+            <button class="btn-outline" (click)="currentBookingStep = 1; bookingSubmitted = false;">Book Another Session</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -540,6 +698,104 @@
       <span *ngIf="!isChatOpen">💬</span>
       <span *ngIf="isChatOpen">✕</span>
     </button>
+  </div>
+
+  <!-- ═══ QUICK BOOKING MODAL (LOGGED IN ONLY) ═══ -->
+  <div class="quick-modal-overlay" *ngIf="isQuickBookingModalOpen" (click)="closeQuickBooking()">
+    <div class="quick-modal" (click)="$event.stopPropagation()">
+      <button class="qm-close" (click)="closeQuickBooking()">✕</button>
+      
+      <!-- Modal Header -->
+      <div class="qm-header">
+        <span class="qm-badge">✦ Quick Booking</span>
+        <h2 class="qm-title">Reserve Your Session</h2>
+        <p class="qm-desc" *ngIf="!quickBookingSuccess">Select your preferred date and time to secure your slot.</p>
+      </div>
+
+      <!-- Success State -->
+      <div class="qm-success" *ngIf="quickBookingSuccess">
+        <div class="qms-icon">🎉</div>
+        <h3>Booking Confirmed!</h3>
+        <p>Your appointment has been saved. Redirecting you shortly...</p>
+      </div>
+
+      <!-- Form State -->
+      <div class="qm-body" *ngIf="!quickBookingSuccess">
+        
+        <!-- Artist Info (if Artist Booking) -->
+        <div class="qm-artist-info" *ngIf="quickBookingStep === 'artist' && selectedArtist">
+          <img [src]="selectedArtist.profilePicture" class="qma-img" alt="Artist">
+          <div class="qma-text">
+            <span class="qma-label">Selected Artist</span>
+            <h4 class="qma-name">{{ selectedArtist.name }}</h4>
+            <p class="qma-spec">{{ selectedArtist.specialty }}</p>
+          </div>
+        </div>
+
+        <!-- Service Info (if Service Booking) -->
+        <div class="qm-service-info" *ngIf="quickBookingStep === 'service' && selectedService">
+          <img [src]="selectedService.image" class="qms-img" alt="Service">
+          <div class="qms-text">
+            <span class="qms-label">Selected Service</span>
+            <h4 class="qms-name">{{ selectedService.name }}</h4>
+            <p class="qms-price">{{ selectedService.price }}</p>
+          </div>
+        </div>
+
+        <!-- Inputs -->
+        <div class="qm-form">
+          <!-- Specialty Select (Only for Artist Booking) -->
+          <div class="qm-field" *ngIf="quickBookingStep === 'artist'">
+            <label class="qmf-label">Which service would you like? *</label>
+            <select class="qmf-input" [(ngModel)]="quickBookingForm.specialty">
+              <option value="">Select a specialty...</option>
+              <option *ngFor="let spec of selectedArtist.services" [value]="getServiceName(spec)">
+                {{ getServiceName(spec) }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Artist Select (Only for Service Booking) -->
+          <div class="qm-field" *ngIf="quickBookingStep === 'service'">
+            <label class="qmf-label">Preferred Artist (Optional)</label>
+            <select class="qmf-input" [(ngModel)]="selectedArtist">
+              <option [ngValue]="null">No Preference</option>
+              <option *ngFor="let a of artists" [ngValue]="a">{{ a.name }}</option>
+            </select>
+          </div>
+
+          <div class="qm-row">
+            <div class="qm-field">
+              <label class="qmf-label">Select Date *</label>
+              <input type="date" class="qmf-input" [(ngModel)]="quickBookingForm.date">
+            </div>
+            <div class="qm-field">
+              <label class="qmf-label">Preferred Time *</label>
+              <select class="qmf-input" [(ngModel)]="quickBookingForm.time">
+                <option value="">Select time...</option>
+                <option>08:00 AM</option>
+                <option>09:00 AM</option>
+                <option>10:00 AM</option>
+                <option>11:00 AM</option>
+                <option>01:00 PM</option>
+                <option>02:00 PM</option>
+                <option>03:00 PM</option>
+                <option>04:00 PM</option>
+                <option>05:00 PM</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="qm-footer">
+            <p class="qm-note">Booking for: <strong>{{ quickBookingForm.fullName }}</strong> ({{ quickBookingForm.email }})</p>
+            <button class="qm-submit-btn" (click)="confirmQuickBooking()" [disabled]="isQuickBookingLoading">
+              <span class="qm-spinner" *ngIf="isQuickBookingLoading"></span>
+              {{ isQuickBookingLoading ? 'Processing...' : 'Confirm Booking ✦' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>

@@ -56,6 +56,12 @@ html {
   scroll-behavior: smooth
 }
 
+/* Global Select Overrides for Visibility */
+select, option {
+  color: #F8F7F2 !important;
+  background-color: #1A1716 !important;
+}
+
 .lum-page {
   font-family: 'Jost', sans-serif;
   background: var(--bg);
@@ -383,6 +389,30 @@ button {
 
 .gd-register-link:hover {
   color: var(--text2);
+}
+
+/* ── LOGGED-IN DROPDOWN ITEMS ── */
+.dd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: 'Jost', sans-serif;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  letter-spacing: .02em;
+}
+
+.dd-item:hover {
+  background: var(--border);
+  color: var(--gold);
 }
 
 .btn-book-nav {
@@ -1855,7 +1885,9 @@ button {
 }
 
 .bf-field select option {
-  background: var(--card)
+  background: #1A1716;
+  color: #F8F7F2;
+  padding: 10px;
 }
 
 .bf-submit {
@@ -1897,40 +1929,332 @@ button {
   line-height: 1.6
 }
 
-.bf-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(16, 13, 12, .3);
-  border-top-color: #100D0C;
-  border-radius: 50%;
-  animation: spin .7s linear infinite
+/* ══════════════════════════════════════
+   GUEST BOOKING WIZARD
+   ══════════════════════════════════════ */
+.booking-wizard-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    padding: 0 20px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg)
-  }
+.bw-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
 }
 
-.booking-success {
-  text-align: center;
-  padding: 40px 20px
+.bw-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: 0.3s;
 }
 
-.bs-icon {
-  font-size: 3.5rem;
-  margin-bottom: 16px
+.bw-lbl {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    font-weight: 600;
 }
 
-.booking-success h3 {
-  font-size: 1.6rem;
-  color: var(--text);
-  margin-bottom: 12px
+.bw-step.active .bw-num {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-mist);
+    box-shadow: 0 0 15px var(--gold-mist);
 }
 
-.booking-success p {
-  color: var(--text2);
-  font-size: .95rem
+.bw-step.active .bw-lbl {
+    color: var(--gold);
+}
+
+.bw-step.done .bw-num {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #100D0C;
+}
+
+.bw-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    max-width: 60px;
+    margin-top: -24px;
+}
+
+.wizard-step-content {
+    animation: wizardFadeIn 0.5s ease-out;
+}
+
+@keyframes wizardFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bf-subtitle {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--gold);
+    margin: 24px 0 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.bf-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.bf-btn-next, .bf-btn-back {
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.bf-btn-next {
+    flex: 2;
+    background: var(--grad);
+    border: none;
+    color: #100D0C;
+    box-shadow: 0 8px 20px -5px rgba(198, 163, 93, 0.3);
+}
+
+.bf-btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px -8px rgba(198, 163, 93, 0.4);
+}
+
+.bf-btn-back {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+}
+
+.bf-btn-back:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Payment Section */
+.payment-summary {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text2);
+    margin-bottom: 24px;
+}
+
+.payment-summary strong {
+    color: var(--gold);
+    font-size: 1.5rem;
+    display: block;
+    margin-top: 5px;
+}
+
+.payment-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.pay-option {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    position: relative;
+}
+
+.pay-option input {
+    position: absolute;
+    opacity: 0;
+}
+
+.pay-option:hover {
+    border-color: var(--gold-mist);
+    transform: scale(1.02);
+}
+
+.pay-option.selected {
+    border-color: var(--gold);
+    background: var(--gold-mist);
+}
+
+.pay-icon {
+    font-size: 1.8rem;
+}
+
+.pay-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.pay-option.selected .pay-label {
+    color: var(--gold);
+}
+
+.payment-details-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: center;
+    animation: qmFadeIn 0.3s ease;
+}
+
+.qr-placeholder {
+    width: 120px;
+    height: 120px;
+    background: #fff;
+    margin: 0 auto 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #000;
+}
+
+.qr-placeholder p {
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.qr-text {
+    font-size: 0.85rem;
+    color: var(--text3);
+    line-height: 1.5;
+}
+
+/* Success Wizard */
+.booking-success-wizard {
+    text-align: center;
+    animation: wizardFadeIn 0.6s ease-out;
+}
+
+.bs-title {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--gold);
+    margin-bottom: 12px;
+}
+
+.bs-desc {
+    font-size: 0.95rem;
+    color: var(--text3);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.receipt-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 30px;
+    margin-bottom: 30px;
+    text-align: left;
+    position: relative;
+}
+
+.rc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+}
+
+.rc-ref {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+}
+
+.rc-status {
+    font-size: 0.6rem;
+    background: rgba(241, 196, 15, 0.1);
+    color: #f1c40f;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.rc-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.rc-item span {
+    color: var(--text3);
+}
+
+.rc-item strong {
+    color: var(--text1);
+}
+
+.rc-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 15px 0;
+    border-top: 1px dashed var(--border);
+}
+
+.rc-total {
+    font-size: 1.1rem;
+    color: var(--gold);
+}
+
+.bs-note {
+    font-size: 0.8rem;
+    color: var(--text3);
+    font-style: italic;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.bs-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .payment-options { grid-template-columns: 1fr; }
+    .bf-actions { flex-direction: column; }
+    .receipt-card { padding: 20px; }
 }
 
 /* ── FOOTER ── */
@@ -2451,4 +2775,270 @@ button {
   .sticky-book {
     display: none
   }
+}
+
+/* ══════════════════════════════════════
+   QUICK BOOKING MODAL (PREMIUM)
+   ══════════════════════════════════════ */
+.quick-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(16, 13, 12, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: qmFadeIn 0.3s ease-out;
+}
+
+.quick-modal {
+    background: #1A1716;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 28px;
+    border: 1px solid rgba(198, 163, 93, 0.2);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: qmSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #F8F7F2;
+}
+
+.qm-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: #A8A8A8;
+    cursor: pointer;
+    z-index: 10;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.qm-close:hover {
+    background: rgba(198, 163, 93, 0.1);
+    color: #C6A35D;
+    transform: rotate(90deg);
+}
+
+.qm-header {
+    padding: 40px 40px 20px;
+    text-align: center;
+}
+
+.qm-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(198, 163, 93, 0.1);
+    color: #C6A35D;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 30px;
+    margin-bottom: 12px;
+}
+
+.qm-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: #C6A35D;
+    margin-bottom: 8px;
+}
+
+.qm-desc {
+    font-size: 0.85rem;
+    color: #A8A8A8;
+    line-height: 1.5;
+}
+
+.qm-body {
+    padding: 0 40px 40px;
+}
+
+/* Artist/Service Info Cards */
+.qm-artist-info, .qm-service-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(198, 163, 93, 0.05);
+    border: 1px solid rgba(198, 163, 93, 0.15);
+    border-radius: 18px;
+    margin-bottom: 24px;
+}
+
+.qma-img, .qms-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.qma-label, .qms-label {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #A8A8A8;
+    margin-bottom: 2px;
+}
+
+.qma-name, .qms-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: #F8F7F2;
+}
+
+.qma-spec, .qms-price {
+    font-size: 0.75rem;
+    color: #C6A35D;
+    font-weight: 500;
+}
+
+/* Form Styles */
+.qm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.qm-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.qm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.qmf-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #A8A8A8;
+    padding-left: 4px;
+}
+
+.qmf-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(198, 163, 93, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #F8F7F2;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.9rem;
+    transition: 0.2s;
+}
+
+.qmf-input:focus {
+    outline: none;
+    border-color: #C6A35D;
+    box-shadow: 0 0 0 3px rgba(198, 163, 93, 0.1);
+}
+
+.qmf-input option {
+    background: #1A1716;
+    color: #F8F7F2;
+    padding: 10px;
+}
+
+.qm-footer {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.qm-note {
+    font-size: 0.75rem;
+    color: #A8A8A8;
+    margin-bottom: 20px;
+}
+
+.qm-submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #C6A35D 0%, #B38F4D 100%);
+    border: none;
+    border-radius: 14px;
+    color: #100D0C;
+    font-weight: 600;
+    font-family: 'Jost', sans-serif;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 10px 20px -5px rgba(198, 163, 93, 0.3);
+}
+
+.qm-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px -8px rgba(198, 163, 93, 0.4);
+}
+
+.qm-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Success State */
+.qm-success {
+    text-align: center;
+    padding: 20px 40px 60px;
+}
+
+.qms-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: qmPulse 2s infinite;
+}
+
+@keyframes qmFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes qmSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes qmPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.qm-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: qmSpin 0.8s linear infinite;
+}
+
+@keyframes qmSpin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+    .quick-modal { border-radius: 0; max-width: 100%; height: 100%; }
+    .qm-row { grid-template-columns: 1fr; }
+    .qm-body { padding: 0 24px 24px; }
+    .qm-header { padding: 60px 24px 20px; }
 }

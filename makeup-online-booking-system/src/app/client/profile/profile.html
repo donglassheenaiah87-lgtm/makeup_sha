@@ -1,0 +1,939 @@
+<div class="prof-page">
+
+  <!-- ═══ LOADING ═══ -->
+  <div class="prof-loading" *ngIf="isLoading">
+    <div class="load-ring">
+      <div class="load-arc"></div>
+    </div>
+    <p class="load-text">Preparing your space<span class="load-dots"><span>.</span><span>.</span><span>.</span></span>
+    </p>
+  </div>
+
+  <ng-container *ngIf="!isLoading && currentUser">
+
+    <!-- ═══ MOBILE HEADER ═══ -->
+    <header class="mobile-header">
+      <a routerLink="/client/homepage" class="mobile-logo">
+        <span class="logo-l">L</span><span class="logo-rest">UMIÈRE</span>
+      </a>
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()" [class.is-open]="isMobileMenuOpen">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar" [class.open]="isMobileMenuOpen">
+
+      <!-- Logo -->
+      <a routerLink="/client/homepage" class="sidebar-logo">
+        <div class="logo-top">
+          <span class="logo-l">L</span><span class="logo-rest">UMIÈRE</span>
+        </div>
+        <span class="logo-sub">Beauty Studio</span>
+        <div class="tier-text-badge" [style.color]="currentTier.color" [style.border-color]="currentTier.color + '44'">
+          <span>{{ currentTier.icon }}</span>
+          <span>{{ currentTier.name }} Member</span>
+        </div>
+      </a>
+
+      <!-- Hidden file inputs -->
+      <input #galleryInput type="file" accept="image/*" style="display:none" (change)="onGalleryFileSelected($event)">
+      <input #profilePicInput type="file" accept="image/*" style="display:none" (change)="onProfilePicSelected($event)">
+
+      <!-- User Card -->
+      <div class="sidebar-user">
+        <div class="prof-avatar-wrap">
+          <div class="prof-avatar-ring" [style.border-color]="currentTier.color">
+            <div class="prof-avatar" *ngIf="!currentUser.profilePicture">
+              <span class="prof-initial">{{ userInitial }}</span>
+            </div>
+            <img class="prof-avatar-img" *ngIf="currentUser.profilePicture" [src]="currentUser.profilePicture"
+              [alt]="fullName" />
+            <!-- Camera overlay -->
+            <button class="avatar-cam-btn" (click)="triggerProfilePicUpload()" [class.loading]="isUploadingProfilePic" title="Change profile picture">
+              <svg *ngIf="!isUploadingProfilePic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span *ngIf="isUploadingProfilePic" class="cam-spin"></span>
+            </button>
+          </div>
+          <div class="prof-tier-badge" [style.background]="currentTier.color" [title]="currentTier.name + ' Tier'">
+            {{ currentTier.icon }}
+          </div>
+        </div>
+        <h2 class="sidebar-name">{{ fullName }}</h2>
+        <div class="sidebar-meta">
+          <span class="sidebar-role">✦ Client Member</span>
+          <span class="sidebar-divider">·</span>
+          <span class="sidebar-since">{{ memberSince }}</span>
+        </div>
+        <!-- Quick Stats -->
+        <div class="sidebar-stats">
+          <div class="ss-item">
+            <span class="ss-num">{{ bookings.length }}</span>
+            <span class="ss-label">Visits</span>
+          </div>
+          <div class="ss-sep"></div>
+          <div class="ss-item">
+            <span class="ss-num">{{ myReviews.length }}</span>
+            <span class="ss-label">Reviews</span>
+          </div>
+          <div class="ss-sep"></div>
+          <div class="ss-item">
+            <span class="ss-num">{{ membershipYears }}</span>
+            <span class="ss-label">{{ membershipYears === 1 ? 'Year' : 'Years' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        <button class="nav-item" [class.active]="activeTab === 'bookings'" (click)="setTab('bookings')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+          </span>
+          <span class="nav-label">My Bookings</span>
+          <span class="nav-badge" *ngIf="upcomingBookings.length > 0">{{ upcomingBookings.length }}</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'reviews'" (click)="setTab('reviews')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </span>
+          <span class="nav-label">My Reviews</span>
+          <span class="nav-badge" *ngIf="myReviews.length > 0">{{ myReviews.length }}</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'preferences'" (click)="setTab('preferences')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" />
+            </svg>
+          </span>
+          <span class="nav-label">Beauty Preferences</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'favorites'" (click)="setTab('favorites')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path
+                d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+          </span>
+          <span class="nav-label">My Favorites</span>
+          <span class="nav-badge fav" *ngIf="(favoriteArtists.length + favoriteServices.length) > 0">{{
+            favoriteArtists.length + favoriteServices.length }}</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'loyalty'" (click)="setTab('loyalty')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+            </svg>
+          </span>
+          <span class="nav-label">Loyalty &amp; Rewards</span>
+          <span class="nav-tier-chip" [style.background]="currentTier.color + '22'" [style.color]="currentTier.color">{{
+            currentTier.name }}</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'photos'" (click)="setTab('photos')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </span>
+          <span class="nav-label">My Best Looks</span>
+          <span class="nav-badge" *ngIf="galleryPhotos.length > 0">{{ galleryPhotos.length }}/4</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'settings'" (click)="setTab('settings')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Settings</span>
+        </button>
+        <button class="nav-item" [class.active]="activeTab === 'report'" (click)="setTab('report')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Report / Help</span>
+        </button>
+      </nav>
+
+      <!-- Bottom Actions -->
+      <div class="sidebar-actions">
+        <button class="action-btn edit-btn" (click)="openEditModal()">
+          <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          Edit Profile
+        </button>
+        <button class="action-btn logout-btn" (click)="logout()">
+          <svg class="action-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay" *ngIf="isMobileMenuOpen" (click)="toggleMobileMenu()"></div>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="dashboard-content">
+
+      <!-- Decorative ambient -->
+      <div class="ambient-orb orb-1"></div>
+      <div class="ambient-orb orb-2"></div>
+
+      <div class="dashboard-header">
+        <div class="dh-crumb">
+          <span class="dh-crumb-home">Dashboard</span>
+          <span class="dh-crumb-sep">›</span>
+          <span class="dh-crumb-active">
+            <ng-container *ngIf="activeTab === 'bookings'">My Bookings</ng-container>
+            <ng-container *ngIf="activeTab === 'reviews'">My Reviews</ng-container>
+            <ng-container *ngIf="activeTab === 'preferences'">Beauty Preferences</ng-container>
+            <ng-container *ngIf="activeTab === 'favorites'">My Favorites</ng-container>
+            <ng-container *ngIf="activeTab === 'loyalty'">Loyalty &amp; Rewards</ng-container>
+            <ng-container *ngIf="activeTab === 'photos'">My Best Looks</ng-container>
+            <ng-container *ngIf="activeTab === 'settings'">Settings</ng-container>
+            <ng-container *ngIf="activeTab === 'report'">Report / Help</ng-container>
+          </span>
+        </div>
+        <div class="dh-row">
+          <h1 class="dh-title">
+            <ng-container *ngIf="activeTab === 'bookings'">My Bookings</ng-container>
+            <ng-container *ngIf="activeTab === 'reviews'">My Reviews</ng-container>
+            <ng-container *ngIf="activeTab === 'preferences'">Beauty Preferences</ng-container>
+            <ng-container *ngIf="activeTab === 'favorites'">My Favorites</ng-container>
+            <ng-container *ngIf="activeTab === 'loyalty'">Loyalty &amp; Rewards</ng-container>
+            <ng-container *ngIf="activeTab === 'photos'">My Best Looks</ng-container>
+            <ng-container *ngIf="activeTab === 'settings'">Settings</ng-container>
+            <ng-container *ngIf="activeTab === 'report'">Report / Help</ng-container>
+          </h1>
+          <p class="dh-greeting">Welcome back, <span class="dh-name">{{ firstName }}</span></p>
+        </div>
+      </div>
+
+      <!-- ══ TAB 1: MY BOOKINGS ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'bookings'">
+        <div *ngIf="isBookingsLoading" class="tab-loading">
+          <div class="tl-spinner"></div>
+          <span>Loading your appointments…</span>
+        </div>
+
+        <ng-container *ngIf="!isBookingsLoading">
+          <!-- Upcoming -->
+          <div class="tab-section">
+            <div class="tab-section-header">
+              <div class="tsh-left">
+                <div class="tsh-dot upcoming-dot"></div>
+                <h2 class="tab-section-title">Upcoming Appointments</h2>
+              </div>
+              <span class="tab-section-count">{{ upcomingBookings.length }}</span>
+            </div>
+
+            <div class="bookings-grid" *ngIf="upcomingBookings.length > 0">
+              <div class="booking-card upcoming" *ngFor="let b of upcomingBookings; let i = index"
+                [style.animation-delay]="(i * 0.07) + 's'">
+                <div class="bc-accent-bar" [style.background]="statusColor(b.status)"></div>
+                <div class="bc-top">
+                  <span class="bc-status-pill" [style.background]="statusColor(b.status) + '22'"
+                    [style.color]="statusColor(b.status)">
+                    {{ statusLabel(b.status) }}
+                  </span>
+                  <span class="bc-date">{{ formatDate(b.date) }}</span>
+                </div>
+                <h3 class="bc-service">{{ b.serviceName }}</h3>
+                <div class="bc-meta">
+                  <div class="bc-meta-item">
+                    <svg class="bc-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M6 20v-2a6 6 0 0112 0v2" />
+                    </svg>
+                    {{ b.artistName || 'Any available' }}
+                  </div>
+                  <div class="bc-meta-item" *ngIf="b.eventType">
+                    <svg class="bc-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" />
+                    </svg>
+                    {{ b.eventType }}
+                  </div>
+                </div>
+                <div class="bc-footer">
+                  <span class="bc-amount">{{ b.amount }}</span>
+                  <a routerLink="/client/homepage" class="bc-action-btn rebook">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                      style="width:13px;height:13px">
+                      <path d="M3 12a9 9 0 109-9M3 3v4h4" />
+                    </svg>
+                    Rebook
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty-state" *ngIf="upcomingBookings.length === 0">
+              <div class="es-art">
+                <div class="es-circle c1"></div>
+                <div class="es-circle c2"></div>
+                <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+                  <rect x="8" y="10" width="32" height="32" rx="4" />
+                  <path d="M16 6v8M32 6v8M8 22h32" />
+                  <circle cx="24" cy="33" r="4" />
+                </svg>
+              </div>
+              <p class="es-text">No upcoming appointments</p>
+              <p class="es-sub">Your next beauty moment awaits.</p>
+              <a routerLink="/client/homepage" class="es-btn">Book an Appointment →</a>
+            </div>
+          </div>
+
+          <!-- Past -->
+          <div class="tab-section">
+            <div class="tab-section-header">
+              <div class="tsh-left">
+                <div class="tsh-dot past-dot"></div>
+                <h2 class="tab-section-title">Past Bookings</h2>
+              </div>
+              <span class="tab-section-count">{{ pastBookings.length }}</span>
+            </div>
+
+            <div class="bookings-grid" *ngIf="pastBookings.length > 0">
+              <div class="booking-card past" *ngFor="let b of pastBookings; let i = index"
+                [style.animation-delay]="(i * 0.07) + 's'">
+                <div class="bc-accent-bar" [style.background]="statusColor(b.status)"></div>
+                <div class="bc-top">
+                  <span class="bc-status-pill" [style.background]="statusColor(b.status) + '22'"
+                    [style.color]="statusColor(b.status)">
+                    {{ statusLabel(b.status) }}
+                  </span>
+                  <span class="bc-date">{{ formatDate(b.date) }}</span>
+                </div>
+                <h3 class="bc-service">{{ b.serviceName }}</h3>
+                <div class="bc-meta">
+                  <div class="bc-meta-item">
+                    <svg class="bc-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M6 20v-2a6 6 0 0112 0v2" />
+                    </svg>
+                    {{ b.artistName || 'Any available' }}
+                  </div>
+                </div>
+                <div class="bc-footer">
+                  <span class="bc-amount">{{ b.amount }}</span>
+                  <button class="bc-action-btn review" *ngIf="b.status === 'completed' && !hasReviewedBooking(b)"
+                    (click)="openReviewModal(b)">
+                    ⭐ Leave Review
+                  </button>
+                  <span class="bc-reviewed-tag" *ngIf="hasReviewedBooking(b)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      style="width:12px;height:12px">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    Reviewed
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty-state" *ngIf="pastBookings.length === 0">
+              <div class="es-art">
+                <div class="es-circle c1"></div>
+                <div class="es-circle c2"></div>
+                <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+                  <path d="M24 6l4 9 10 1.5-7 7 1.6 10L24 29l-9.2 4.5L16.4 23.5 9.4 16.5l10-1.5z" />
+                </svg>
+              </div>
+              <p class="es-text">No past bookings yet</p>
+              <p class="es-sub">Your beauty history will appear here.</p>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- ══ TAB 2: MY REVIEWS ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'reviews'">
+        <div *ngIf="isReviewsLoading" class="tab-loading">
+          <div class="tl-spinner"></div><span>Loading reviews…</span>
+        </div>
+
+        <ng-container *ngIf="!isReviewsLoading">
+          <!-- Stats Bar -->
+          <div class="reviews-stats-bar" *ngIf="myReviews.length > 0">
+            <div class="rsb-item">
+              <span class="rsb-num">{{ myReviews.length }}</span>
+              <span class="rsb-label">{{ myReviews.length === 1 ? 'Review' : 'Reviews' }}</span>
+            </div>
+            <div class="rsb-sep"></div>
+            <div class="rsb-item">
+              <span class="rsb-num">{{ averageRating }}</span>
+              <span class="rsb-label">Avg. Rating</span>
+            </div>
+            <div class="rsb-sep"></div>
+            <div class="rsb-item">
+              <div class="rsb-stars">
+                <span *ngFor="let s of getStars(+averageRating)" class="star filled">★</span>
+                <span *ngFor="let s of getEmptyStars(+averageRating)" class="star empty">★</span>
+              </div>
+              <span class="rsb-label">Your score</span>
+            </div>
+          </div>
+
+          <div class="reviews-list" *ngIf="myReviews.length > 0">
+            <div class="review-card" *ngFor="let r of myReviews; let i = index"
+              [style.animation-delay]="(i * 0.08) + 's'">
+              <div class="rc-left">
+                <div class="rc-avatar">{{ r.artistName[0] }}</div>
+                <div class="rc-stars-col">
+                  <span *ngFor="let s of getStars(r.rating)" class="star filled sm">★</span>
+                  <span *ngFor="let s of getEmptyStars(r.rating)" class="star empty sm">★</span>
+                </div>
+              </div>
+              <div class="rc-body">
+                <div class="rc-top">
+                  <span class="rc-artist">{{ r.artistName }}</span>
+                  <span class="rc-service-pill">{{ r.service }}</span>
+                  <span class="rc-date">{{ r.date }}</span>
+                </div>
+                <blockquote class="rc-comment">"{{ r.comment }}"</blockquote>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="myReviews.length === 0">
+            <div class="es-art">
+              <div class="es-circle c1"></div>
+              <div class="es-circle c2"></div>
+              <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M24 6l4 9 10 1.5-7 7 1.6 10L24 29l-9.2 4.5L16.4 23.5 9.4 16.5l10-1.5z" />
+              </svg>
+            </div>
+            <p class="es-text">No reviews yet</p>
+            <p class="es-sub">Complete a booking and share your experience to help others find the perfect artist.</p>
+            <button class="es-btn" (click)="setTab('bookings')">← Go to My Bookings</button>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- ══ TAB 3: BEAUTY PREFERENCES ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'preferences'">
+        <div class="pref-header-band">
+          <div class="phb-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              style="width:22px;height:22px;color:var(--gold)">
+              <path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z" />
+              <path d="M12 8v4l3 3" />
+            </svg>
+          </div>
+          <p class="phb-desc">These preferences are shared with your artist before each appointment to help them craft
+            your perfect look.</p>
+        </div>
+
+        <div class="pref-form">
+          <div class="pref-section-label">Skin & Sensitivities</div>
+          <div class="pref-row">
+            <div class="pref-field">
+              <label class="pf-label">Skin Type</label>
+              <div class="pf-select-wrap">
+                <select class="pf-select" [(ngModel)]="prefForm.skinType">
+                  <option value="">Select skin type</option>
+                  <option *ngFor="let s of skinTypeOptions" [value]="s">{{ s }}</option>
+                </select>
+                <svg class="pf-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+            </div>
+            <div class="pref-field">
+              <label class="pf-label">Allergies / Sensitivities</label>
+              <input class="pf-input" type="text" [(ngModel)]="prefForm.allergies"
+                placeholder="e.g. Latex, fragrances" />
+            </div>
+          </div>
+
+          <div class="pref-section-label">Artist & Schedule</div>
+          <div class="pref-row">
+            <div class="pref-field">
+              <label class="pf-label">Preferred Artist</label>
+              <input class="pf-input" type="text" [(ngModel)]="prefForm.preferredArtist"
+                placeholder="e.g. Sophia Reyes" />
+            </div>
+            <div class="pref-field">
+              <label class="pf-label">Preferred Schedule</label>
+              <div class="pf-select-wrap">
+                <select class="pf-select" [(ngModel)]="prefForm.preferredSchedule">
+                  <option value="">Select preference</option>
+                  <option *ngFor="let s of scheduleOptions" [value]="s">{{ s }}</option>
+                </select>
+                <svg class="pf-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="pref-section-label">Style & Inspiration</div>
+          <div class="pref-field full">
+            <label class="pf-label">Favorite Service</label>
+            <input class="pf-input" type="text" [(ngModel)]="prefForm.favoriteService"
+              placeholder="e.g. Bridal Elegance, Airbrush Finish" />
+          </div>
+          <div class="pref-field full">
+            <label class="pf-label">Inspiration Board <span class="pf-hint">— comma-separated links or mood
+                notes</span></label>
+            <textarea class="pf-textarea" [(ngModel)]="prefForm.inspirations" rows="3"
+              placeholder="e.g. Soft glam with warm tones, Charlotte Tilbury Pillow Talk look…"></textarea>
+          </div>
+
+          <div class="pref-save-row">
+            <div class="save-msg success" *ngIf="saveMessage && activeTab === 'preferences'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width:14px;height:14px">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              {{ saveMessage }}
+            </div>
+            <div class="save-msg error" *ngIf="saveError">{{ saveError }}</div>
+            <button class="pref-save-btn" (click)="savePreferences()" [disabled]="isSaving">
+              <span class="btn-spinner" *ngIf="isSaving"></span>
+              {{ isSaving ? 'Saving…' : 'Save Preferences ✦' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB 4: MY FAVORITES ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'favorites'">
+        <!-- Saved Artists -->
+        <div class="tab-section">
+          <div class="tab-section-header">
+            <div class="tsh-left">
+              <div class="tsh-dot fav-dot"></div>
+              <h2 class="tab-section-title">Saved Artists</h2>
+            </div>
+            <span class="tab-section-count">{{ favoriteArtists.length }}</span>
+          </div>
+
+          <div class="fav-artists-grid" *ngIf="favoriteArtists.length > 0">
+            <div class="fav-artist-card" *ngFor="let name of favoriteArtists">
+              <div class="fac-avatar">{{ name[0] }}</div>
+              <div class="fac-info">
+                <p class="fac-name">{{ name }}</p>
+                <p class="fac-sub">Beauty Artist</p>
+              </div>
+              <div class="fac-actions">
+                <a routerLink="/client/homepage" class="fac-book-btn">Book</a>
+                <button class="fac-remove-btn" (click)="removeFavoriteArtist(name)" title="Remove">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="width:14px;height:14px">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="favoriteArtists.length === 0">
+            <div class="es-art">
+              <div class="es-circle c1"></div>
+              <div class="es-circle c2"></div>
+              <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+                <circle cx="24" cy="18" r="8" />
+                <path d="M8 40c0-8.8 7.2-16 16-16s16 7.2 16 16" />
+              </svg>
+            </div>
+            <p class="es-text">No saved artists yet</p>
+            <a routerLink="/client/homepage" class="es-btn">Browse Artists →</a>
+          </div>
+        </div>
+
+        <!-- Saved Services -->
+        <div class="tab-section">
+          <div class="tab-section-header">
+            <div class="tsh-left">
+              <div class="tsh-dot fav-dot"></div>
+              <h2 class="tab-section-title">Saved Services</h2>
+            </div>
+            <span class="tab-section-count">{{ favoriteServices.length }}</span>
+          </div>
+
+          <div class="fav-services-wrap" *ngIf="favoriteServices.length > 0">
+            <div class="fav-service-pill" *ngFor="let name of favoriteServices">
+              <span class="fsp-gem">✦</span>
+              <span class="fsp-name">{{ name }}</span>
+              <div class="fsp-actions">
+                <a routerLink="/client/homepage" class="fsp-book">Book</a>
+                <button class="fsp-remove" (click)="removeFavoriteService(name)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="width:12px;height:12px">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="favoriteServices.length === 0">
+            <div class="es-art">
+              <div class="es-circle c1"></div>
+              <div class="es-circle c2"></div>
+              <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M24 6l4 9 10 1.5-7 7 1.6 10L24 29l-9.2 4.5L16.4 23.5 9.4 16.5l10-1.5z" />
+              </svg>
+            </div>
+            <p class="es-text">No saved services yet</p>
+            <a routerLink="/client/homepage" class="es-btn">Explore Services →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB 5: LOYALTY & REWARDS ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'loyalty'">
+
+        <!-- Hero -->
+        <div class="loyalty-hero" [style.--tier-color]="currentTier.color">
+          <div class="lh-bg-pattern"></div>
+          <div class="lh-content">
+            <div class="lh-left">
+              <span class="lh-eyebrow">Your Loyalty Status</span>
+              <div class="lh-tier-row">
+                <span class="lh-tier-icon">{{ currentTier.icon }}</span>
+                <h2 class="lh-tier-name" [style.color]="currentTier.color">{{ currentTier.name }} Member</h2>
+              </div>
+              <p class="lh-since">Member since {{ memberSince }}</p>
+              <div class="lh-stats">
+                <div class="lh-stat">
+                  <span class="lh-stat-num" [style.color]="currentTier.color">{{ membershipYears }}</span>
+                  <span class="lh-stat-label">{{ membershipYears === 1 ? 'Year' : 'Years' }} with us</span>
+                </div>
+                <div class="lh-stat-sep"></div>
+                <div class="lh-stat">
+                  <span class="lh-stat-num" [style.color]="currentTier.color">{{ bookings.length }}</span>
+                  <span class="lh-stat-label">Total Visits</span>
+                </div>
+              </div>
+              <p class="lh-next" *ngIf="nextTier">
+                <span class="lh-next-num">{{ nextTier.min - membershipYears }}</span>
+                more {{ (nextTier.min - membershipYears) === 1 ? 'year' : 'years' }} to
+                <strong>{{ nextTier.name }}</strong> {{ nextTier.icon }}
+              </p>
+              <p class="lh-next celebrate" *ngIf="!nextTier">🎉 You've reached the highest tier!</p>
+            </div>
+            <div class="lh-badge-wrap">
+              <div class="lh-badge-glow" [style.background]="currentTier.color"></div>
+              <div class="lh-big-icon">{{ currentTier.icon }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="loyalty-progress-card" *ngIf="nextTier">
+          <div class="lpc-labels">
+            <div class="lpc-label-item">
+              <span class="lpc-dot" [style.background]="currentTier.color"></span>
+              {{ currentTier.name }} <span class="lpc-sub">({{ currentTier.min }} yrs)</span>
+            </div>
+            <span class="lpc-pct" [style.color]="currentTier.color">{{ tierProgress }}%</span>
+            <div class="lpc-label-item right">
+              <span class="lpc-dot next" [style.background]="nextTier.color"></span>
+              {{ nextTier.name }} <span class="lpc-sub">({{ nextTier.min }} yrs)</span>
+            </div>
+          </div>
+          <div class="lpc-track">
+            <div class="lpc-fill" [style.width.%]="tierProgress"
+              [style.background]="tierGradient">
+            </div>
+            <div class="lpc-thumb" [style.left.%]="tierProgress" [style.background]="currentTier.color"></div>
+          </div>
+        </div>
+
+        <!-- Tier Cards -->
+        <div class="tier-section">
+          <h3 class="tier-section-title">Membership Tiers</h3>
+          <div class="tier-cards">
+            <div class="tier-card" *ngFor="let t of tiers" [class.active]="t.name === currentTier.name"
+              [style.--tc-color]="t.color">
+              <div class="tc-glow" *ngIf="t.name === currentTier.name"></div>
+              <div class="tc-icon-wrap">{{ t.icon }}</div>
+              <div class="tc-name" [style.color]="t.color">{{ t.name }}</div>
+              <div class="tc-range">{{ t.min }}{{ t.max === 999 ? '+' : ' – ' + t.max }} yrs</div>
+              <div class="tc-perks">
+                <span class="tc-perk">Priority booking</span>
+                <span class="tc-perk" *ngIf="t.name !== 'Bronze'">Exclusive events</span>
+                <span class="tc-perk" *ngIf="t.name === 'Gold'">VIP consultation</span>
+              </div>
+              <div class="tc-current-badge" *ngIf="t.name === currentTier.name" [style.background]="t.color">Current
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ TAB 6: MY BEST LOOKS ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'photos'">
+        <div class="photos-header">
+          <p class="photos-desc">Upload up to 4 photos of your <strong>Best Looks</strong> or beauty inspirations. These are visible on your profile.</p>
+          <button class="add-photo-btn" (click)="triggerGalleryUpload()" [disabled]="galleryPhotos.length >= MAX_PHOTOS || isUploadingPhoto">
+            <span class="btn-spinner" *ngIf="isUploadingPhoto"></span>
+            {{ isUploadingPhoto ? 'Uploading...' : '+ Add Best Look' }}
+          </button>
+        </div>
+
+        <div class="photo-grid">
+          <!-- Slots -->
+          <div class="photo-slot" *ngFor="let photo of galleryPhotos; let i = index">
+            <img [src]="photo" alt="Gallery Photo">
+            <button class="remove-photo-btn" (click)="removeGalleryPhoto(i)" title="Remove photo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <!-- Empty placeholders -->
+          <div class="photo-slot empty" *ngFor="let item of [].constructor(MAX_PHOTOS - galleryPhotos.length)" (click)="triggerGalleryUpload()">
+            <div class="empty-icon">+</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB 7: SETTINGS ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'settings'">
+        <!-- Security Section -->
+        <div class="settings-card">
+          <div class="sc-header">
+            <h3 class="sc-title">🔐 Security & Password</h3>
+            <p class="sc-subtitle">Manage your account security and password</p>
+          </div>
+          <div class="sc-body">
+            <div class="settings-field">
+              <label class="sf-label">Current Password</label>
+              <input type="password" class="sf-input" [(ngModel)]="settingsForm.currentPassword" placeholder="••••••••">
+            </div>
+            <div class="settings-row">
+              <div class="settings-field">
+                <label class="sf-label">New Password</label>
+                <input type="password" class="sf-input" [(ngModel)]="settingsForm.newPassword" placeholder="Min 6 characters">
+              </div>
+              <div class="settings-field">
+                <label class="sf-label">Confirm New Password</label>
+                <input type="password" class="sf-input" [(ngModel)]="settingsForm.confirmPassword" placeholder="Confirm">
+              </div>
+            </div>
+            <div class="settings-actions">
+              <div class="pw-msg success" *ngIf="passwordMessage">{{ passwordMessage }}</div>
+              <div class="pw-msg error" *ngIf="passwordError">{{ passwordError }}</div>
+              <button class="pw-change-btn" (click)="changePassword()" [disabled]="isChangingPassword">
+                <span class="btn-spinner" *ngIf="isChangingPassword"></span>
+                {{ isChangingPassword ? 'Updating...' : 'Update Password' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications Section -->
+        <div class="settings-card">
+          <div class="sc-header">
+            <h3 class="sc-title">🔔 Notifications</h3>
+            <p class="sc-subtitle">Stay updated on your bookings and offers</p>
+          </div>
+          <div class="sc-body">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <p class="toggle-label">Email Notifications</p>
+                <p class="toggle-desc">Receive booking confirmations, reminders, and studio updates.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" [(ngModel)]="settingsForm.notificationsEnabled" (change)="saveNotificationPreference()">
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="settings-actions">
+              <div class="pw-msg success" *ngIf="settingsSaveMessage">{{ settingsSaveMessage }}</div>
+              <div class="pw-msg error" *ngIf="settingsSaveError">{{ settingsSaveError }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB 8: REPORT / HELP ══ -->
+      <div class="tab-panel" *ngIf="activeTab === 'report'">
+        <div class="report-container">
+          <!-- Step 1: Category Selection -->
+          <div class="report-intro" *ngIf="!reportChatStarted">
+            <h3 class="ri-title">How can we help you today?</h3>
+            <p class="ri-subtitle">Select a category to start a report. Our team will assist you as soon as possible.</p>
+            
+            <div class="category-grid">
+              <button class="cat-card" *ngFor="let cat of reportCategories" (click)="selectReportCategory(cat.id)">
+                <span class="cat-label">{{ cat.label }}</span>
+                <p class="cat-desc">{{ cat.desc }}</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Chat-style Interface -->
+          <div class="report-chat-box" *ngIf="reportChatStarted">
+            <div class="chat-header">
+              <button class="chat-back" (click)="resetReport()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back
+              </button>
+              <div class="chat-title-wrap">
+                <span class="chat-title">Issue Report</span>
+                <span class="chat-status" [class.submitted]="reportSubmitted">{{ reportSubmitted ? 'Status: Submitted' : 'Drafting Report...' }}</span>
+              </div>
+              <span class="ticket-id" *ngIf="reportSubmitted">Ticket #{{ reportTicketId }}</span>
+            </div>
+
+            <div class="chat-messages" #scrollMe [scrollTop]="scrollMe.scrollHeight">
+              <div class="msg-bubble" *ngFor="let m of reportMessages" [class.user]="m.isUser" [class.bot]="!m.isUser">
+                <div class="msg-text">{{ m.text }}</div>
+                <div class="msg-time">{{ m.time }}</div>
+              </div>
+            </div>
+
+            <div class="chat-footer" *ngIf="!reportSubmitted">
+              <textarea class="chat-input" [(ngModel)]="reportInput" placeholder="Describe the problem..." (keyup.enter)="sendReportMessage()"></textarea>
+              <div class="chat-actions">
+                <button class="msg-send-btn" (click)="sendReportMessage()" [disabled]="!reportInput.trim()">
+                  Send Message
+                </button>
+                <button class="report-submit-btn" (click)="submitReport()" [disabled]="isSubmittingReport">
+                  <span class="btn-spinner" *ngIf="isSubmittingReport"></span>
+                  {{ isSubmittingReport ? 'Submitting...' : 'Submit Report ✦' }}
+                </button>
+              </div>
+            </div>
+            
+            <div class="chat-footer submitted" *ngIf="reportSubmitted">
+              <p>Your report has been received. You will be notified via email once our team reviews it.</p>
+              <button class="new-report-btn" (click)="resetReport()">Start New Report</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </ng-container>
+
+  <!-- ═══ EDIT MODAL ═══ -->
+  <div class="modal-backdrop" [class.open]="isEditModalOpen" (click)="closeEditModal()">
+    <div class="modal-sheet" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Profile</h3>
+        <button class="modal-x" (click)="closeEditModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label class="mf-label">First Name</label>
+            <input class="mf-input" type="text" [(ngModel)]="editForm.firstName" placeholder="First name" />
+          </div>
+          <div class="modal-field">
+            <label class="mf-label">Last Name</label>
+            <input class="mf-input" type="text" [(ngModel)]="editForm.lastName" placeholder="Last name" />
+          </div>
+        </div>
+        <div class="modal-field">
+          <label class="mf-label">Phone Number</label>
+          <input class="mf-input" type="tel" [(ngModel)]="editForm.phone" placeholder="+63 9XX XXX XXXX" />
+        </div>
+        <div class="modal-field">
+          <label class="mf-label">Personal Notes / Special Requests</label>
+          <textarea class="mf-input mf-textarea" [(ngModel)]="editForm.notes" rows="3"
+            placeholder="Any special notes for our team…"></textarea>
+        </div>
+        <div class="save-msg success" *ngIf="saveMessage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          {{ saveMessage }}
+        </div>
+        <div class="save-msg error" *ngIf="saveError">{{ saveError }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel" (click)="closeEditModal()">Cancel</button>
+        <button class="modal-save" (click)="saveProfile()" [disabled]="isSaving">
+          <span class="btn-spinner" *ngIf="isSaving"></span>
+          {{ isSaving ? 'Saving…' : 'Save Changes ✦' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REVIEW MODAL ═══ -->
+  <div class="modal-backdrop" [class.open]="isReviewModalOpen" (click)="closeReviewModal()">
+    <div class="modal-sheet" (click)="$event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h3 class="modal-title">Leave a Review</h3>
+        <button class="modal-x" (click)="closeReviewModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="reviewTargetBooking">
+        <div class="review-target-card">
+          <div class="rtc-avatar">{{ reviewTargetBooking.artistName[0] }}</div>
+          <div>
+            <p class="rtc-service">{{ reviewTargetBooking.serviceName }}</p>
+            <p class="rtc-artist">with {{ reviewTargetBooking.artistName }}</p>
+          </div>
+        </div>
+        <div class="star-picker">
+          <label class="mf-label">Your Rating</label>
+          <div class="star-row">
+            <button class="star-btn" *ngFor="let i of [1,2,3,4,5]" (mouseenter)="hoverRating = i"
+              (mouseleave)="hoverRating = 0" (click)="reviewForm.rating = i"
+              [class.lit]="i <= (hoverRating || reviewForm.rating)">★</button>
+          </div>
+          <span class="star-label">{{ ['','Poor','Fair','Good','Great','Excellent'][hoverRating || reviewForm.rating]
+            }}</span>
+        </div>
+        <div class="modal-field">
+          <label class="mf-label">Your Experience</label>
+          <textarea class="mf-input mf-textarea" [(ngModel)]="reviewForm.comment" rows="4"
+            placeholder="Share how you felt — the look, the ambiance, the artist ✨"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel" (click)="closeReviewModal()">Cancel</button>
+        <button class="modal-save" (click)="submitReview()"
+          [disabled]="isSubmittingReview || !reviewForm.comment.trim()">
+          <span class="btn-spinner" *ngIf="isSubmittingReview"></span>
+          {{ isSubmittingReview ? 'Submitting…' : 'Submit Review ⭐' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ERROR STATE ═══ -->
+  <div class="error-page" *ngIf="!isLoading && !currentUser">
+    <div class="empty-state standalone">
+      <div class="es-art">
+        <div class="es-circle c1"></div>
+        <div class="es-circle c2"></div>
+        <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+          <circle cx="24" cy="24" r="18" />
+          <path d="M24 14v12M24 30v2" />
+        </svg>
+      </div>
+      <p class="es-text">Could not load your profile</p>
+      <p class="es-sub">{{ userLoadError || 'Your account details are missing from our records.' }}</p>
+      <button class="es-btn" (click)="logout()" style="margin-top:1rem">Sign Out & Try Again</button>
+    </div>
+  </div>
+
+</div>

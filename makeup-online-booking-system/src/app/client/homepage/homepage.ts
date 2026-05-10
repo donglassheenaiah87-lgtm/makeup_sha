@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -28,6 +28,22 @@ export class HomepageComponent implements OnInit, OnDestroy {
   bookingSubmitted = false;
   isBookingLoading = false;
 
+  // ── Quick Booking (Logged-in Users) ──
+  isQuickBookingModalOpen = false;
+  quickBookingStep: 'service' | 'artist' = 'service';
+  selectedService: any = null;
+  selectedArtist: any = null;
+  quickBookingForm = {
+    date: '',
+    time: '',
+    specialty: '',
+    email: '',
+    fullName: '',
+    uid: ''
+  };
+  isQuickBookingLoading = false;
+  quickBookingSuccess = false;
+
   isLoggedIn = false;
   currentUser: UserData | null = null;
   private authSub?: Subscription;
@@ -54,10 +70,17 @@ export class HomepageComponent implements OnInit, OnDestroy {
   ];
 
   bookingForm = {
-    fullName: '', contactNumber: '', email: '', eventDate: '',
-    service: '', eventType: '', preferredArtist: '', venue: '',
-    referral: '', message: ''
+    // Step 1: Personal
+    firstName: '', lastName: '', fullName: '', contactNumber: '', email: '', venue: '', age: null as number | null, gender: '',
+    // Step 2: Service
+    service: '', eventType: '', preferredArtist: '', message: '',
+    allergies: '', skinSensitivity: '', medicalConcerns: '', eventDate: '',
+    time: '', package: '',
+    // Step 3: Payment
+    paymentMethod: '', bookingRef: '', amount: 'TBD'
   };
+  currentBookingStep = 1;
+  bookingRef = '';
 
   services: any[] = [];
   isServicesLoading = false;
@@ -103,7 +126,8 @@ export class HomepageComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userService: UserService,
     private serviceItemService: ServiceItemService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private elRef: ElementRef
   ) {}
 
   async ngOnInit() {
@@ -245,6 +269,14 @@ export class HomepageComponent implements OnInit, OnDestroy {
   toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; }
   toggleProfileDropdown() { this.isProfileDropdownOpen = !this.isProfileDropdownOpen; }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const profileWrap = this.elRef.nativeElement.querySelector('.profile-wrap');
+    if (profileWrap && !profileWrap.contains(event.target as Node)) {
+      this.isProfileDropdownOpen = false;
+    }
+  }
+
   setGreeting() {
     const hour = new Date().getHours();
     if (hour < 12) this.greeting = 'Good Morning';
@@ -319,6 +351,91 @@ export class HomepageComponent implements OnInit, OnDestroy {
     }, 900);
   }
 
+  // ═══════════════════════════════════════
+  // ── QUICK BOOKING METHODS ──
+  // ═══════════════════════════════════════
+
+  openQuickServiceBooking(service: any) {
+    if (!this.isLoggedIn) {
+      this.scrollTo('booking');
+      return;
+    }
+    this.selectedService = service;
+    this.selectedArtist = null;
+    this.quickBookingStep = 'service';
+    this.quickBookingForm.specialty = service.name;
+    this.prepareQuickForm();
+    this.isQuickBookingModalOpen = true;
+  }
+
+  openQuickArtistBooking(artist: any) {
+    if (!this.isLoggedIn) {
+      this.scrollTo('booking');
+      return;
+    }
+    this.selectedArtist = artist;
+    this.selectedService = null;
+    this.quickBookingStep = 'artist';
+    this.quickBookingForm.specialty = ''; // User must choose from list
+    this.prepareQuickForm();
+    this.isQuickBookingModalOpen = true;
+  }
+
+  private prepareQuickForm() {
+    if (this.currentUser) {
+      this.quickBookingForm.fullName = this.currentUser.name || '';
+      this.quickBookingForm.email = this.currentUser.email || '';
+      this.quickBookingForm.uid = this.currentUser.uid;
+    }
+    this.quickBookingForm.date = '';
+    this.quickBookingForm.time = '';
+    this.quickBookingSuccess = false;
+  }
+
+  closeQuickBooking() {
+    this.isQuickBookingModalOpen = false;
+  }
+
+  async confirmQuickBooking() {
+    if (!this.isLoggedIn || !this.currentUser) return;
+    if (!this.quickBookingForm.date || !this.quickBookingForm.time || !this.quickBookingForm.specialty) {
+      alert('Please complete all fields.');
+      return;
+    }
+
+    this.isQuickBookingLoading = true;
+    try {
+      const artistName = this.selectedArtist ? this.selectedArtist.name : (this.selectedService?.preferredArtist || 'No Preference');
+      const artistId = this.selectedArtist ? this.selectedArtist.uid : null;
+      const serviceName = this.quickBookingForm.specialty;
+      const amount = this.selectedService ? this.selectedService.price : 'TBD';
+
+      await this.bookingService.addBooking({
+        clientId: this.currentUser.uid,
+        clientName: this.quickBookingForm.fullName,
+        email: this.quickBookingForm.email,
+        serviceName: serviceName,
+        artistName: artistName,
+        artistId: artistId || '',
+        date: this.quickBookingForm.date,
+        time: this.quickBookingForm.time,
+        amount: amount,
+        status: 'pending',
+        createdAt: new Date()
+      } as any);
+
+      this.quickBookingSuccess = true;
+      setTimeout(() => {
+        this.closeQuickBooking();
+      }, 2500);
+    } catch (error) {
+      console.error('Quick booking error:', error);
+      alert('Failed to save booking. Please try again.');
+    } finally {
+      this.isQuickBookingLoading = false;
+    }
+  }
+
   sendChatMessage() {
     if (!this.chatMessage.trim()) return;
     this.chatMessages.push({ text: this.chatMessage, isUser: true, time: this.getTime() });
@@ -329,28 +446,100 @@ export class HomepageComponent implements OnInit, OnDestroy {
     }, 900);
   }
 
+  // ── GUEST WIZARD METHODS ──
+  nextStep() {
+    if (this.validateStep(this.currentBookingStep)) {
+      this.currentBookingStep++;
+      if (this.currentBookingStep === 3) {
+        this.calculateAmount();
+      }
+      this.scrollTo('booking');
+    }
+  }
+
+  prevStep() {
+    if (this.currentBookingStep > 1) {
+      this.currentBookingStep--;
+      this.scrollTo('booking');
+    }
+  }
+
+  validateStep(step: number): boolean {
+    const f = this.bookingForm;
+    if (step === 1) {
+      if (!f.firstName || !f.lastName || !f.contactNumber || !f.email || !f.venue) {
+        alert('Please fill in all required fields.'); return false;
+      }
+      if (!f.email.includes('@')) { alert('Please enter a valid email.'); return false; }
+      return true;
+    }
+    if (step === 2) {
+      if (!f.service || !f.eventDate) {
+        alert('Please select a service and date.'); return false;
+      }
+      return true;
+    }
+    if (step === 3) {
+      if (!f.paymentMethod) {
+        alert('Please select a payment method.'); return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  calculateAmount() {
+    const selected = this.services.find(s => s.name === this.bookingForm.service);
+    this.bookingForm.amount = selected ? selected.price : 'TBD';
+  }
+
+  generateBookingRef() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let res = 'LUM-';
+    for (let i = 0; i < 6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    this.bookingRef = res;
+    this.bookingForm.bookingRef = res;
+  }
+
   async submitBooking() {
     this.isBookingLoading = true;
+    this.generateBookingRef();
     
-    const selectedService = this.services.find(s => s.name === this.bookingForm.service);
-    const amount = selectedService ? selectedService.price : 'TBD';
+    // Find artist object to get the ID (Foreign Key)
+    const selectedArtistObj = this.artists.find(a => a.name === this.bookingForm.preferredArtist);
+    const artistId = selectedArtistObj ? selectedArtistObj.uid : '';
 
     try {
       await this.bookingService.addBooking({
-        clientName: this.bookingForm.fullName,
-        serviceName: this.bookingForm.service,
-        artistName: this.bookingForm.preferredArtist,
-        date: this.bookingForm.eventDate,
-        amount: amount,
-        status: 'pending',
+        firstName: this.bookingForm.firstName,
+        lastName: this.bookingForm.lastName,
+        clientName: `${this.bookingForm.firstName} ${this.bookingForm.lastName}`,
+        email: this.bookingForm.email,
         phone: this.bookingForm.contactNumber,
-        notes: this.bookingForm.message,
-        eventType: this.bookingForm.eventType,
         venue: this.bookingForm.venue,
-        // ERROR BEFORE: Property 'createdAt' is missing but required by 'Omit<BookingData, "id">'
-        // FIX: We need to explicitly pass 'createdAt: new Date()' here because BookingService expects it.
+        age: this.bookingForm.age as any,
+        gender: this.bookingForm.gender,
+
+        serviceName: this.bookingForm.service,
+        artistName: this.bookingForm.preferredArtist || 'No Preference',
+        artistId: artistId,
+        date: this.bookingForm.eventDate,
+        time: this.bookingForm.time,
+        package: this.bookingForm.package,
+        amount: this.bookingForm.amount,
+        
+        notes: this.bookingForm.message,
+        allergies: this.bookingForm.allergies,
+        skinSensitivity: this.bookingForm.skinSensitivity,
+        medicalConcerns: this.bookingForm.medicalConcerns,
+
+        paymentMethod: this.bookingForm.paymentMethod,
+        bookingRef: this.bookingRef,
+        status: 'pending',
         createdAt: new Date()
-      });
+      } as any);
+      
+      this.currentBookingStep = 4; // Move to Success Step
       this.bookingSubmitted = true;
     } catch (error) {
       console.error('Error saving booking:', error);

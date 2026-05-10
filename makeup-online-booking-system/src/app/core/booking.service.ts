@@ -18,18 +18,32 @@ export interface BookingData {
   id: string; // Document ID
   clientName: string;
   clientId?: string;
+  email?: string;
   serviceName: string;
   artistName: string;
   artistId?: string;
   date: string;
+  time?: string;
   amount: string;
   paymentMethod?: string;
   paymentAccount?: string;
+  paymentStatus?: 'unpaid' | 'paid';
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   phone?: string;
   notes?: string;
   eventType?: string;
   venue?: string;
+  // New Guest Wizard Fields
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  age?: number;
+  gender?: string;
+  package?: string;
+  allergies?: string;
+  skinSensitivity?: string;
+  medicalConcerns?: string;
+  bookingRef?: string;
   createdAt: Date;
 }
 

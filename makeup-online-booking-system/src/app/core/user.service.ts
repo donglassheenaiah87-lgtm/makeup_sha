@@ -65,6 +65,10 @@ export interface UserData {
   // Format: array of strings (IDs or names) for simple lookup
   favoriteArtists?: string[];
   favoriteServices?: string[];
+
+  // ── Photo Gallery & Settings ──
+  galleryPhotos?: string[];        // up to 4 base64 images stored in Firestore
+  notificationsEnabled?: boolean;  // notification preference from Settings tab
 }
 
 @Injectable({
