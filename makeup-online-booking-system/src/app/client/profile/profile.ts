@@ -358,7 +358,9 @@ export class Profile implements OnInit, OnDestroy {
       lastMessage: 'Conversation started',
       lastTime: serverTimestamp(),
       unreadArtist: 0,
-      unreadClient: 0
+      unreadClient: 0,
+      participants: [booking.artistId!, this.currentUser.uid],
+      createdAt: serverTimestamp()
     }).then(() => {
       this.setTab('messages');
       const conv = this.conversations.find(c => c.id === convId);
@@ -375,7 +377,9 @@ export class Profile implements OnInit, OnDestroy {
           lastMessage: 'Conversation started',
           lastTime: new Date(),
           unreadArtist: 0,
-          unreadClient: 0
+          unreadClient: 0,
+          participants: [booking.artistId!, this.currentUser!.uid],
+          createdAt: new Date()
         });
       }
     });

@@ -466,7 +466,9 @@ export class HomepageComponent implements OnInit, OnDestroy {
       unreadArtist: 0,
       unreadClient: 0,
       lastMessage: 'Chat started',
-      lastTimestamp: null // Renamed
+      lastTime: null,
+      participants: [artist.uid, this.currentUser.uid],
+      createdAt: null
     };
 
     await this.chatService.initializeConversation(conversationId, metadata);
