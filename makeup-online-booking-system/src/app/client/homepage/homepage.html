@@ -238,9 +238,12 @@
             <span class="ac-pill" *ngFor="let sp of a.services | slice:0:3">{{ getServiceName(sp) }}</span>
           </div>
         </div>
-        <div class="ac-footer">
-          <button class="btn-primary" (click)="isLoggedIn ? openQuickArtistBooking(a) : scrollTo('booking')">
-            {{ isLoggedIn ? 'Book ' + getArtistFirstName(a) + ' →' : 'Book ' + getArtistFirstName(a) + ' →' }}
+        <div class="ac-footer" style="display: flex; gap: 10px;">
+          <button class="btn-primary" style="flex: 1;" (click)="isLoggedIn ? openQuickArtistBooking(a) : scrollTo('booking')">
+            {{ isLoggedIn ? 'Book ' + getArtistFirstName(a) : 'Book Now' }}
+          </button>
+          <button class="btn-outline" *ngIf="isLoggedIn" (click)="startChat(a)" style="padding: 10px 18px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1.5px solid var(--border2); background: transparent; transition: all 0.2s; cursor: pointer;">
+            <span style="font-size: 1.2rem;">💬</span>
           </button>
         </div>
       </div>

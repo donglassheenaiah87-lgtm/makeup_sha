@@ -393,8 +393,14 @@ export class HomepageComponent implements OnInit, OnDestroy {
     if (!this.isLoggedIn) return;
     this.isMessagesModalOpen = true;
     this.isProfileDropdownOpen = false;
-    if (this.conversations.length > 0 && !this.selectedConversation) {
-      this.selectConversation(this.conversations[0]);
+    if (this.conversations.length > 0) {
+      if (!this.selectedConversation) {
+        this.selectConversation(this.conversations[0]);
+      } else {
+        // Refresh selected conversation data from the list
+        const updated = this.conversations.find(c => c.id === this.selectedConversation?.id);
+        if (updated) this.selectedConversation = updated;
+      }
     }
   }
 
@@ -415,18 +421,67 @@ export class HomepageComponent implements OnInit, OnDestroy {
   }
 
   async sendChatMessage() {
-    if (!this.newMessageText.trim() || !this.selectedConversation || !this.currentUser) return;
-    
+    if (!this.selectedConversation || !this.currentUser) return;
     const text = this.newMessageText.trim();
-    this.newMessageText = '';
+    if (!text) return;
+
+    const metadata = {
+      artistId: this.selectedConversation.artistId,
+      clientId: this.currentUser.uid,
+      artistName: this.selectedConversation.artistName,
+      clientName: this.currentUser.name || this.currentUser.email || 'Valued Client',
+      artistImage: this.selectedConversation.artistImage || '',
+      clientImage: this.currentUser.profilePicture || ''
+    };
+
+    try {
+      await this.chatService.sendMessage(
+        this.selectedConversation.id,
+        this.currentUser.uid,
+        this.selectedConversation.artistId,
+        text,
+        'client',
+        metadata
+      );
+      this.newMessageText = '';
+    } catch (e) {
+      console.error("Error sending message:", e);
+    }
+  }
+
+  async startChat(artist: any) {
+    if (!this.isLoggedIn || !this.currentUser) {
+      this.scrollTo('booking');
+      return;
+    }
+
+    const conversationId = `${artist.uid}_${this.currentUser.uid}`;
+    const metadata = {
+      artistId: artist.uid,
+      clientId: this.currentUser.uid,
+      artistName: artist.name,
+      clientName: this.currentUser.name || this.currentUser.email || 'Valued Client',
+      artistImage: artist.profilePicture || '',
+      clientImage: this.currentUser.profilePicture || '',
+      unreadArtist: 0,
+      unreadClient: 0,
+      lastMessage: 'Chat started',
+      lastTimestamp: null // Renamed
+    };
+
+    await this.chatService.initializeConversation(conversationId, metadata);
+    this.openMessages();
     
-    await this.chatService.sendMessage(
-      this.selectedConversation.id,
-      this.currentUser.uid,
-      this.selectedConversation.artistId,
-      text,
-      'client'
-    );
+    // Find or wait for the conversation to appear in the list
+    setTimeout(() => {
+      const conv = this.conversations.find(c => c.id === conversationId);
+      if (conv) {
+        this.selectConversation(conv);
+      } else {
+        // Fallback: manually set it if listener is slow
+        this.selectConversation({ ...metadata, id: conversationId } as any);
+      }
+    }, 500);
   }
 
   private scrollToBottom() {

@@ -410,10 +410,11 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
         clientName: b.clientName || 'Lumière Client',
         clientImage: (b as any).clientImage || '',
         artistImage: this.profilePicture || '',
-        lastMessage: '', 
-        lastTime: new Date(), 
+        lastTimestamp: new Date(), 
         unreadArtist: 0, 
-        unreadClient: 0
+        unreadClient: 0,
+        participants: [user.uid, b.clientId],
+        createdAt: new Date()
       };
       this.conversations.unshift(newConv);
       this.activeConversation = newConv;
@@ -427,9 +428,11 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
         artistImage: newConv.artistImage,
         clientImage: newConv.clientImage,
         lastMessage: 'Started chat',
-        lastTime: serverTimestamp(),
+        lastTimestamp: serverTimestamp(),
         unreadArtist: 0,
-        unreadClient: 0
+        unreadClient: 0,
+        participants: [newConv.artistId, newConv.clientId],
+        createdAt: serverTimestamp()
       });
     }
   }
@@ -456,7 +459,15 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     const convId = this.activeConversation.id;
     const receiverId = this.activeConversation.clientId;
     
-    await this.chatService.sendMessage(convId, user.uid, receiverId, text, 'artist');
+    await this.chatService.sendMessage(convId, user.uid, receiverId, text, 'artist', {
+      artistId: this.activeConversation.artistId,
+      clientId: this.activeConversation.clientId,
+      artistName: this.activeConversation.artistName,
+      clientName: this.activeConversation.clientName,
+      artistImage: this.activeConversation.artistImage || '',
+      clientImage: this.activeConversation.clientImage || '',
+      participants: [this.activeConversation.artistId, this.activeConversation.clientId]
+    });
     this.newMessage = '';
     this.cdr.detectChanges();
   }
