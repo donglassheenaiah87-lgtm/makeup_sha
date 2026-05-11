@@ -397,9 +397,13 @@ export class HomepageComponent implements OnInit, OnDestroy {
       if (!this.selectedConversation) {
         this.selectConversation(this.conversations[0]);
       } else {
-        // Refresh selected conversation data from the list
+        // Refresh selected conversation data and RESTORE subscription
         const updated = this.conversations.find(c => c.id === this.selectedConversation?.id);
-        if (updated) this.selectedConversation = updated;
+        if (updated) {
+          this.selectConversation(updated);
+        } else {
+          this.selectConversation(this.conversations[0]);
+        }
       }
     }
   }
@@ -444,6 +448,8 @@ export class HomepageComponent implements OnInit, OnDestroy {
         metadata
       );
       this.newMessageText = '';
+      this.cdr.detectChanges();
+      this.scrollToBottom();
     } catch (e) {
       console.error("Error sending message:", e);
     }
