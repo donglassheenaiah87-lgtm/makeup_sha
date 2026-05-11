@@ -8,6 +8,7 @@ import { UserService, UserData } from '../../core/user.service';
 import { ServiceItemService } from '../../core/service-item.service';
 import { ArtistAvailabilityService } from '../../core/artist-availability.service';
 import { Subscription } from 'rxjs';
+import { ChatService, Conversation, Message } from '../../core/chat.service';
 @Component({
   selector: 'app-homepage',
   standalone: true,
@@ -41,6 +42,18 @@ export class HomepageComponent implements OnInit, OnDestroy {
   };
   isQuickBookingLoading = false;
   quickBookingSuccess = false;
+
+  // ── My Bookings Modal ──
+  isMyBookingsModalOpen = false;
+  
+  // ── Messages Modal ──
+  isMessagesModalOpen = false;
+  conversations: Conversation[] = [];
+  selectedConversation: Conversation | null = null;
+  chatMessages: Message[] = [];
+  newMessageText = '';
+  private convSub?: Subscription;
+  private msgSub?: Subscription;
 
   isLoggedIn = false;
   currentUser: UserData | null = null;
@@ -119,6 +132,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private serviceItemService: ServiceItemService,
     private artistAvailabilityService: ArtistAvailabilityService,
+    private chatService: ChatService,
     private cdr: ChangeDetectorRef,
     private elRef: ElementRef
   ) {}
@@ -237,10 +251,20 @@ export class HomepageComponent implements OnInit, OnDestroy {
           this.bookingForm.email = this.currentUser.email || '';
           this.bookingForm.contactNumber = this.currentUser.phone || '';
         }
+
+        // Subscribe to conversations
+        if (this.convSub) this.convSub.unsubscribe();
+        this.convSub = this.chatService.getConversationsForClient(user.uid).subscribe(convs => {
+          this.conversations = convs;
+          this.cdr.detectChanges();
+        });
       } else {
         this.isLoggedIn = false;
         this.currentUser = null;
         this.bookings = [];
+        this.conversations = [];
+        if (this.convSub) this.convSub.unsubscribe();
+        if (this.msgSub) this.msgSub.unsubscribe();
         // Reset form for guests
         this.bookingForm = {
           firstName: '', lastName: '', fullName: '', contactNumber: '', email: '', venue: '', age: null, gender: '',
@@ -259,6 +283,8 @@ export class HomepageComponent implements OnInit, OnDestroy {
     if (this.authSub) this.authSub.unsubscribe();
     if (this.artistsSub) this.artistsSub.unsubscribe();
     if (this.servicesSub) this.servicesSub.unsubscribe();
+    if (this.convSub) this.convSub.unsubscribe();
+    if (this.msgSub) this.msgSub.unsubscribe();
   }
 
   startAnnouncementRotation() {
@@ -298,7 +324,9 @@ export class HomepageComponent implements OnInit, OnDestroy {
   }
 
   get firstName() {
-    return this.currentUser?.firstName || (this.currentUser?.name ? this.currentUser.name.split(' ')[0] : 'Beautiful');
+    const name = this.currentUser?.firstName || (this.currentUser?.name ? this.currentUser.name.split(' ')[0] : '');
+    if (name === 'Client' || name === 'User' || !name) return 'Beautiful';
+    return name;
   }
 
   get userInitial() {
@@ -348,6 +376,64 @@ export class HomepageComponent implements OnInit, OnDestroy {
   scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     this.isMobileMenuOpen = false;
+  }
+
+  // ── New Modal Handlers ──
+  openMyBookings() {
+    if (!this.isLoggedIn) return;
+    this.isMyBookingsModalOpen = true;
+    this.isProfileDropdownOpen = false;
+  }
+
+  closeMyBookings() {
+    this.isMyBookingsModalOpen = false;
+  }
+
+  openMessages() {
+    if (!this.isLoggedIn) return;
+    this.isMessagesModalOpen = true;
+    this.isProfileDropdownOpen = false;
+    if (this.conversations.length > 0 && !this.selectedConversation) {
+      this.selectConversation(this.conversations[0]);
+    }
+  }
+
+  closeMessages() {
+    this.isMessagesModalOpen = false;
+    if (this.msgSub) this.msgSub.unsubscribe();
+  }
+
+  selectConversation(conv: Conversation) {
+    this.selectedConversation = conv;
+    if (this.msgSub) this.msgSub.unsubscribe();
+    this.msgSub = this.chatService.getMessages(conv.id).subscribe(msgs => {
+      this.chatMessages = msgs;
+      this.cdr.detectChanges();
+      this.scrollToBottom();
+    });
+    this.chatService.markAsRead(conv.id, 'client');
+  }
+
+  async sendChatMessage() {
+    if (!this.newMessageText.trim() || !this.selectedConversation || !this.currentUser) return;
+    
+    const text = this.newMessageText.trim();
+    this.newMessageText = '';
+    
+    await this.chatService.sendMessage(
+      this.selectedConversation.id,
+      this.currentUser.uid,
+      this.selectedConversation.artistId,
+      text,
+      'client'
+    );
+  }
+
+  private scrollToBottom() {
+    setTimeout(() => {
+      const container = document.querySelector('.chat-messages');
+      if (container) container.scrollTop = container.scrollHeight;
+    }, 100);
   }
 
 
@@ -405,8 +491,11 @@ export class HomepageComponent implements OnInit, OnDestroy {
 
   private prepareQuickForm() {
     if (this.currentUser) {
-      this.quickBookingForm.fullName = this.currentUser.name || 
-        `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim() || 'Valued Client';
+      let name = this.currentUser.name || `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim();
+      if (!name || name === 'Client User' || name === 'User') {
+        name = this.currentUser.email ? this.currentUser.email.split('@')[0] : 'Valued Client';
+      }
+      this.quickBookingForm.fullName = name;
       this.quickBookingForm.email = this.currentUser.email || '';
       this.quickBookingForm.uid = this.currentUser.uid;
     }

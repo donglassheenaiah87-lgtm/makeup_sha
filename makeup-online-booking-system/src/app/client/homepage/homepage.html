@@ -58,8 +58,8 @@
               <p class="gd-sub" style="opacity: 0.8;">{{ currentUser?.email }}</p>
             </div>
             <div class="gd-body" style="padding: 12px;">
-              <a routerLink="/client/my-bookings" class="dd-item">📅 My Bookings</a>
-              <a routerLink="/client/profile" [queryParams]="{tab: 'messages'}" class="dd-item">💬 Messages</a>
+              <button (click)="openMyBookings()" class="dd-item">📅 My Bookings</button>
+              <button (click)="openMessages()" class="dd-item">💬 Messages</button>
               <a routerLink="/client/profile" class="dd-item">👤 Profile Settings</a>
               <div style="height: 1px; background: var(--border); margin: 6px 8px;"></div>
               <button (click)="logout()" class="dd-item" style="width: 100%; text-align: left; background: transparent; border: none; color: #e74c3c; cursor: pointer; font-family: 'Jost', sans-serif; font-size: .85rem; font-weight: 500;">🚪 Sign Out</button>
@@ -87,8 +87,9 @@
         <a routerLink="/client/register" class="mob-link">✨ Register</a>
       </ng-container>
       <ng-container *ngIf="isLoggedIn">
-        <a routerLink="/client/my-bookings" class="mob-link">📅 My Bookings</a>
-        <a routerLink="/client/profile" class="mob-link">👤 Profile</a>
+        <button (click)="openMyBookings(); toggleMobileMenu()" class="mob-link">📅 My Bookings</button>
+        <button (click)="openMessages(); toggleMobileMenu()" class="mob-link">💬 Messages</button>
+        <a routerLink="/client/profile" class="mob-link">👤 Profile Settings</a>
         <button (click)="logout()" class="mob-link" style="color: #e74c3c;">🚪 Logout</button>
       </ng-container>
       <button class="mob-book-btn" (click)="onMobileBookClick()">Book an Appointment →</button>
@@ -752,5 +753,106 @@
       </div>
     </div>
   </div>
+  
+
+
+  <!-- ═══ MY BOOKINGS MODAL ═══ -->
+  <div class="quick-modal-overlay" *ngIf="isMyBookingsModalOpen" (click)="closeMyBookings()">
+    <div class="quick-modal bookings-modal" (click)="$event.stopPropagation()">
+      <button class="qm-close" (click)="closeMyBookings()">✕</button>
+      <div class="qm-header">
+        <span class="qm-badge">✦ My History</span>
+        <h2 class="qm-title">Your Bookings</h2>
+        <p class="qm-desc">Track and manage your scheduled appointments.</p>
+      </div>
+
+      <div class="qm-body">
+        <div class="empty-bookings" *ngIf="bookings.length === 0">
+          <p>You haven't made any bookings yet.</p>
+          <button class="btn-book-now-empty" (click)="closeMyBookings(); scrollTo('services')">Book Now</button>
+        </div>
+
+        <div class="bookings-list" *ngIf="bookings.length > 0">
+          <div class="booking-item" *ngFor="let b of bookings">
+            <div class="bi-left">
+              <span class="bi-service">{{ b.serviceName }}</span>
+              <span class="bi-artist">with {{ b.artistName }}</span>
+            </div>
+            <div class="bi-right">
+              <span class="bi-date">{{ formatDate(b.eventDate || b.date) }}</span>
+              <span class="bi-status" [style.background]="statusColor(b.status)">{{ b.status }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ MESSAGES MODAL ═══ -->
+  <div class="quick-modal-overlay" *ngIf="isMessagesModalOpen" (click)="closeMessages()">
+    <div class="quick-modal messages-modal" (click)="$event.stopPropagation()">
+      <button class="qm-close" (click)="closeMessages()">✕</button>
+      
+      <div class="messages-layout">
+        <!-- Sidebar -->
+        <div class="messages-sidebar">
+          <div class="ms-header">
+            <h3>Messages</h3>
+          </div>
+          <div class="ms-list">
+            <div class="ms-item" *ngFor="let conv of conversations" 
+                 [class.active]="selectedConversation?.id === conv.id"
+                 (click)="selectConversation(conv)">
+              <div class="ms-avatar" [style.background-image]="'url(' + (conv.artistImage || 'https://via.placeholder.com/40') + ')'"></div>
+              <div class="ms-info">
+                <p class="ms-name">{{ conv.artistName }}</p>
+                <p class="ms-last">{{ conv.lastMessage }}</p>
+              </div>
+              <span class="ms-unread" *ngIf="conv.unreadClient > 0">{{ conv.unreadClient }}</span>
+            </div>
+            <div class="empty-convs" *ngIf="conversations.length === 0">
+              <p>No conversations yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area" *ngIf="selectedConversation">
+          <div class="chat-header">
+            <div class="ch-avatar" [style.background-image]="'url(' + (selectedConversation.artistImage || 'https://via.placeholder.com/40') + ')'"></div>
+            <div class="ch-info">
+              <h4 class="ch-name">{{ selectedConversation.artistName }}</h4>
+              <p class="ch-status">Online</p>
+            </div>
+          </div>
+          
+          <div class="chat-messages">
+            <div class="message-bubble" *ngFor="let m of chatMessages" 
+                 [class.sent]="m.senderId === currentUser?.uid"
+                 [class.received]="m.senderId !== currentUser?.uid">
+              <p class="mb-text">{{ m.text }}</p>
+              <span class="mb-time">{{ m.timestamp?.toDate() | date:'shortTime' }}</span>
+            </div>
+          </div>
+
+          <div class="chat-input-area">
+            <input type="text" placeholder="Type a message..." 
+                   [(ngModel)]="newMessageText" 
+                   (keyup.enter)="sendChatMessage()" />
+            <button class="btn-send" (click)="sendChatMessage()">
+              <span>✦</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-placeholder" *ngIf="!selectedConversation">
+          <div class="cp-icon">💬</div>
+          <p>Select a conversation to start chatting</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 </div>
