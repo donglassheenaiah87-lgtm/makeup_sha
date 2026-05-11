@@ -9,7 +9,6 @@
     <nav class="sidebar-nav">
       <a class="nav-item" [class.active]="activeTab==='overview'"      (click)="setTab('overview')">      <span class="nav-icon">◈</span>  <span class="nav-label" *ngIf="!sidebarCollapsed">Overview</span></a>
       <a class="nav-item" [class.active]="activeTab==='bookings'"      (click)="setTab('bookings')">      <span class="nav-icon">📋</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Bookings</span></a>
-      <a class="nav-item" [class.active]="activeTab==='clients'"       (click)="setTab('clients')">       <span class="nav-icon">👤</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Clients</span></a>
       <a class="nav-item" [class.active]="activeTab==='artists'"       (click)="setTab('artists')">       <span class="nav-icon">🎨</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Artists</span></a>
       <a class="nav-item" [class.active]="activeTab==='services'"      (click)="setTab('services')">      <span class="nav-icon">💄</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Services</span></a>
       <a class="nav-item" [class.active]="activeTab==='reports'"       (click)="setTab('reports')">       <span class="nav-icon">📊</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Reports</span></a>
@@ -158,7 +157,6 @@
           <button class="action-btn" (click)="openModal('addBooking')"><span>📋</span> New Booking</button>
           <button class="action-btn" (click)="openModal('addArtist')"><span>🎨</span> Add Artist</button>
           <button class="action-btn" (click)="openModal('addService')"><span>💄</span> Add Service</button>
-          <button class="action-btn" (click)="openModal('addClient')"><span>👤</span> Add Client</button>
           <button class="action-btn" (click)="setTab('reports')"><span>📊</span> Reports</button>
           <button class="action-btn" (click)="exportBookings()"><span>📤</span> Export CSV</button>
         </div>
@@ -280,55 +278,6 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════
-         CLIENTS TAB
-    ══════════════════════════════════════════ -->
-    <div class="tab-content" *ngIf="activeTab==='clients' && !isLoading">
-      <div class="card">
-        <div class="card-header">
-          <h3>Client Management <span class="count-chip">{{filteredClients.length}}</span></h3>
-          <div class="header-actions">
-            <button class="export-btn" (click)="exportClients()">📤 Export CSV</button>
-            <button class="add-btn"    (click)="openModal('addClient')">+ Add Client</button>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Bookings</th><th>Total Spent</th><th>Last Visit</th><th>Fav. Service</th><th>Status</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let c of filteredClients; let i=index" class="clickable-row" (click)="viewClientDetail(c)">
-                <td class="row-num">{{i+1}}</td>
-                <td>
-                  <div class="name-cell">
-                    <div class="name-avatar">{{c.name[0]}}</div>
-                    <div>
-                      <p class="client-name">{{c.name}}</p>
-                      <p class="cell-sub">Since {{c.joined}}</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="muted">{{c.email}}</td>
-                <td class="muted">{{c.phone}}</td>
-                <td class="center-td"><span class="pill">{{c.bookings}}</span></td>
-                <td class="amount">₱{{c.totalSpent}}</td>
-                <td class="muted">{{c.lastVisit}}</td>
-                <td class="muted">{{c.favoriteService}}</td>
-                <td>
-                  <span class="badge" [ngClass]="{'confirmed':c.status==='active','pending':c.status==='vip','cancelled':c.status==='inactive'}">{{c.status}}</span>
-                </td>
-                <td class="action-cell" (click)="$event.stopPropagation()">
-                  <button class="icon-btn view-btn" (click)="viewClientDetail(c)" title="View profile">👁</button>
-                  <button class="icon-btn delete"   (click)="deleteClient(c)"    title="Remove">🗑</button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredClients.length===0"><td colspan="10" class="empty-row">No clients found</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
     <!-- ══════════════════════════════════════════
          ARTISTS TAB
@@ -538,6 +487,55 @@
         </div>
       </div>
 
+      <!-- Payout Requests Section -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+          <h3>💸 Pending Payout Requests <span class="count-chip">{{payoutRequests.length}}</span></h3>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Artist</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Account Info</th>
+                <th>Date Requested</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of payoutRequests">
+                <td><strong>{{p.artistName}}</strong></td>
+                <td class="amount">₱{{p.amount | number}}</td>
+                <td><span class="pill">{{p.method | uppercase}}</span></td>
+                <td>
+                  <p class="cell-main">{{p.accountName}}</p>
+                  <p class="cell-sub">{{p.accountNumber}}</p>
+                </td>
+                <td class="muted">{{p.requestedDate}}</td>
+                <td>
+                  <span class="badge" [ngClass]="{'pending': p.status==='processing', 'confirmed': p.status==='completed', 'cancelled': p.status==='rejected'}">
+                    {{p.status}}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <div class="action-btns" *ngIf="p.status === 'processing'">
+                    <button class="icon-btn view-btn" (click)="processPayout(p, 'completed')" title="Mark as Paid">✅</button>
+                    <button class="icon-btn delete" (click)="processPayout(p, 'rejected')" title="Reject">❌</button>
+                  </div>
+                  <span *ngIf="p.status !== 'processing'" class="muted">Processed</span>
+                </td>
+              </tr>
+              <tr *ngIf="payoutRequests.length === 0">
+                <td colspan="7" class="empty-row">No pending payout requests</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <!-- ══════════════════════════════════════════
@@ -689,6 +687,7 @@
             </div>
             <div class="rev-actions">
               <button class="rev-action-btn reply-btn" (click)="openReviewReply(r)">{{r.reply ? '✏ Edit Reply' : '💬 Reply'}}</button>
+              <button class="rev-action-btn warn-btn" (click)="warnUser(r)">⚠️ Warn User</button>
               <button class="rev-action-btn publish-btn" *ngIf="r.status !== 'published'" (click)="updateReviewStatus(r, 'published')">✅ Publish</button>
               <button class="rev-action-btn flag-btn"    *ngIf="r.status !== 'flagged'"   (click)="updateReviewStatus(r, 'flagged')">🚩 Flag</button>
               <button class="rev-action-btn pending-btn" *ngIf="r.status !== 'pending'"   (click)="updateReviewStatus(r, 'pending')">⏳ Pending</button>
@@ -744,8 +743,9 @@
               <p class="si-reason">Reason: <strong>{{e.reason}}</strong></p>
               <p class="si-details">{{e.details}}</p>
               <p class="si-leave">Leave: {{e.leaveStart}} to {{e.leaveEnd}}</p>
-              <div class="si-actions" *ngIf="e.status==='active'">
-                <button class="resolve-btn" (click)="resolveExcuse(e)">Mark as Resolved</button>
+              <div class="si-actions" *ngIf="e.status==='active'" style="display:flex; gap: 8px;">
+                <button class="resolve-btn" (click)="resolveExcuse(e)">Approve</button>
+                <button class="icon-btn delete" (click)="rejectExcuse(e)" style="padding: 6px 12px; font-size: 0.9rem;">Reject</button>
               </div>
             </div>
             <div class="empty-row" *ngIf="excuseRequests.length===0">No active emergencies</div>
@@ -753,35 +753,6 @@
         </div>
       </div>
 
-      <!-- Payout Requests -->
-      <div class="card" style="margin-top:1.4rem">
-        <div class="card-header">
-          <h3>Payout Requests <span class="count-chip">{{payoutRequests.length}}</span></h3>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead><tr><th>Artist</th><th>Amount</th><th>Method</th><th>Account</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let p of payoutRequests">
-                <td><strong>{{p.artistName}}</strong></td>
-                <td class="amount">₱{{p.amount | number}}</td>
-                <td>{{p.method}}</td>
-                <td>{{p.account}}</td>
-                <td>{{p.createdAt?.toDate() | date:'shortDate'}}</td>
-                <td><span class="badge" [ngClass]="p.status">{{p.status}}</span></td>
-                <td>
-                  <div class="si-actions" *ngIf="p.status==='pending'" style="margin-top:0">
-                    <button class="resolve-btn" (click)="processPayout(p, 'approved')">Approve</button>
-                    <button class="icon-btn delete" (click)="processPayout(p, 'rejected')" style="padding:4px 8px;font-size:0.8rem">Reject</button>
-                  </div>
-                  <button *ngIf="p.status==='approved'" class="resolve-btn" (click)="processPayout(p, 'processed')">Mark Paid</button>
-                </td>
-              </tr>
-              <tr *ngIf="payoutRequests.length===0"><td colspan="7" class="empty-row">No payout requests</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
   </main>

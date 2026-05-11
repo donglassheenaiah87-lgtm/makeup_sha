@@ -3,9 +3,9 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Auth } from '@angular/fire/auth';
-import { UserService } from '../../core/user.service';
+import { UserService, UserData } from '../../core/user.service';
 import { AuthService } from '../../core/auth.service';
-import { BookingService } from '../../core/booking.service';
+import { BookingService, BookingData } from '../../core/booking.service';
 import { ChatService, Conversation, Message } from '../../core/chat.service';
 import { PayoutService, Payout } from '../../core/payout.service';
 import { ReviewService, Review } from '../../core/review.service';
@@ -26,7 +26,7 @@ export interface Booking {
   amount: number | string;
   paymentMethod?: string;
   paymentAccount?: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'emergency';
   notes?: string;
 }
 
@@ -152,13 +152,20 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   // ── Bookings ──
   bookings: Booking[] = [];
+
   private bookingsSub?: Subscription;
+  private clientsSub?: Subscription;
   private reviewsSub?: Subscription;
   private payoutsSub?: Subscription;
   private chatSub?: Subscription;
   private msgsSub?: Subscription;
+  private emergencySub?: Subscription;
 
   activeMessages: Message[] = [];
+
+  // ── Raw Data ──
+  private rawBookings: BookingData[] = [];
+  private rawClients: UserData[] = [];
 
   // ── Portfolio ──
   portfolioItems: PortfolioItem[] = [];
@@ -250,20 +257,25 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
         };
         
         // Subscriptions
-        this.bookingsSub = this.bookingService.getBookingsByArtistRealtime(this.artistName).subscribe(data => {
-          this.bookings = data.map(b => ({
-            id: b.id, clientId: b.clientId || 'guest', clientName: b.clientName, clientPhone: b.phone || 'N/A', service: b.serviceName, date: b.date, time: '', location: 'TBD', amount: b.amount, paymentMethod: b.paymentMethod || 'Pay Onsite', paymentAccount: b.paymentAccount || '', status: b.status as any, notes: b.notes || ''
-          }));
-          this.computeStats();
-          this.buildCalendar();
-          this.emgBuildCalendar();
+        this.clientsSub = this.userService.getAllUsersRealtime().subscribe(data => {
+          this.rawClients = data;
+          this.updateBookingDisplays();
           this.cdr.detectChanges();
         });
 
-        // Other Subscriptions
+        this.bookingsSub = this.bookingService.getBookingsByArtistRealtime(this.artistName).subscribe(data => {
+          this.rawBookings = data;
+          this.updateBookingDisplays();
+          this.cdr.detectChanges();
+        });
+
         this.reviewsSub = this.reviewService.getReviewsForArtistRealtime(user.uid).subscribe(d => {
-          this.reviews = d;
+          this.reviews = d.map(r => ({
+            ...r,
+            clientName: this.resolveClientName(r.clientId, r.clientName)
+          }));
           this.computeStats();
+          this.cdr.detectChanges();
         });
 
         this.payoutsSub = this.payoutService.getPayoutsForArtistRealtime(user.uid).subscribe(d => {
@@ -272,8 +284,18 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
         });
 
         this.chatSub = this.chatService.getConversationsForArtist(user.uid).subscribe(d => {
-          this.conversations = d;
+          this.conversations = d.map(conv => ({
+            ...conv,
+            clientName: this.resolveClientName(conv.clientId, conv.clientName)
+          }));
           this.computeStats();
+        });
+        
+        this.emergencySub = this.emergencyService.getEmergenciesForArtistRealtime(user.uid).subscribe(data => {
+          this.emergencyHistory = data.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+          this.activeEmergency = data.find(e => e.status === 'active') || null;
+          this.buildCalendar();
+          this.cdr.detectChanges();
         });
 
         // Restore Portfolio, Schedule, Services
@@ -285,11 +307,13 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.clientsSub) this.clientsSub.unsubscribe();
     if (this.bookingsSub) this.bookingsSub.unsubscribe();
     if (this.reviewsSub) this.reviewsSub.unsubscribe();
     if (this.payoutsSub) this.payoutsSub.unsubscribe();
     if (this.chatSub) this.chatSub.unsubscribe();
     if (this.msgsSub) this.msgsSub.unsubscribe();
+    if (this.emergencySub) this.emergencySub.unsubscribe();
   }
 
   computeStats() {
@@ -309,7 +333,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     this.stats.totalEarnings = this.stats.earnings;
     this.stats.avgEarning = validBookings.length > 0 ? Math.round(this.stats.earnings / validBookings.length) : 0;
 
-    const totalRating = this.reviews.reduce((s, r) => s + r.starRating, 0);
+    const totalRating = this.reviews.reduce((s, r) => s + r.rating, 0);
     this.stats.avgRating = this.reviews.length > 0 ? (totalRating / this.reviews.length).toFixed(1) : '0.0';
 
     this.stats.totalMessages = this.conversations.length;
@@ -317,6 +341,63 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       .filter(p => p.status === 'completed' || p.status === 'processing')
       .reduce((s: number, p: any) => s + p.amount, 0);
     this.stats.availableBalance = Math.max(0, this.stats.earnings - totalPaidOut);
+  }
+
+  private updateBookingDisplays() {
+    if (!this.rawBookings) return;
+
+    this.bookings = this.rawBookings.map(b => ({
+      id: b.id,
+      clientId: b.clientId || 'guest',
+      clientName: this.resolveClientName(b.clientId, b.clientName, b),
+      clientPhone: b.phone || 'N/A',
+      service: b.serviceName,
+      date: b.date,
+      time: '',
+      location: 'TBD',
+      amount: b.amount,
+      paymentMethod: b.paymentMethod || 'Pay Onsite',
+      paymentAccount: b.paymentAccount || '',
+      status: b.status as any,
+      notes: b.notes || ''
+    }));
+
+    this.computeStats();
+    this.buildCalendar();
+    this.emgBuildCalendar();
+  }
+
+  private resolveClientName(clientId?: string, storedName: string = 'Client User', booking: any = {}): string {
+    const isGeneric = (n: string) => {
+      const low = n?.toLowerCase().trim();
+      return !low || low === 'client user' || low === 'user' || low === 'lumière client' || low === 'valued client' || low === 'guest' || low === 'guest client';
+    };
+
+    // 1. Try to Resolve by ID from Users collection
+    if (clientId && clientId !== 'guest') {
+      const user = this.rawClients.find(c => c.uid === clientId);
+      if (user) {
+        if (!isGeneric(user.name)) return user.name;
+        // If name is generic, try email prefix
+        if (user.email) return user.email.split('@')[0];
+      }
+    }
+
+    // 2. Resolve by Guest Name if ID lookup fails or is generic
+    if (booking.firstName || booking.lastName) {
+      const gName = `${booking.firstName || ''} ${booking.lastName || ''}`.trim();
+      if (!isGeneric(gName)) return gName;
+    }
+
+    // 3. Fallback to stored name if not generic
+    if (!isGeneric(storedName)) {
+      return storedName;
+    }
+
+    // 4. Try email from booking
+    if ((booking as any).email) return (booking as any).email.split('@')[0];
+
+    return 'Guest Client';
   }
 
   // ── Navigation ──
@@ -535,7 +616,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       const date = new Date(year, month, d);
       const dateStr = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
       const hasBooking = this.bookings.some(b =>
-        (b.status === 'pending' || b.status === 'confirmed') && b.date === dateStr
+        (b.status === 'pending' || b.status === 'confirmed' || b.status === 'emergency') && b.date === dateStr
       );
       const isBlocked = this.blockedDates.includes(dateStr);
       const isToday = date.toDateString() === today.toDateString();
@@ -554,14 +635,30 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       // Leave range checks
       const leaveStart = this.emergencyForm?.leaveStart;
       const leaveEnd = this.emergencyForm?.leaveEnd;
-      const isLeaveStart = !!leaveStart && date.toDateString() === leaveStart.toDateString();
-      const isLeaveEnd = !!leaveEnd && date.toDateString() === leaveEnd.toDateString();
-      const isLeave = !!(leaveStart && leaveEnd && date > leaveStart && date < leaveEnd);
+      
+      // Check current form range
+      let isLeaveStart = !!leaveStart && date.toDateString() === leaveStart.toDateString();
+      let isLeaveEnd = !!leaveEnd && date.toDateString() === leaveEnd.toDateString();
+      let isLeave = !!(leaveStart && leaveEnd && date > leaveStart && date < leaveEnd);
+
+      // Also check history (Active or Resolved/Approved)
+      const inHistory = this.emergencyHistory.some(e => {
+        if (e.status === 'rejected') return false;
+        const start = new Date(e.leaveStart);
+        const end = new Date(e.leaveEnd);
+        const isS = date.toDateString() === start.toDateString();
+        const isE = date.toDateString() === end.toDateString();
+        const isI = date > start && date < end;
+        if (isS) isLeaveStart = true;
+        if (isE) isLeaveEnd = true;
+        if (isI) isLeave = true;
+        return isS || isE || isI;
+      });
 
       // Collect bookings for this day
       const dayBookings = this.bookings.filter(b => {
         const dateStr2 = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
-        return (b.status === 'pending' || b.status === 'confirmed') && b.date === dateStr2;
+        return (b.status === 'pending' || b.status === 'confirmed' || b.status === 'emergency') && b.date === dateStr2;
       });
 
       cells.push({
@@ -653,9 +750,20 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       const date = new Date(year, month, d);
       const ls = this.emergencyForm.leaveStart;
       const le = this.emergencyForm.leaveEnd;
-      const isLeaveStart = !!ls && date.toDateString() === ls.toDateString();
-      const isLeaveEnd = !!le && date.toDateString() === le.toDateString();
-      const inRange = !!(ls && le && date > ls && date < le);
+      
+      let isLeaveStart = !!ls && date.toDateString() === ls.toDateString();
+      let isLeaveEnd = !!le && date.toDateString() === le.toDateString();
+      let inRange = !!(ls && le && date > ls && date < le);
+
+      // Check history
+      this.emergencyHistory.forEach(e => {
+        if (e.status === 'rejected') return;
+        const start = new Date(e.leaveStart);
+        const end = new Date(e.leaveEnd);
+        if (date.toDateString() === start.toDateString()) isLeaveStart = true;
+        if (date.toDateString() === end.toDateString()) isLeaveEnd = true;
+        if (date > start && date < end) inRange = true;
+      });
       // Check if any upcoming booking falls on this day
       const hasBooking = this.bookings.some(b => {
         if (b.status === 'cancelled' || b.status === 'completed') return false;
@@ -703,7 +811,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   // ── Reviews Helpers ──
   getStars(rating: number): string { return '⭐'.repeat(rating); }
-  getRatingCount(star: number): number { return this.reviews.filter(r => r.starRating === star).length; }
+  getRatingCount(star: number): number { return this.reviews.filter(r => r.rating === star).length; }
   getRatingPercent(star: number): number {
     if (!this.reviews.length) return 0;
     return Math.round((this.getRatingCount(star) / this.reviews.length) * 100);
@@ -893,9 +1001,9 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       affectedBookings: affected
     };
 
-    // Mark bookings as emergency_affected
+    // Mark bookings as emergency
     for (const b of affected) {
-      await this.bookingService.updateBookingStatus(b.id, 'pending');
+      await this.bookingService.updateBookingStatus(b.id, 'emergency');
     }
 
     this.computeStats();
@@ -1027,6 +1135,33 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     this.emergencyForm.leaveEnd = null;
     this.emgBuildCalendar();
     this.buildCalendar();
+  }
+
+  // ── Time Formatting Helper ──
+  formatTime(timestamp: any): string {
+    if (!timestamp) return '';
+    
+    try {
+      // Handle Firestore Timestamp
+      if (timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      // Handle raw seconds/nanoseconds object
+      if (timestamp && typeof timestamp.seconds === 'number') {
+        return new Date(timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      // Handle raw Date or ISO string
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (e) {
+      console.error('Error formatting timestamp:', e);
+    }
+    
+    return '';
   }
 
   // ── Logout ──

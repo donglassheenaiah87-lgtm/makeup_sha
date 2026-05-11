@@ -77,7 +77,7 @@ export class PaymentService {
     });
   }
 
-  async updatePayoutStatus(id: string, status: 'approved' | 'rejected' | 'processed') {
+  async updatePayoutStatus(id: string, status: 'approved' | 'rejected' | 'processed' | 'completed' | 'processing') {
     const docRef = doc(this.firestore, `payoutRequests/${id}`);
     return updateDoc(docRef, { status, updatedAt: serverTimestamp() });
   }

@@ -51,8 +51,21 @@ export class PayoutService {
     });
   }
 
-  async updatePayoutStatus(id: string, status: 'processing' | 'completed' | 'failed') {
+  async updatePayoutStatus(id: string, status: 'processing' | 'completed' | 'failed' | 'rejected') {
     const docRef = doc(this.firestore, `payouts/${id}`);
     return updateDoc(docRef, { status });
+  }
+
+  getAllPayoutsRealtime(): Observable<Payout[]> {
+    return new Observable<Payout[]>(subscriber => {
+      const ref = collection(this.firestore, 'payouts');
+      const unsubscribe = onSnapshot(ref, (snap) => {
+        const payouts = snap.docs.map(d => d.data() as Payout);
+        subscriber.next(payouts.sort((a, b) => new Date(b.requestedDate).getTime() - new Date(a.requestedDate).getTime()));
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
   }
 }

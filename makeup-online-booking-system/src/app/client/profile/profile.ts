@@ -279,20 +279,40 @@ export class Profile implements OnInit, OnDestroy {
   get upcomingBookings() {
     const now = new Date();
     return this.bookings
-      .filter(b => { const d = b.date ? new Date(b.date) : null; return d && d >= now && b.status !== 'cancelled'; })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .filter(b => {
+        const d = b.date ? new Date(b.date) : null;
+        // Upcoming = (pending or confirmed) AND (date >= now or no date)
+        return (b.status === 'pending' || b.status === 'confirmed') && (!d || d >= now);
+      })
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateA - dateB;
+      });
   }
 
   get pastBookings() {
     const now = new Date();
     return this.bookings
-      .filter(b => { const d = b.date ? new Date(b.date) : null; return d && d < now; })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter(b => {
+        const d = b.date ? new Date(b.date) : null;
+        // Past = (completed or cancelled) OR (date < now)
+        return b.status === 'completed' || b.status === 'cancelled' || (d && d < now);
+      })
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateB - dateA;
+      });
+  }
+
+  get pendingReviews() {
+    return this.bookings.filter(b => b.status === 'completed' && !this.hasReviewedBooking(b));
   }
 
   get averageRating() {
     if (!this.myReviews.length) return '0.0';
-    const sum = this.myReviews.reduce((acc, r) => acc + r.starRating, 0);
+    const sum = this.myReviews.reduce((acc, r) => acc + r.rating, 0);
     return (sum / this.myReviews.length).toFixed(1);
   }
 
@@ -674,18 +694,29 @@ export class Profile implements OnInit, OnDestroy {
   // ── REVIEW METHODS ──
   // ═══════════════════════════════════════
   // isReviewModalOpen is already defined at the top
-  reviewTargetBooking: any = null;
+  reviewTargetBooking: BookingData | null = null;
   hoverRating = 0;
   reviewForm = { rating: 5, comment: '' };
   isSubmittingReview = false;
+  isEditingReview = false;
+  editingReviewId = '';
 
-  openReviewModal(booking: any) {
+  openReviewModal(booking: BookingData) {
     if (booking.status !== 'completed') {
       alert('You can only review completed appointments.');
       return;
     }
     this.reviewTargetBooking = booking;
     this.reviewForm = { rating: 5, comment: '' };
+    this.isEditingReview = false;
+    this.isReviewModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  openEditReviewModal(review: Review) {
+    this.editingReviewId = review.reviewId;
+    this.reviewForm = { rating: review.rating, comment: review.reviewText };
+    this.isEditingReview = true;
     this.isReviewModalOpen = true;
     this.cdr.detectChanges();
   }
@@ -693,41 +724,62 @@ export class Profile implements OnInit, OnDestroy {
   closeReviewModal() {
     this.isReviewModalOpen = false;
     this.reviewTargetBooking = null;
+    this.isEditingReview = false;
+    this.editingReviewId = '';
+    this.reviewForm = { rating: 5, comment: '' };
     this.cdr.detectChanges();
   }
 
   async submitReview() {
-    if (!this.reviewTargetBooking || !this.currentUser) return;
-    if (!this.reviewForm.comment.trim()) return;
+    if (!this.currentUser) return;
+    if (!this.reviewForm.comment.trim()) {
+      alert('Please write a message.');
+      return;
+    }
 
     this.isSubmittingReview = true;
     try {
-      const reviewData: Omit<Review, 'reviewId'> = {
-        artistId: this.reviewTargetBooking.assignedArtistId,
-        artistName: this.reviewTargetBooking.artistName,
-        clientUserId: this.currentUser.uid,
-        clientName: this.currentUser.name,
-        bookingId: this.reviewTargetBooking.id,
-        service: this.reviewTargetBooking.serviceName,
-        starRating: this.reviewForm.rating,
-        reviewMessage: this.reviewForm.comment,
-        date: new Date().toLocaleDateString('en-PH'),
-        createdAt: serverTimestamp()
-      };
+      if (this.isEditingReview) {
+        await this.reviewService.updateReview(this.editingReviewId, {
+          rating: this.reviewForm.rating,
+          reviewText: this.reviewForm.comment
+        });
+        alert('Review updated! ✨');
+      } else {
+        if (!this.reviewTargetBooking) return;
+        const reviewData: Omit<Review, 'reviewId' | 'createdAt' | 'status'> = {
+          clientId: this.currentUser.uid,
+          clientName: this.fullName,
+          artistId: this.reviewTargetBooking.artistId || '',
+          artistName: this.reviewTargetBooking.artistName,
+          reviewText: this.reviewForm.comment,
+          rating: this.reviewForm.rating,
+          bookingId: this.reviewTargetBooking.id,
+          serviceName: this.reviewTargetBooking.serviceName || 'General Service'
+        };
 
-      await this.reviewService.addReview(reviewData);
-      
-      // Update booking to show it's reviewed
-      await this.bookingService.updateBookingStatus(this.reviewTargetBooking.id, 'completed');
+        await this.reviewService.addReview(reviewData);
+        alert('Thank you for your feedback! ⭐');
+      }
       
       this.closeReviewModal();
-      alert('Thank you for your feedback! ⭐');
     } catch (e) {
       console.error('Review Error:', e);
-      alert('Failed to submit review. Please try again.');
+      alert('Failed to save review. Please try again.');
     } finally {
       this.isSubmittingReview = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  async deleteReview(reviewId: string) {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    try {
+      await this.reviewService.deleteReview(reviewId);
+      alert('Review deleted.');
+    } catch (e) {
+      console.error('Delete Error:', e);
+      alert('Failed to delete review.');
     }
   }
 

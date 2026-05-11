@@ -385,59 +385,101 @@
         </div>
 
         <ng-container *ngIf="!isReviewsLoading">
-          <!-- Stats Bar -->
-          <div class="reviews-stats-bar" *ngIf="myReviews.length > 0">
-            <div class="rsb-item">
-              <span class="rsb-num">{{ myReviews.length }}</span>
-              <span class="rsb-label">{{ myReviews.length === 1 ? 'Review' : 'Reviews' }}</span>
-            </div>
-            <div class="rsb-sep"></div>
-            <div class="rsb-item">
-              <span class="rsb-num">{{ averageRating }}</span>
-              <span class="rsb-label">Avg. Rating</span>
-            </div>
-            <div class="rsb-sep"></div>
-            <div class="rsb-item">
-              <div class="rsb-stars">
-                <span *ngFor="let s of getStars(+averageRating)" class="star filled">★</span>
-                <span *ngFor="let s of getEmptyStars(+averageRating)" class="star empty">★</span>
+          <!-- Header & Stats -->
+          <div class="reviews-header-grid">
+            <div class="rh-stat-card main">
+              <div class="rh-stat-content">
+                <span class="rh-stat-label">Average Rating</span>
+                <div class="rh-stat-row">
+                  <h2 class="rh-stat-num">{{ averageRating }}</h2>
+                  <div class="rh-stat-stars">
+                    <span *ngFor="let s of getStars(+averageRating)" class="star filled">★</span>
+                    <span *ngFor="let s of getEmptyStars(+averageRating)" class="star empty">★</span>
+                  </div>
+                </div>
+                <p class="rh-stat-sub">Based on {{ myReviews.length }} reviews</p>
               </div>
-              <span class="rsb-label">Your score</span>
+              <div class="rh-stat-icon">✨</div>
+            </div>
+            <div class="rh-stat-card">
+              <span class="rh-stat-label">Completed Services</span>
+              <h2 class="rh-stat-num">{{ pastBookings.length }}</h2>
+              <div class="rh-stat-progress">
+                <div class="rh-progress-bar" [style.width.%]="(myReviews.length / (pastBookings.length || 1)) * 100"></div>
+              </div>
+              <p class="rh-stat-sub">{{ myReviews.length }} / {{ pastBookings.length }} Reviewed</p>
             </div>
           </div>
 
-          <div class="reviews-list" *ngIf="myReviews.length > 0">
-            <div class="review-card" *ngFor="let r of myReviews; let i = index"
-              [style.animation-delay]="(i * 0.08) + 's'">
-              <div class="rc-left">
-                <div class="rc-avatar">{{ r.artistName[0] }}</div>
-                <div class="rc-stars-col">
-                  <span *ngFor="let s of getStars(r.starRating)" class="star filled sm">★</span>
-                  <span *ngFor="let s of getEmptyStars(r.starRating)" class="star empty sm">★</span>
+          <!-- Pending Reviews Section -->
+          <div class="pending-reviews-section" *ngIf="pendingReviews.length > 0">
+            <div class="section-header">
+              <h3 class="section-title">Pending Feedback <span class="badge-new">{{ pendingReviews.length }}</span></h3>
+              <p class="section-desc">Share your experience for these completed services</p>
+            </div>
+            <div class="pending-grid">
+              <div class="pending-card" *ngFor="let b of pendingReviews">
+                <div class="pc-content">
+                  <div class="pc-service">{{ b.serviceName }}</div>
+                  <div class="pc-meta">{{ b.artistName }} • {{ formatDate(b.date) }}</div>
                 </div>
-              </div>
-              <div class="rc-body">
-                <div class="rc-top">
-                  <span class="rc-artist">{{ r.artistName }}</span>
-                  <span class="rc-service-pill">{{ r.service }}</span>
-                  <span class="rc-date">{{ r.date }}</span>
-                </div>
-                <blockquote class="rc-comment">"{{ r.reviewMessage }}"</blockquote>
+                <button class="pc-review-btn" (click)="openReviewModal(b)">
+                  ⭐ Rate Now
+                </button>
               </div>
             </div>
           </div>
 
-          <div class="empty-state" *ngIf="myReviews.length === 0">
-            <div class="es-art">
-              <div class="es-circle c1"></div>
-              <div class="es-circle c2"></div>
-              <svg class="es-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
-                <path d="M24 6l4 9 10 1.5-7 7 1.6 10L24 29l-9.2 4.5L16.4 23.5 9.4 16.5l10-1.5z" />
-              </svg>
+          <!-- Reviews List -->
+          <div class="reviews-list-container">
+            <div class="section-header">
+              <h3 class="section-title">My Recent Feedback</h3>
+              <button class="section-action-btn" (click)="setTab('bookings')">Write New Review</button>
             </div>
-            <p class="es-text">No reviews yet</p>
-            <p class="es-sub">Complete a booking and share your experience to help others find the perfect artist.</p>
-            <button class="es-btn" (click)="setTab('bookings')">← Go to My Bookings</button>
+
+            <div class="reviews-grid" *ngIf="myReviews.length > 0">
+              <div class="review-item-card" *ngFor="let r of myReviews; let i = index" [style.animation-delay]="(i * 0.1) + 's'">
+                <div class="ric-header">
+                  <div class="ric-artist-info">
+                    <div class="ric-avatar">{{ r.artistName[0] }}</div>
+                    <div>
+                      <h4 class="ric-artist-name">{{ r.artistName }}</h4>
+                      <span class="ric-date">{{ formatDate(r.createdAt) }}</span>
+                    </div>
+                  </div>
+                  <div class="ric-rating">
+                    <span *ngFor="let s of getStars(r.rating)" class="star filled sm">★</span>
+                    <span *ngFor="let s of getEmptyStars(r.rating)" class="star empty sm">★</span>
+                  </div>
+                </div>
+                <div class="ric-body">
+                  <p class="ric-text">"{{ r.reviewText }}"</p>
+                  <div class="ric-reply" *ngIf="r.reply">
+                    <div class="ric-reply-header">
+                      <span class="ric-reply-icon">💬</span>
+                      <strong>Artist Response:</strong>
+                    </div>
+                    <p class="ric-reply-text">{{ r.reply }}</p>
+                  </div>
+                </div>
+                <div class="ric-footer">
+                  <span class="ric-status" [class.flagged]="r.status === 'flagged'">
+                    {{ r.status === 'flagged' ? '⚠️ Flagged' : '✓ Published' }}
+                  </span>
+                  <div class="ric-actions">
+                    <button class="ric-btn edit" (click)="openEditReviewModal(r)">Edit</button>
+                    <button class="ric-btn delete" (click)="deleteReview(r.reviewId)">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty-state reviews-empty" *ngIf="myReviews.length === 0">
+              <div class="es-icon">⭐</div>
+              <h3>No reviews yet</h3>
+              <p>Share your experience with our artists! Your feedback helps the community.</p>
+              <button class="es-btn" (click)="setTab('bookings')">View Completed Bookings</button>
+            </div>
           </div>
         </ng-container>
       </div>
@@ -968,48 +1010,57 @@
   </div>
 
   <!-- ═══ REVIEW MODAL ═══ -->
-  <div class="modal-backdrop" [class.open]="isReviewModalOpen" (click)="closeReviewModal()">
-    <div class="modal-sheet" (click)="$event.stopPropagation()">
-      <div class="modal-handle"></div>
-      <div class="modal-header">
-        <h3 class="modal-title">Leave a Review</h3>
-        <button class="modal-x" (click)="closeReviewModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
+  <div class="modal-overlay" *ngIf="isReviewModalOpen" (click)="closeReviewModal()">
+    <div class="review-modal" (click)="$event.stopPropagation()">
+      <div class="rm-header">
+        <div class="rm-header-left">
+          <h2 class="rm-title">{{ isEditingReview ? 'Edit Your Review' : 'Rate Your Experience' }}</h2>
+          <p class="rm-sub">{{ isEditingReview ? 'Update your feedback' : 'Share how was your service with ' + reviewTargetBooking?.artistName }}</p>
+        </div>
+        <button class="rm-close" (click)="closeReviewModal()">✕</button>
       </div>
-      <div class="modal-body" *ngIf="reviewTargetBooking">
-        <div class="review-target-card">
-          <div class="rtc-avatar">{{ reviewTargetBooking.artistName[0] }}</div>
-          <div>
-            <p class="rtc-service">{{ reviewTargetBooking.serviceName }}</p>
-            <p class="rtc-artist">with {{ reviewTargetBooking.artistName }}</p>
+
+      <div class="rm-body">
+        <!-- Artist Card -->
+        <div class="rm-artist-card" *ngIf="!isEditingReview && reviewTargetBooking">
+          <div class="rm-artist-avatar">{{ reviewTargetBooking.artistName[0] }}</div>
+          <div class="rm-artist-info">
+            <span class="rm-artist-label">Artist Reviewed</span>
+            <h4 class="rm-artist-name">{{ reviewTargetBooking.artistName }}</h4>
+            <span class="rm-service-tag">{{ reviewTargetBooking.serviceName }}</span>
           </div>
         </div>
-        <div class="star-picker">
-          <label class="mf-label">Your Rating</label>
-          <div class="star-row">
-            <button class="star-btn" *ngFor="let i of [1,2,3,4,5]" (mouseenter)="hoverRating = i"
-              (mouseleave)="hoverRating = 0" (click)="reviewForm.rating = i"
-              [class.lit]="i <= (hoverRating || reviewForm.rating)">★</button>
+
+        <!-- Rating -->
+        <div class="rm-rating-section">
+          <label class="rm-label">How many stars?</label>
+          <div class="rm-stars-input">
+            <button *ngFor="let s of [1,2,3,4,5]" 
+              class="star-btn" 
+              [class.active]="reviewForm.rating >= s || hoverRating >= s"
+              (mouseenter)="hoverRating = s"
+              (mouseleave)="hoverRating = 0"
+              (click)="reviewForm.rating = s">
+              ★
+            </button>
           </div>
-          <span class="star-label">{{ ['','Poor','Fair','Good','Great','Excellent'][hoverRating || reviewForm.rating]
-            }}</span>
+          <span class="rm-rating-text">{{ ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewForm.rating - 1] }}</span>
         </div>
-        <div class="modal-field">
-          <label class="mf-label">Your Experience</label>
-          <textarea class="mf-input mf-textarea" [(ngModel)]="reviewForm.comment" rows="4"
-            placeholder="Share how you felt — the look, the ambiance, the artist ✨"></textarea>
+
+        <!-- Comment -->
+        <div class="rm-field">
+          <label class="rm-label">Write your review</label>
+          <textarea class="rm-textarea" [(ngModel)]="reviewForm.comment" rows="4" 
+            placeholder="Tell us about the quality, professionalism, and results..."></textarea>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-cancel" (click)="closeReviewModal()">Cancel</button>
-        <button class="modal-save" (click)="submitReview()"
-          [disabled]="isSubmittingReview || !reviewForm.comment.trim()">
-          <span class="btn-spinner" *ngIf="isSubmittingReview"></span>
-          {{ isSubmittingReview ? 'Submitting…' : 'Submit Review ⭐' }}
-        </button>
+
+        <div class="rm-actions">
+          <button class="rm-btn-cancel" (click)="closeReviewModal()">Cancel</button>
+          <button class="rm-btn-submit" (click)="submitReview()" [disabled]="isSubmittingReview">
+            <span class="btn-spinner" *ngIf="isSubmittingReview"></span>
+            {{ isSubmittingReview ? 'Saving...' : (isEditingReview ? 'Update Review' : 'Submit Review ✦') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -23,7 +23,7 @@ export interface ArtistExcuse {
   leaveStart: string;
   leaveEnd: string;
   affectedBookingIds: string[];
-  status: 'active' | 'resolved';
+  status: 'active' | 'resolved' | 'rejected';
   declaredAt: string;
   createdAt: any;
 }
@@ -45,10 +45,30 @@ export class EmergencyService {
     return updateDoc(docRef, { status: 'resolved' });
   }
 
+  async rejectEmergency(id: string) {
+    const docRef = doc(this.firestore, `excuseRequests/${id}`);
+    // We could delete or mark as rejected. Marking as rejected is better for audit.
+    return updateDoc(docRef, { status: 'rejected' });
+  }
+
   getActiveEmergenciesForArtist(artistId: string): Observable<ArtistExcuse[]> {
     return new Observable<ArtistExcuse[]>(subscriber => {
       const ref = collection(this.firestore, 'excuseRequests');
       const q = query(ref, where('artistId', '==', artistId), where('status', '==', 'active'));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const emergencies = snap.docs.map(d => d.data() as ArtistExcuse);
+        subscriber.next(emergencies);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
+  getEmergenciesForArtistRealtime(artistId: string): Observable<ArtistExcuse[]> {
+    return new Observable<ArtistExcuse[]>(subscriber => {
+      const ref = collection(this.firestore, 'excuseRequests');
+      const q = query(ref, where('artistId', '==', artistId));
       const unsubscribe = onSnapshot(q, (snap) => {
         const emergencies = snap.docs.map(d => d.data() as ArtistExcuse);
         subscriber.next(emergencies);

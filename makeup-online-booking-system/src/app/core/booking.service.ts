@@ -28,7 +28,7 @@ export interface BookingData {
   paymentMethod?: string;
   paymentAccount?: string;
   paymentStatus?: 'unpaid' | 'paid';
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'emergency';
   phone?: string;
   notes?: string;
   eventType?: string;
