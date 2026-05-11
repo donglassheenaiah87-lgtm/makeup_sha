@@ -2,64 +2,142 @@
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
-  <div class="spark s1">✦</div>
-  <div class="spark s2">✧</div>
-  <div class="spark s3">✦</div>
-  <div class="spark s4">✧</div>
-  <div class="register-container">
+
+  <div class="register-container" [class.step-3-active]="currentStep === 3">
+    <!-- Brand -->
     <div class="brand">
       <div class="brand-icon">🎨</div>
       <h1 class="brand-name">GlowBook</h1>
-      <p class="brand-tagline">Join as a Makeup Artist</p>
+      <p class="brand-tagline">Artist Application Portal</p>
     </div>
-    <form (ngSubmit)="onRegister()" class="register-form">
-      <div class="input-group">
-        <span class="input-icon">👤</span>
-        <input type="text" [(ngModel)]="name" name="name"
-          placeholder="Full name" required />
+
+    <!-- Step Indicator -->
+    <div class="step-indicator" *ngIf="currentStep < 3">
+      <div class="step" [class.active]="currentStep >= 1">
+        <span class="step-num">1</span>
+        <span class="step-label">Personal</span>
       </div>
-      <div class="input-group">
-        <span class="input-icon">✉</span>
-        <input type="email" [(ngModel)]="email" name="email"
-          placeholder="Email address" required />
+      <div class="step-line"></div>
+      <div class="step" [class.active]="currentStep >= 2">
+        <span class="step-num">2</span>
+        <span class="step-label">Professional</span>
       </div>
-      <div class="input-group">
-        <span class="input-icon">📞</span>
-        <input type="text" [(ngModel)]="phone" name="phone"
-          placeholder="Phone number" required />
-      </div>
-      <div class="input-group">
-        <span class="input-icon">💄</span>
-        <input type="text" [(ngModel)]="specialty" name="specialty"
-          placeholder="Your specialty (e.g. Bridal, SFX)" required />
-      </div>
-      <div class="input-group">
-        <span class="input-icon">🔒</span>
-        <input [type]="showPassword ? 'text' : 'password'"
-          [(ngModel)]="password" name="password"
-          placeholder="Password" required />
-        <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
-          {{ showPassword ? '🙈' : '👁' }}
-        </button>
-      </div>
-      <div class="input-group">
-        <span class="input-icon">🔒</span>
-        <input [type]="showConfirm ? 'text' : 'password'"
-          [(ngModel)]="confirmPassword" name="confirmPassword"
-          placeholder="Confirm password" required />
-        <button type="button" class="toggle-pw" (click)="showConfirm = !showConfirm">
-          {{ showConfirm ? '🙈' : '👁' }}
-        </button>
+    </div>
+
+    <!-- Step 1: Personal Info -->
+    <div class="step-content animate-fade" *ngIf="currentStep === 1">
+      <h2 class="step-title">Personal Information</h2>
+      <div class="form-grid">
+        <div class="input-group">
+          <label>First Name</label>
+          <input type="text" [(ngModel)]="firstName" placeholder="Enter first name" />
+        </div>
+        <div class="input-group">
+          <label>Last Name</label>
+          <input type="text" [(ngModel)]="lastName" placeholder="Enter last name" />
+        </div>
+        <div class="input-group full">
+          <label>Email Address</label>
+          <input type="email" [(ngModel)]="email" placeholder="email@example.com" />
+        </div>
+        <div class="input-group">
+          <label>Phone Number</label>
+          <input type="text" [(ngModel)]="phone" placeholder="09XX XXX XXXX" />
+        </div>
+        <div class="input-group">
+          <label>Birthdate</label>
+          <input type="date" [(ngModel)]="birthdate" />
+        </div>
+        <div class="input-group full">
+          <label>Complete Address</label>
+          <input type="text" [(ngModel)]="address" placeholder="Unit, Street, City, Province" />
+        </div>
+        <div class="input-group">
+          <label>Gender</label>
+          <select [(ngModel)]="gender">
+            <option value="">Select gender</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" placeholder="••••••••" />
+            <button (click)="showPassword = !showPassword" type="button">
+              {{ showPassword ? '🙈' : '👁' }}
+            </button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Confirm Password</label>
+          <div class="pw-wrap">
+            <input [type]="showConfirm ? 'text' : 'password'" [(ngModel)]="confirmPassword" placeholder="••••••••" />
+            <button (click)="showConfirm = !showConfirm" type="button">
+              {{ showConfirm ? '🙈' : '👁' }}
+            </button>
+          </div>
+        </div>
       </div>
       <p class="error-msg" *ngIf="errorMessage">⚠ {{ errorMessage }}</p>
-      <p class="success-msg" *ngIf="successMessage">✅ {{ successMessage }}</p>
-      <button type="submit" class="btn-register" [disabled]="isLoading">
-        <span>{{ isLoading ? 'Creating account...' : 'Create Artist Account' }}</span>
-        <span class="btn-arrow" *ngIf="!isLoading">→</span>
-      </button>
-    </form>
-    <div class="divider"><span>or</span></div>
-    <p class="login-link">Already have an account? <a routerLink="/login">Sign in</a></p>
-    <p class="footer-note">✦ Create beauty, inspire confidence</p>
+      <button class="btn-next" (click)="nextStep()">Next Step →</button>
+    </div>
+
+    <!-- Step 2: Specialization -->
+    <div class="step-content animate-fade" *ngIf="currentStep === 2">
+      <h2 class="step-title">Specialization & Experience</h2>
+      <p class="step-hint">Choose the services you specialize in</p>
+      
+      <div class="services-grid">
+        <div class="service-card" *ngFor="let s of availableServices" 
+          [class.selected]="selectedSpecializations.includes(s.name)"
+          (click)="toggleSpecialization(s.name)">
+          <span class="sc-icon">{{ s.icon || '💄' }}</span>
+          <span class="sc-name">{{ s.name }}</span>
+          <span class="sc-check" *ngIf="selectedSpecializations.includes(s.name)">✓</span>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top: 1.5rem;">
+        <div class="input-group full">
+          <label>Years of Experience</label>
+          <input type="number" [(ngModel)]="yearsExperience" placeholder="e.g. 5" />
+        </div>
+        <div class="input-group full">
+          <label>Short Bio</label>
+          <textarea [(ngModel)]="bio" placeholder="Tell us about your artistic journey..."></textarea>
+        </div>
+        <div class="input-group full">
+          <label>Skills & Techniques</label>
+          <input type="text" [(ngModel)]="skills" placeholder="e.g. Contouring, Airbrush, Bridal Glow" />
+        </div>
+      </div>
+
+      <p class="error-msg" *ngIf="errorMessage">⚠ {{ errorMessage }}</p>
+      
+      <div class="btn-row">
+        <button class="btn-back" (click)="prevStep()">← Back</button>
+        <button class="btn-submit" (click)="onRegister()" [disabled]="isLoading">
+          {{ isLoading ? 'Submitting Application...' : 'Submit Application' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div class="step-content success-step animate-scale" *ngIf="currentStep === 3">
+      <div class="success-icon">✨</div>
+      <h2 class="success-title">Application Submitted!</h2>
+      <p class="success-text">Your artist application has been submitted successfully. Our team will review your profile.</p>
+      
+      <div class="info-card">
+        <p>🕒 <strong>Please wait within 24 hours for admin approval.</strong></p>
+        <p>📧 Once approved, you will receive an email and can log in to your dashboard.</p>
+      </div>
+
+      <button class="btn-finish" routerLink="/login">Return to Sign In</button>
+    </div>
+
+    <p class="login-link" *ngIf="currentStep < 3">Already have an account? <a routerLink="/login">Sign in</a></p>
   </div>
 </div>

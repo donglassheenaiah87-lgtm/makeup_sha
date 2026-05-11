@@ -15,6 +15,7 @@
       <a class="nav-item" [class.active]="activeTab==='reports'"       (click)="setTab('reports')">       <span class="nav-icon">📊</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Reports</span></a>
       <div class="nav-divider" *ngIf="!sidebarCollapsed"></div>
       <a class="nav-item" [class.active]="activeTab==='reviews'"       (click)="setTab('reviews')">       <span class="nav-icon">⭐</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Reviews</span></a>
+      <a class="nav-item" [class.active]="activeTab==='support'"       (click)="setTab('support')">       <span class="nav-icon">🚩</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Support</span></a>
       <a class="nav-item" [class.active]="activeTab==='notifications'" (click)="setTab('notifications')"> <span class="nav-icon">🔔</span> <span class="nav-label" *ngIf="!sidebarCollapsed">Notifications</span><span class="nav-badge" *ngIf="unreadCount>0">{{unreadCount}}</span></a>
       <a class="nav-item" [class.active]="activeTab==='settings'"      (click)="setTab('settings')">      <span class="nav-icon">⚙</span>  <span class="nav-label" *ngIf="!sidebarCollapsed">Settings</span></a>
     </nav>
@@ -374,8 +375,13 @@
                   <span class="avail-badge" [ngClass]="{'avail-yes':a.availability==='Available','avail-busy':a.availability==='Busy','avail-off':a.availability==='On Leave'||a.availability==='Unavailable'}">{{a.availability}}</span>
                 </td>
                 <td (click)="$event.stopPropagation()">
-                  <button *ngIf="a.status === 'pending'" class="toggle-status-btn" style="background:#e09040;color:#fff;border-color:#e09040" (click)="approveArtist(a)">Approve</button>
-                  <button *ngIf="a.status !== 'pending'" class="toggle-status-btn" [class.active]="a.status==='active'" (click)="toggleArtistStatus(a)">{{a.status}}</button>
+                  <div class="status-actions" *ngIf="a.status === 'pending'">
+                    <button class="action-btn-sm approve" (click)="approveArtist(a)">✓ Approve</button>
+                    <button class="action-btn-sm reject" (click)="rejectArtist(a)">✕ Reject</button>
+                  </div>
+                  <button *ngIf="a.status !== 'pending'" class="toggle-status-btn" [class.active]="a.status==='approved'" (click)="toggleArtistStatus(a)">
+                    {{ a.status === 'approved' ? '✓ Approved' : a.status }}
+                  </button>
                 </td>
                 <td class="action-cell" (click)="$event.stopPropagation()">
                   <button class="icon-btn view-btn" (click)="viewArtistDetail(a)" title="View profile">👁</button>
@@ -693,6 +699,89 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SUPPORT & EMERGENCIES TAB
+    ══════════════════════════════════════════ -->
+    <div class="tab-content" *ngIf="activeTab==='support' && !isLoading">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <h3>Incident Reports <span class="count-chip">{{incidentReports.length}}</span></h3>
+          </div>
+          <div class="support-list">
+            <div class="support-item card" *ngFor="let r of incidentReports">
+              <div class="si-header">
+                <span class="si-cat">{{r.category | titlecase}}</span>
+                <select class="status-select sm" [(ngModel)]="r.status" (change)="updateReportStatus(r, r.status)">
+                  <option value="open">Open</option>
+                  <option value="investigating">Investigating</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              <p class="si-client">From: <strong>{{r.clientName}}</strong> ({{r.clientEmail}})</p>
+              <div class="si-messages">
+                <p class="si-msg" *ngFor="let m of r.messages">"{{m}}"</p>
+              </div>
+              <p class="si-date">{{r.createdAt?.toDate() | date:'medium'}}</p>
+            </div>
+            <div class="empty-row" *ngIf="incidentReports.length===0">No reports found</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Artist Emergencies <span class="count-chip">{{excuseRequests.length}}</span></h3>
+          </div>
+          <div class="support-list">
+            <div class="support-item card" *ngFor="let e of excuseRequests" [class.resolved-excuse]="e.status==='resolved'">
+              <div class="si-header">
+                <span class="si-artist">🎨 {{e.artistName}}</span>
+                <span class="badge" [class.confirmed]="e.status==='active'" [class.cancelled]="e.status==='resolved'">{{e.status}}</span>
+              </div>
+              <p class="si-reason">Reason: <strong>{{e.reason}}</strong></p>
+              <p class="si-details">{{e.details}}</p>
+              <p class="si-leave">Leave: {{e.leaveStart}} to {{e.leaveEnd}}</p>
+              <div class="si-actions" *ngIf="e.status==='active'">
+                <button class="resolve-btn" (click)="resolveExcuse(e)">Mark as Resolved</button>
+              </div>
+            </div>
+            <div class="empty-row" *ngIf="excuseRequests.length===0">No active emergencies</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payout Requests -->
+      <div class="card" style="margin-top:1.4rem">
+        <div class="card-header">
+          <h3>Payout Requests <span class="count-chip">{{payoutRequests.length}}</span></h3>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Artist</th><th>Amount</th><th>Method</th><th>Account</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let p of payoutRequests">
+                <td><strong>{{p.artistName}}</strong></td>
+                <td class="amount">₱{{p.amount | number}}</td>
+                <td>{{p.method}}</td>
+                <td>{{p.account}}</td>
+                <td>{{p.createdAt?.toDate() | date:'shortDate'}}</td>
+                <td><span class="badge" [ngClass]="p.status">{{p.status}}</span></td>
+                <td>
+                  <div class="si-actions" *ngIf="p.status==='pending'" style="margin-top:0">
+                    <button class="resolve-btn" (click)="processPayout(p, 'approved')">Approve</button>
+                    <button class="icon-btn delete" (click)="processPayout(p, 'rejected')" style="padding:4px 8px;font-size:0.8rem">Reject</button>
+                  </div>
+                  <button *ngIf="p.status==='approved'" class="resolve-btn" (click)="processPayout(p, 'processed')">Mark Paid</button>
+                </td>
+              </tr>
+              <tr *ngIf="payoutRequests.length===0"><td colspan="7" class="empty-row">No payout requests</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </main>

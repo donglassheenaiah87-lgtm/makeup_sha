@@ -33,58 +33,41 @@
         <button class="btn-theme" (click)="toggleTheme()" [title]="isDarkMode ? 'Light Mode' : 'Dark Mode'">
           {{ isDarkMode ? '☀️' : '🌙' }}
         </button>
-        <div class="profile-wrap">
+        <!-- ── GUEST ACTIONS ── -->
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="nav-signin-link">Sign In</a>
+          <a routerLink="/client/register" class="nav-signup-btn">Sign Up</a>
+        </ng-container>
+
+        <!-- ── LOGGED IN ACTIONS ── -->
+        <div class="profile-wrap" *ngIf="isLoggedIn">
           <!-- Circle avatar trigger -->
           <button class="btn-avatar" (click)="toggleProfileDropdown()" [class.active]="isProfileDropdownOpen" title="Account">
-            <svg class="avatar-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
+            <span class="avatar-initial">{{ userInitial }}</span>
           </button>
 
           <!-- Dropdown Panel -->
           <div class="guest-dropdown" [class.open]="isProfileDropdownOpen">
-            
-            <!-- ── GUEST STATE ── -->
-            <ng-container *ngIf="!isLoggedIn">
-              <div class="gd-header">
-                <div class="gd-avatar-large">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/>
-                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                  </svg>
-                </div>
-                <p class="gd-welcome">Welcome, Guest</p>
-                <p class="gd-sub">Sign in to manage your bookings</p>
+            <div class="gd-header" style="background: linear-gradient(160deg, rgba(198,163,93,0.15) 0%, var(--card2) 100%);">
+              <div class="gd-avatar-large" style="background: var(--grad); border: none;">
+                <span style="font-size: 1.4rem; color: #100D0C; font-weight: 700;">
+                  {{ userInitial }}
+                </span>
               </div>
-              <div class="gd-body">
-                <a routerLink="/login" class="gd-signin-btn">Sign In</a>
-                <a routerLink="/client/register" class="gd-register-link">Don't have an account? <span>Register</span></a>
-              </div>
-            </ng-container>
-
-            <!-- ── LOGGED IN STATE ── -->
-            <ng-container *ngIf="isLoggedIn">
-              <div class="gd-header" style="background: linear-gradient(160deg, rgba(198,163,93,0.15) 0%, var(--card2) 100%);">
-                <div class="gd-avatar-large" style="background: var(--grad); border: none;">
-                  <span style="font-size: 1.4rem; color: #100D0C; font-weight: 700; font-family: 'Jost', sans-serif;">
-                    {{ userInitial }}
-                  </span>
-                </div>
-                <p class="gd-welcome">Hi, {{ firstName }} ✨</p>
-                <p class="gd-sub" style="opacity: 0.8;">{{ currentUser?.email }}</p>
-              </div>
-              <div class="gd-body" style="padding: 12px;">
-                <a routerLink="/client/my-bookings" class="dd-item">📅 My Bookings</a>
-                <a routerLink="/client/profile" class="dd-item">👤 Profile Settings</a>
-                <div style="height: 1px; background: var(--border); margin: 6px 8px;"></div>
-                <button (click)="logout()" class="dd-item" style="width: 100%; text-align: left; background: transparent; border: none; color: #e74c3c; cursor: pointer; font-family: 'Jost', sans-serif; font-size: .85rem; font-weight: 500;">🚪 Sign Out</button>
-              </div>
-            </ng-container>
-
+              <p class="gd-welcome">Hi, {{ firstName }} ✨</p>
+              <p class="gd-sub" style="opacity: 0.8;">{{ currentUser?.email }}</p>
+            </div>
+            <div class="gd-body" style="padding: 12px;">
+              <a routerLink="/client/my-bookings" class="dd-item">📅 My Bookings</a>
+              <a routerLink="/client/profile" [queryParams]="{tab: 'messages'}" class="dd-item">💬 Messages</a>
+              <a routerLink="/client/profile" class="dd-item">👤 Profile Settings</a>
+              <div style="height: 1px; background: var(--border); margin: 6px 8px;"></div>
+              <button (click)="logout()" class="dd-item" style="width: 100%; text-align: left; background: transparent; border: none; color: #e74c3c; cursor: pointer; font-family: 'Jost', sans-serif; font-size: .85rem; font-weight: 500;">🚪 Sign Out</button>
+            </div>
           </div>
         </div>
-        <button class="btn-book-nav" (click)="scrollTo('booking')">Book Now →</button>
+
+        <button class="btn-book-nav" (click)="isLoggedIn ? openQuickBooking() : scrollTo('booking')">Book Now →</button>
         <button class="btn-hamburger" (click)="toggleMobileMenu()" [class.active]="isMobileMenuOpen">
           <span></span><span></span><span></span>
         </button>
@@ -99,10 +82,16 @@
       <button class="mob-link" (click)="scrollTo('reviews')">Reviews</button>
       <button class="mob-link" (click)="scrollTo('faq')">FAQ</button>
       <button class="mob-link" (click)="scrollTo('contact')">Contact</button>
-      <div class="mob-divider"></div>
-      <a routerLink="/login" class="mob-link">🔑 Sign In</a>
-      <a routerLink="/client/register" class="mob-link">✨ Register</a>
-      <button class="mob-book-btn" (click)="scrollTo('booking')">Book an Appointment →</button>
+      <ng-container *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="mob-link">🔑 Sign In</a>
+        <a routerLink="/client/register" class="mob-link">✨ Register</a>
+      </ng-container>
+      <ng-container *ngIf="isLoggedIn">
+        <a routerLink="/client/my-bookings" class="mob-link">📅 My Bookings</a>
+        <a routerLink="/client/profile" class="mob-link">👤 Profile</a>
+        <button (click)="logout()" class="mob-link" style="color: #e74c3c;">🚪 Logout</button>
+      </ng-container>
+      <button class="mob-book-btn" (click)="onMobileBookClick()">Book an Appointment →</button>
     </div>
   </header>
 
@@ -116,7 +105,7 @@
         <h1 class="hero-h1">Your Most<br><em>Radiant Look,</em><br>Crafted For You.</h1>
         <p class="hero-desc">Luxury makeup artistry for weddings, debuts, editorial shoots, and every moment that deserves to be unforgettable.</p>
         <div class="hero-ctas">
-          <button class="btn-primary" (click)="scrollTo('booking')">
+          <button class="btn-primary" (click)="isLoggedIn ? openQuickBooking() : scrollTo('booking')">
             <span>Reserve Your Date</span><span class="btn-arrow">→</span>
           </button>
           <button class="btn-outline" (click)="scrollTo('services')">Explore Services</button>
@@ -295,7 +284,7 @@
         <ul class="pc-features">
           <li *ngFor="let f of p.features"><span class="pc-check">✓</span> {{ f }}</li>
         </ul>
-        <button class="pc-btn" [class.featured-btn]="p.badge === 'Best Value'" (click)="scrollTo('booking')">
+        <button class="pc-btn" [class.featured-btn]="p.badge === 'Best Value'" (click)="isLoggedIn ? openQuickBooking() : scrollTo('booking')">
           Book This Package →
         </button>
       </div>
@@ -660,45 +649,11 @@
   </footer>
 
   <!-- ═══ STICKY BOOK BUTTON ═══ -->
-  <button class="sticky-book" (click)="scrollTo('booking')" [class.visible]="isNavbarScrolled">
+  <button class="sticky-book" (click)="isLoggedIn ? openQuickBooking() : scrollTo('booking')" [class.visible]="isNavbarScrolled">
     💄 Book Now
   </button>
 
-  <!-- ═══ CHAT WIDGET ═══ -->
-  <div class="chat-widget">
-    <div class="chat-panel" [class.open]="isChatOpen">
-      <div class="cp-header">
-        <div class="cp-artist">
-          <div class="cp-avatar">💄</div>
-          <div>
-            <div class="cp-name">Lumière Studio</div>
-            <div class="cp-status"><span class="cp-dot"></span> Online</div>
-          </div>
-        </div>
-        <button class="cp-close" (click)="toggleChat()">✕</button>
-      </div>
-      <div class="cp-messages">
-        <div class="cp-msg" *ngFor="let msg of chatMessages" [class.user]="msg.isUser">
-          <div class="cp-bubble">{{ msg.text }}</div>
-          <div class="cp-time">{{ msg.time }}</div>
-        </div>
-      </div>
-      <div class="cp-suggestions">
-        <button class="cp-sug" (click)="sendQuickMessage('Bridal Packages')">Bridal 💍</button>
-        <button class="cp-sug" (click)="sendQuickMessage('Check Availability')">Availability 📅</button>
-        <button class="cp-sug" (click)="sendQuickMessage('Pricing Info')">Pricing 💰</button>
-        <button class="cp-sug" (click)="sendQuickMessage('Home Service')">Home Service 🏠</button>
-      </div>
-      <div class="cp-input-row">
-        <input class="cp-input" [(ngModel)]="chatMessage" placeholder="Ask us anything…" (keyup.enter)="sendChatMessage()" />
-        <button class="cp-send" (click)="sendChatMessage()">➤</button>
-      </div>
-    </div>
-    <button class="chat-bubble" (click)="toggleChat()">
-      <span *ngIf="!isChatOpen">💬</span>
-      <span *ngIf="isChatOpen">✕</span>
-    </button>
-  </div>
+
 
   <!-- ═══ QUICK BOOKING MODAL (LOGGED IN ONLY) ═══ -->
   <div class="quick-modal-overlay" *ngIf="isQuickBookingModalOpen" (click)="closeQuickBooking()">

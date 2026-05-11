@@ -15,6 +15,7 @@ export interface ChatMessage {
   id: string;
   conversationId: string;
   senderId: string;
+  receiverId: string;
   senderRole: 'admin' | 'artist' | 'client';
   text: string;
   timestamp: Date;
@@ -30,7 +31,11 @@ export class MessageService {
   async sendMessage(data: Omit<ChatMessage, 'id' | 'timestamp'>) {
     const ref = collection(this.firestore, 'messages');
     const newDocRef = doc(ref);
-    return setDoc(newDocRef, { ...data, id: newDocRef.id, timestamp: new Date() });
+    return setDoc(newDocRef, { 
+      ...data, 
+      id: newDocRef.id, 
+      timestamp: new Date() // Keeping Date for now as interface uses it, but in real Firestore we'd use serverTimestamp
+    });
   }
 
   // ── Get Messages for a Conversation (Admin, Artist, Client) ──

@@ -4,6 +4,8 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   where
@@ -11,16 +13,17 @@ import {
 import { Observable } from 'rxjs';
 
 export interface Review {
-  id: string;
+  reviewId: string;
   artistId: string;
   artistName: string;
-  clientId: string;
+  clientUserId: string;
   clientName: string;
+  bookingId: string;
   service: string;
-  rating: number;
-  comment: string;
+  starRating: number;
+  reviewMessage: string;
   date: string;
-  createdAt: Date;
+  createdAt: any;
 }
 
 @Injectable({
@@ -29,21 +32,19 @@ export interface Review {
 export class ReviewService {
   constructor(private firestore: Firestore) {}
 
-  async addReview(data: Omit<Review, 'id'>) {
+  async addReview(data: Omit<Review, 'reviewId'>) {
     const ref = collection(this.firestore, 'reviews');
     const docRef = doc(ref);
-    return setDoc(docRef, { ...data, id: docRef.id });
+    return setDoc(docRef, { ...data, reviewId: docRef.id });
   }
 
-  // ── CHANGED: Added filter by artistId for artist-specific reviews (original method kept) ──
-  // Reads from: Firebase 'reviews' collection, filtered by artistId
   getReviewsForArtistRealtime(artistId: string): Observable<Review[]> {
     return new Observable<Review[]>(subscriber => {
       const ref = collection(this.firestore, 'reviews');
       const q = query(ref, where('artistId', '==', artistId));
       const unsubscribe = onSnapshot(q, (snap) => {
         const reviews = snap.docs.map(d => d.data() as Review);
-        subscriber.next(reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        subscriber.next(reviews);
       }, (error) => {
         subscriber.error(error);
       });
@@ -51,15 +52,12 @@ export class ReviewService {
     });
   }
 
-  // ── NEW: Fetch all reviews across the platform (used for Community Reviews tab in Profile) ──
-  // Reads from: Firebase 'reviews' collection (all documents)
-  // Why: Lets clients see what other clients are saying about artists before booking.
   getAllReviewsRealtime(): Observable<Review[]> {
     return new Observable<Review[]>(subscriber => {
       const ref = collection(this.firestore, 'reviews');
       const unsubscribe = onSnapshot(ref, (snap) => {
         const reviews = snap.docs.map(d => d.data() as Review);
-        subscriber.next(reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        subscriber.next(reviews);
       }, (error) => {
         subscriber.error(error);
       });
@@ -67,20 +65,31 @@ export class ReviewService {
     });
   }
 
-  // ── NEW: Fetch reviews written by a specific client (used for "My Reviews" tab in Profile) ──
-  // Reads from: Firebase 'reviews' collection, filtered by clientId
-  // ACID - Isolated: Each query is independent and reads only this client's data.
-  getReviewsByClientRealtime(clientId: string): Observable<Review[]> {
+  getReviewsByClientRealtime(clientUserId: string): Observable<Review[]> {
     return new Observable<Review[]>(subscriber => {
       const ref = collection(this.firestore, 'reviews');
-      const q = query(ref, where('clientId', '==', clientId));
+      const q = query(ref, where('clientUserId', '==', clientUserId));
       const unsubscribe = onSnapshot(q, (snap) => {
         const reviews = snap.docs.map(d => d.data() as Review);
-        subscriber.next(reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        subscriber.next(reviews);
       }, (error) => {
         subscriber.error(error);
       });
       return { unsubscribe };
     });
+  }
+  async updateReviewReply(id: string, reply: string) {
+    const docRef = doc(this.firestore, `reviews/${id}`);
+    return updateDoc(docRef, { reply, updatedAt: new Date() });
+  }
+
+  async updateReviewStatus(id: string, status: 'published' | 'pending' | 'flagged') {
+    const docRef = doc(this.firestore, `reviews/${id}`);
+    return updateDoc(docRef, { status, updatedAt: new Date() });
+  }
+
+  async deleteReview(id: string) {
+    const docRef = doc(this.firestore, `reviews/${id}`);
+    return deleteDoc(docRef);
   }
 }

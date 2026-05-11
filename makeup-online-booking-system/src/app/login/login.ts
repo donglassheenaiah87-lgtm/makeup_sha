@@ -86,7 +86,12 @@ export class LoginComponent {
         this.router.navigate(['/admin/dashboard']);
       } else if (userData.role === 'artist') {
         if (userData.status === 'pending') {
-          this.errorMessage = 'Your artist account is pending admin approval.';
+          this.errorMessage = 'Your artist account is pending admin approval. Please wait within 24 hours.';
+          this.isLoading = false;
+          await this.authService.logout();
+          return;
+        } else if (userData.status === 'rejected') {
+          this.errorMessage = 'Your artist application was rejected. Please contact support for more details.';
           this.isLoading = false;
           await this.authService.logout();
           return;

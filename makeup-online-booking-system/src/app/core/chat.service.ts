@@ -9,15 +9,18 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy
+  orderBy,
+  serverTimestamp,
+  addDoc
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface Message {
-  sender: 'artist' | 'client';
+  id?: string;
+  senderId: string;
+  receiverId: string;
   text: string;
-  time: string;
-  timestamp: number;
+  timestamp: any;
 }
 
 export interface Conversation {
@@ -26,11 +29,12 @@ export interface Conversation {
   clientId: string;
   artistName: string;
   clientName: string;
+  artistImage?: string;
+  clientImage?: string;
   lastMessage: string;
-  lastTime: string;
+  lastTime: any;
   unreadArtist: number;
   unreadClient: number;
-  messages: Message[];
 }
 
 @Injectable({
@@ -43,7 +47,7 @@ export class ChatService {
   getConversationsForArtist(artistId: string): Observable<Conversation[]> {
     return new Observable<Conversation[]>(subscriber => {
       const convRef = collection(this.firestore, 'conversations');
-      const q = query(convRef, where('artistId', '==', artistId));
+      const q = query(convRef, where('artistId', '==', artistId), orderBy('lastTime', 'desc'));
       const unsubscribe = onSnapshot(q, (snap) => {
         const convs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Conversation));
         subscriber.next(convs);
@@ -58,7 +62,7 @@ export class ChatService {
   getConversationsForClient(clientId: string): Observable<Conversation[]> {
     return new Observable<Conversation[]>(subscriber => {
       const convRef = collection(this.firestore, 'conversations');
-      const q = query(convRef, where('clientId', '==', clientId));
+      const q = query(convRef, where('clientId', '==', clientId), orderBy('lastTime', 'desc'));
       const unsubscribe = onSnapshot(q, (snap) => {
         const convs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Conversation));
         subscriber.next(convs);
@@ -69,30 +73,61 @@ export class ChatService {
     });
   }
 
+  // ── Get Messages for a Conversation ──
+  getMessages(conversationId: string): Observable<Message[]> {
+    return new Observable<Message[]>(subscriber => {
+      const msgRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+      const q = query(msgRef, orderBy('timestamp', 'asc'));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+        subscriber.next(messages);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
   // ── Send Message ──
-  async sendMessage(conversationId: string, message: Message, unreadArtist: number, unreadClient: number, lastMessage: string, lastTime: string) {
-    const docRef = doc(this.firestore, `conversations/${conversationId}`);
-    const snap = await getDoc(docRef);
+  async sendMessage(conversationId: string, senderId: string, receiverId: string, text: string, senderRole: 'artist' | 'client') {
+    const convRef = doc(this.firestore, `conversations/${conversationId}`);
+    const msgRef = collection(this.firestore, `conversations/${conversationId}/messages`);
+    
+    const messageData = {
+      senderId,
+      receiverId,
+      text,
+      timestamp: serverTimestamp()
+    };
+
+    // 1. Add message to subcollection
+    await addDoc(msgRef, messageData);
+
+    // 2. Update conversation summary
+    const snap = await getDoc(convRef);
     if (snap.exists()) {
       const data = snap.data() as Conversation;
-      const messages = data.messages || [];
-      messages.push(message);
-      return updateDoc(docRef, {
-        messages,
-        lastMessage,
-        lastTime,
-        unreadArtist,
-        unreadClient
-      });
+      const updates: any = {
+        lastMessage: text,
+        lastTime: serverTimestamp()
+      };
+      
+      if (senderRole === 'artist') {
+        updates.unreadClient = (data.unreadClient || 0) + 1;
+      } else {
+        updates.unreadArtist = (data.unreadArtist || 0) + 1;
+      }
+
+      await updateDoc(convRef, updates);
     }
   }
 
   // ── Initialize Conversation ──
-  async initializeConversation(conversationId: string, initialData: Omit<Conversation, 'id' | 'messages'>) {
+  async initializeConversation(conversationId: string, initialData: Omit<Conversation, 'id'>) {
     const docRef = doc(this.firestore, `conversations/${conversationId}`);
     const snap = await getDoc(docRef);
     if (!snap.exists()) {
-      return setDoc(docRef, { ...initialData, messages: [] });
+      return setDoc(docRef, { ...initialData, id: conversationId, lastTime: serverTimestamp() });
     }
   }
 

@@ -105,6 +105,15 @@
           <span class="nav-label">My Reviews</span>
           <span class="nav-badge" *ngIf="myReviews.length > 0">{{ myReviews.length }}</span>
         </button>
+        <button class="nav-item" [class.active]="activeTab === 'messages'" (click)="setTab('messages')">
+          <span class="nav-icon-wrap">
+            <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+            </svg>
+          </span>
+          <span class="nav-label">Messages</span>
+          <span class="nav-badge" *ngIf="unreadMessages > 0">{{ unreadMessages }}</span>
+        </button>
         <button class="nav-item" [class.active]="activeTab === 'preferences'" (click)="setTab('preferences')">
           <span class="nav-icon-wrap">
             <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -197,6 +206,7 @@
           <span class="dh-crumb-active">
             <ng-container *ngIf="activeTab === 'bookings'">My Bookings</ng-container>
             <ng-container *ngIf="activeTab === 'reviews'">My Reviews</ng-container>
+            <ng-container *ngIf="activeTab === 'messages'">Messages</ng-container>
             <ng-container *ngIf="activeTab === 'preferences'">Beauty Preferences</ng-container>
             <ng-container *ngIf="activeTab === 'favorites'">My Favorites</ng-container>
             <ng-container *ngIf="activeTab === 'loyalty'">Loyalty &amp; Rewards</ng-container>
@@ -209,6 +219,7 @@
           <h1 class="dh-title">
             <ng-container *ngIf="activeTab === 'bookings'">My Bookings</ng-container>
             <ng-container *ngIf="activeTab === 'reviews'">My Reviews</ng-container>
+            <ng-container *ngIf="activeTab === 'messages'">Messages</ng-container>
             <ng-container *ngIf="activeTab === 'preferences'">Beauty Preferences</ng-container>
             <ng-container *ngIf="activeTab === 'favorites'">My Favorites</ng-container>
             <ng-container *ngIf="activeTab === 'loyalty'">Loyalty &amp; Rewards</ng-container>
@@ -274,6 +285,13 @@
                     </svg>
                     Rebook
                   </a>
+                  <button class="bc-action-btn msg" (click)="openChatWithArtist(b)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                      style="width:13px;height:13px">
+                      <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+                    </svg>
+                    Message
+                  </button>
                 </div>
               </div>
             </div>
@@ -324,6 +342,9 @@
                     </svg>
                     {{ b.artistName || 'Any available' }}
                   </div>
+                  <button class="bc-msg-link" (click)="openChatWithArtist(b)" *ngIf="b.artistId">
+                    💬 Message Artist
+                  </button>
                 </div>
                 <div class="bc-footer">
                   <span class="bc-amount">{{ b.amount }}</span>
@@ -391,8 +412,8 @@
               <div class="rc-left">
                 <div class="rc-avatar">{{ r.artistName[0] }}</div>
                 <div class="rc-stars-col">
-                  <span *ngFor="let s of getStars(r.rating)" class="star filled sm">★</span>
-                  <span *ngFor="let s of getEmptyStars(r.rating)" class="star empty sm">★</span>
+                  <span *ngFor="let s of getStars(r.starRating)" class="star filled sm">★</span>
+                  <span *ngFor="let s of getEmptyStars(r.starRating)" class="star empty sm">★</span>
                 </div>
               </div>
               <div class="rc-body">
@@ -401,7 +422,7 @@
                   <span class="rc-service-pill">{{ r.service }}</span>
                   <span class="rc-date">{{ r.date }}</span>
                 </div>
-                <blockquote class="rc-comment">"{{ r.comment }}"</blockquote>
+                <blockquote class="rc-comment">"{{ r.reviewMessage }}"</blockquote>
               </div>
             </div>
           </div>
@@ -419,6 +440,80 @@
             <button class="es-btn" (click)="setTab('bookings')">← Go to My Bookings</button>
           </div>
         </ng-container>
+      </div>
+
+      <!-- ══ TAB 3: MESSAGES ══ -->
+      <div class="tab-panel messages-panel" *ngIf="activeTab === 'messages'">
+        <div class="chat-container">
+          <!-- Sidebar: Conversations -->
+          <div class="chat-sidebar">
+            <div class="cs-header">
+              <h3 class="cs-title">Conversations</h3>
+            </div>
+            <div class="cs-list">
+              <div class="cs-item" *ngFor="let conv of conversations" 
+                [class.active]="activeConversation?.id === conv.id"
+                (click)="selectConversation(conv)">
+                <div class="cs-avatar">
+                  <img *ngIf="conv.artistImage" [src]="conv.artistImage" class="cs-avatar-img" />
+                  <span *ngIf="!conv.artistImage">{{ conv.artistName[0] }}</span>
+                </div>
+                <div class="cs-info">
+                  <div class="cs-top">
+                    <span class="cs-name">{{ conv.artistName }}</span>
+                    <span class="cs-unread" *ngIf="conv.unreadClient > 0">{{ conv.unreadClient }}</span>
+                  </div>
+                  <p class="cs-last">{{ conv.lastMessage }}</p>
+                </div>
+              </div>
+              <div class="cs-empty" *ngIf="conversations.length === 0">
+                <p>No conversations yet.</p>
+                <small>Book an artist to start chatting.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main: Active Chat -->
+          <div class="chat-main">
+            <ng-container *ngIf="activeConversation; else noChat">
+              <div class="cm-header">
+                <div class="cm-avatar">
+                  <img *ngIf="activeConversation.artistImage" [src]="activeConversation.artistImage" class="cm-avatar-img" />
+                  <span *ngIf="!activeConversation.artistImage">{{ activeConversation.artistName[0] }}</span>
+                </div>
+                <div class="cm-user-info">
+                  <h4 class="cm-name">{{ activeConversation.artistName }}</h4>
+                  <span class="cm-status">Online</span>
+                </div>
+              </div>
+              <div class="chat-messages-container" #chatScroll>
+                <div class="msg-group" *ngFor="let msg of activeMessages">
+                  <div class="msg-wrapper" [class.sent]="msg.senderId === currentUser.uid" [class.received]="msg.senderId !== currentUser.uid">
+                    <div class="msg-bubble">
+                      {{ msg.text }}
+                    </div>
+                    <span class="msg-time">{{ msg.timestamp?.toDate() | date:'shortTime' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <input type="text" class="chat-input" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" placeholder="Type your message...">
+                <button class="chat-send-btn" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </button>
+              </div>
+            </ng-container>
+            <ng-template #noChat>
+              <div class="chat-empty-state">
+                <div class="ces-icon">💬</div>
+                <h3>Select a conversation</h3>
+                <p>Choose a chat to start messaging with your artist.</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
       </div>
 
       <!-- ══ TAB 3: BEAUTY PREFERENCES ══ -->

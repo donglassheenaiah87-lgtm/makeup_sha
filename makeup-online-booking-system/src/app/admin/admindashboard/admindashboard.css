@@ -1767,3 +1767,81 @@ input:checked + .slider-danger:before { background: #e06060 !important; }
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
+/* SUPPORT & EMERGENCIES */
+.support-list { display: flex; flex-direction: column; gap: 16px; max-height: 600px; overflow-y: auto; padding-right: 8px; }
+.support-item { padding: 1.2rem; transition: all 0.2s; }
+.resolved-excuse { opacity: 0.6; filter: grayscale(50%); }
+.si-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.si-cat, .si-artist { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 700; color: #c9a84c; }
+.si-client { font-size: 0.85rem; color: #b0c4d8; margin-bottom: 10px; }
+.si-messages { background: rgba(0,0,0,0.15); border-radius: 10px; padding: 10px; margin-bottom: 12px; }
+.si-msg { font-size: 0.82rem; color: #d0dce8; font-style: italic; margin-bottom: 4px; }
+.resolve-btn { background: rgba(96,192,128,0.15); border: 1px solid rgba(96,192,128,0.3); color: #60c080; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+
+
+/* Status Actions for Pending Artists */
+.status-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn-sm {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-sm.approve {
+  background: rgba(96, 192, 128, 0.15);
+  color: #60c080;
+  border: 1px solid rgba(96, 192, 128, 0.3);
+}
+
+.action-btn-sm.approve:hover {
+  background: #60c080;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.action-btn-sm.reject {
+  background: rgba(224, 96, 96, 0.15);
+  color: #e06060;
+  border: 1px solid rgba(224, 96, 96, 0.3);
+}
+
+.action-btn-sm.reject:hover {
+  background: #e06060;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.toggle-status-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #8aabcc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: capitalize;
+}
+
+.toggle-status-btn.active {
+  background: rgba(96, 192, 128, 0.1);
+  color: #60c080;
+  border-color: rgba(96, 192, 128, 0.3);
+}
+
+.toggle-status-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+

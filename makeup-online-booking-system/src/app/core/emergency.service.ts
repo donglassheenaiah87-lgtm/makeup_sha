@@ -7,7 +7,10 @@ import {
   updateDoc,
   onSnapshot,
   query,
-  where
+  where,
+  getDoc,
+  addDoc,
+  serverTimestamp
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -22,7 +25,7 @@ export interface ArtistExcuse {
   affectedBookingIds: string[];
   status: 'active' | 'resolved';
   declaredAt: string;
-  createdAt: Date;
+  createdAt: any;
 }
 
 @Injectable({
@@ -32,27 +35,76 @@ export class EmergencyService {
   constructor(private firestore: Firestore) {}
 
   async declareEmergency(data: Omit<ArtistExcuse, 'id'>) {
-    const ref = collection(this.firestore, 'artistExcuses');
+    const ref = collection(this.firestore, 'excuseRequests');
     const docRef = doc(ref);
-    return setDoc(docRef, { ...data, id: docRef.id });
+    return setDoc(docRef, { ...data, id: docRef.id, createdAt: serverTimestamp() });
   }
 
   async resolveEmergency(id: string) {
-    const docRef = doc(this.firestore, `artistExcuses/${id}`);
+    const docRef = doc(this.firestore, `excuseRequests/${id}`);
     return updateDoc(docRef, { status: 'resolved' });
   }
 
   getActiveEmergenciesForArtist(artistId: string): Observable<ArtistExcuse[]> {
     return new Observable<ArtistExcuse[]>(subscriber => {
-      const ref = collection(this.firestore, 'artistExcuses');
+      const ref = collection(this.firestore, 'excuseRequests');
       const q = query(ref, where('artistId', '==', artistId), where('status', '==', 'active'));
       const unsubscribe = onSnapshot(q, (snap) => {
         const emergencies = snap.docs.map(d => d.data() as ArtistExcuse);
-        subscriber.next(emergencies.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        subscriber.next(emergencies);
       }, (error) => {
         subscriber.error(error);
       });
       return { unsubscribe };
+    });
+  }
+
+  getAllEmergenciesRealtime(): Observable<ArtistExcuse[]> {
+    return new Observable<ArtistExcuse[]>(subscriber => {
+      const ref = collection(this.firestore, 'excuseRequests');
+      const unsubscribe = onSnapshot(ref, (snap) => {
+        const emergencies = snap.docs.map(d => d.data() as ArtistExcuse);
+        subscriber.next(emergencies);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
+  async reassignBooking(bookingId: string, newArtistId: string, newArtistName: string) {
+    const bookingRef = doc(this.firestore, `bookings/${bookingId}`);
+    const snap = await getDoc(bookingRef);
+    if (!snap.exists()) return;
+    
+    const oldData = snap.data();
+    
+    // 1. Update Booking
+    await updateDoc(bookingRef, {
+      assignedArtistId: newArtistId,
+      artistName: newArtistName,
+      transferredFrom: oldData['assignedArtistId'],
+      transferDate: serverTimestamp()
+    });
+
+    // 2. Create Notification for Client
+    await addDoc(collection(this.firestore, 'notifications'), {
+      recipientId: oldData['clientId'],
+      type: 'emergency_reassignment',
+      title: 'Booking Reassigned',
+      message: `Due to an artist emergency, your booking for ${oldData['serviceName']} has been reassigned to ${newArtistName}.`,
+      timestamp: serverTimestamp(),
+      read: false
+    });
+
+    // 3. Create Notification for New Artist
+    await addDoc(collection(this.firestore, 'notifications'), {
+      recipientId: newArtistId,
+      type: 'new_assignment',
+      title: 'New Emergency Assignment',
+      message: `You have been reassigned a booking for ${oldData['clientName']} due to an emergency handoff.`,
+      timestamp: serverTimestamp(),
+      read: false
     });
   }
 }

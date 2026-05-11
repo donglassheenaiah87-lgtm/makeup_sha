@@ -10,8 +10,9 @@ import { AuthService } from '../../core/auth.service';
 import { UserService, UserData } from '../../core/user.service';
 import { BookingService, BookingData } from '../../core/booking.service';
 import { ReviewService, Review } from '../../core/review.service';
+import { ChatService, Conversation, Message } from '../../core/chat.service';
 
-export type ProfileTab = 'bookings' | 'reviews' | 'preferences' | 'favorites' | 'loyalty' | 'photos' | 'settings' | 'report';
+export type ProfileTab = 'bookings' | 'reviews' | 'messages' | 'preferences' | 'favorites' | 'loyalty' | 'photos' | 'settings' | 'report';
 
 @Component({
   selector: 'app-profile',
@@ -47,14 +48,17 @@ export class Profile implements OnInit, OnDestroy {
   myReviews: Review[] = [];
   isReviewsLoading = true;
 
-  // ── Review Modal ──
-  reviewTargetBooking: BookingData | null = null;
-  reviewForm = { rating: 5, comment: '' };
-  isSubmittingReview = false;
-  hoverRating = 0;
 
   // ── Edit Modal ──
   editForm = { firstName: '', lastName: '', phone: '', notes: '' };
+
+  // ── Messaging ──
+  conversations: Conversation[] = [];
+  activeConversation: Conversation | null = null;
+  activeMessages: Message[] = [];
+  newMessage = '';
+  private convsSub?: Subscription;
+  private msgsSub?: Subscription;
 
   // ── Preferences ──
   prefForm = {
@@ -119,6 +123,7 @@ export class Profile implements OnInit, OnDestroy {
     private userService: UserService,
     private bookingService: BookingService,
     private reviewService: ReviewService,
+    private chatService: ChatService,
     private router: Router,
     private cdr: ChangeDetectorRef,
     private auth: Auth,
@@ -135,12 +140,14 @@ export class Profile implements OnInit, OnDestroy {
           console.warn('Error fetching user from DB, creating fallback…', e);
         }
 
-        if (!fetchedUser) {
-          fetchedUser = {
+        if (fetchedUser) {
+          this.currentUser = fetchedUser;
+        } else {
+          this.currentUser = {
             uid: user.uid,
             email: user?.email || '',
-            name: user?.displayName || 'Client User',
-            firstName: user?.displayName?.split(' ')[0] || 'Client',
+            name: user?.displayName || user?.email?.split('@')[0] || 'Lumière Client',
+            firstName: user?.displayName?.split(' ')[0] || (user?.email ? user.email.split('@')[0] : 'Client'),
             lastName: user?.displayName?.split(' ').slice(1).join(' ') || '',
             phone: user?.phoneNumber || '',
             role: 'client',
@@ -153,7 +160,7 @@ export class Profile implements OnInit, OnDestroy {
           }
         }
 
-        this.currentUser = fetchedUser;
+
 
         // Load gallery photos
         this.galleryPhotos = this.currentUser?.galleryPhotos || [];
@@ -184,6 +191,11 @@ export class Profile implements OnInit, OnDestroy {
               next: (r) => { this.myReviews = r; this.isReviewsLoading = false; this.cdr.detectChanges(); },
               error: () => { this.isReviewsLoading = false; this.cdr.detectChanges(); }
             });
+
+          this.convsSub = this.chatService.getConversationsForClient(user.uid).subscribe((convs: Conversation[]) => {
+            this.conversations = convs;
+            this.cdr.detectChanges();
+          });
         }
 
       } catch (err: any) {
@@ -199,6 +211,8 @@ export class Profile implements OnInit, OnDestroy {
     this.authSub?.unsubscribe();
     this.bookingsSub?.unsubscribe();
     this.reviewsSub?.unsubscribe();
+    this.convsSub?.unsubscribe();
+    this.msgsSub?.unsubscribe();
   }
 
   // ── Computed ──
@@ -223,6 +237,7 @@ export class Profile implements OnInit, OnDestroy {
   }
 
   get loyaltyPoints() { return this.currentUser?.loyaltyPoints || 0; }
+  get unreadMessages() { return this.conversations.reduce((s, c) => s + (c.unreadClient || 0), 0); }
 
   get membershipYears(): number {
     const d = this.currentUser?.createdAt;
@@ -277,7 +292,7 @@ export class Profile implements OnInit, OnDestroy {
 
   get averageRating() {
     if (!this.myReviews.length) return '0.0';
-    const sum = this.myReviews.reduce((acc, r) => acc + r.rating, 0);
+    const sum = this.myReviews.reduce((acc, r) => acc + r.starRating, 0);
     return (sum / this.myReviews.length).toFixed(1);
   }
 
@@ -285,7 +300,7 @@ export class Profile implements OnInit, OnDestroy {
   get favoriteServices() { return this.currentUser?.favoriteServices || []; }
 
   hasReviewedBooking(booking: BookingData): boolean {
-    return this.myReviews.some(r => r.artistName === booking.artistName && r.service === booking.serviceName);
+    return this.myReviews.some(r => r.bookingId === booking.id);
   }
 
   // ── Actions ──
@@ -297,6 +312,74 @@ export class Profile implements OnInit, OnDestroy {
   }
 
   toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; }
+
+  // ── Messaging Methods ──
+  selectConversation(conv: Conversation) {
+    this.activeConversation = conv;
+    this.chatService.markAsRead(conv.id, 'client');
+    
+    if (this.msgsSub) this.msgsSub.unsubscribe();
+    this.msgsSub = this.chatService.getMessages(conv.id).subscribe((msgs: Message[]) => {
+      this.activeMessages = msgs;
+      this.cdr.detectChanges();
+      setTimeout(() => this.scrollToChatBottom(), 100);
+    });
+  }
+
+  async sendMessage() {
+    if (!this.newMessage.trim() || !this.activeConversation || !this.currentUser) return;
+    const text = this.newMessage.trim();
+    const convId = this.activeConversation.id;
+    const receiverId = this.activeConversation.artistId;
+    
+    await this.chatService.sendMessage(convId, this.currentUser.uid, receiverId, text, 'client');
+    this.newMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  private scrollToChatBottom() {
+    const chatContainer = document.querySelector('.chat-messages-container');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }
+
+  openChatWithArtist(booking: BookingData) {
+    if (!booking.artistId || !this.currentUser) return;
+    const convId = `${booking.artistId}_${this.currentUser.uid}`;
+    
+    this.chatService.initializeConversation(convId, {
+      artistId: booking.artistId,
+      clientId: this.currentUser.uid,
+      artistName: booking.artistName,
+      clientName: this.fullName,
+      artistImage: (booking as any).artistImage || '',
+      clientImage: this.currentUser.profilePicture || '',
+      lastMessage: 'Conversation started',
+      lastTime: serverTimestamp(),
+      unreadArtist: 0,
+      unreadClient: 0
+    }).then(() => {
+      this.setTab('messages');
+      const conv = this.conversations.find(c => c.id === convId);
+      if (conv) {
+        this.selectConversation(conv);
+      } else {
+        // Fallback if subscription hasn't updated yet
+        this.selectConversation({
+          id: convId,
+          artistId: booking.artistId!,
+          clientId: this.currentUser!.uid,
+          artistName: booking.artistName,
+          clientName: this.fullName,
+          lastMessage: 'Conversation started',
+          lastTime: new Date(),
+          unreadArtist: 0,
+          unreadClient: 0
+        });
+      }
+    });
+  }
 
   openEditModal() {
     this.editForm = {
@@ -364,41 +447,6 @@ export class Profile implements OnInit, OnDestroy {
     }
   }
 
-  openReviewModal(booking: BookingData) {
-    this.reviewTargetBooking = booking;
-    this.reviewForm = { rating: 5, comment: '' };
-    this.hoverRating = 0;
-    this.isReviewModalOpen = true;
-  }
-
-  closeReviewModal() {
-    this.isReviewModalOpen = false;
-    this.reviewTargetBooking = null;
-  }
-
-  async submitReview() {
-    if (!this.currentUser || !this.reviewTargetBooking) return;
-    this.isSubmittingReview = true;
-    try {
-      await this.reviewService.addReview({
-        artistId: this.reviewTargetBooking.artistId || '',
-        artistName: this.reviewTargetBooking.artistName,
-        clientId: this.currentUser.uid,
-        clientName: this.currentUser.name || this.fullName,
-        service: this.reviewTargetBooking.serviceName,
-        rating: this.reviewForm.rating,
-        comment: this.reviewForm.comment,
-        date: new Date().toLocaleDateString('en-PH'),
-        createdAt: new Date()
-      });
-      this.closeReviewModal();
-      this.setTab('reviews');
-    } catch (e) {
-      console.error('Review error:', e);
-    } finally {
-      this.isSubmittingReview = false;
-    }
-  }
 
   async removeFavoriteArtist(name: string) {
     if (!this.currentUser) return;
@@ -615,6 +663,67 @@ export class Profile implements OnInit, OnDestroy {
       setTimeout(() => { this.settingsSaveMessage = ''; }, 3000);
     } catch {
       this.settingsSaveError = 'Failed to save. Please try again.';
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // ── REVIEW METHODS ──
+  // ═══════════════════════════════════════
+  // isReviewModalOpen is already defined at the top
+  reviewTargetBooking: any = null;
+  hoverRating = 0;
+  reviewForm = { rating: 5, comment: '' };
+  isSubmittingReview = false;
+
+  openReviewModal(booking: any) {
+    if (booking.status !== 'completed') {
+      alert('You can only review completed appointments.');
+      return;
+    }
+    this.reviewTargetBooking = booking;
+    this.reviewForm = { rating: 5, comment: '' };
+    this.isReviewModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeReviewModal() {
+    this.isReviewModalOpen = false;
+    this.reviewTargetBooking = null;
+    this.cdr.detectChanges();
+  }
+
+  async submitReview() {
+    if (!this.reviewTargetBooking || !this.currentUser) return;
+    if (!this.reviewForm.comment.trim()) return;
+
+    this.isSubmittingReview = true;
+    try {
+      const reviewData: Omit<Review, 'reviewId'> = {
+        artistId: this.reviewTargetBooking.assignedArtistId,
+        artistName: this.reviewTargetBooking.artistName,
+        clientUserId: this.currentUser.uid,
+        clientName: this.currentUser.name,
+        bookingId: this.reviewTargetBooking.id,
+        service: this.reviewTargetBooking.serviceName,
+        starRating: this.reviewForm.rating,
+        reviewMessage: this.reviewForm.comment,
+        date: new Date().toLocaleDateString('en-PH'),
+        createdAt: serverTimestamp()
+      };
+
+      await this.reviewService.addReview(reviewData);
+      
+      // Update booking to show it's reviewed
+      await this.bookingService.updateBookingStatus(this.reviewTargetBooking.id, 'completed');
+      
+      this.closeReviewModal();
+      alert('Thank you for your feedback! ⭐');
+    } catch (e) {
+      console.error('Review Error:', e);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      this.isSubmittingReview = false;
+      this.cdr.detectChanges();
     }
   }
 

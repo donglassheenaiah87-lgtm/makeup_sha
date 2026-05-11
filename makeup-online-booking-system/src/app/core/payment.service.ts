@@ -4,7 +4,9 @@ import {
   collection,
   doc,
   setDoc,
-  onSnapshot
+  updateDoc,
+  onSnapshot,
+  serverTimestamp
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
@@ -44,5 +46,39 @@ export class PaymentService {
       });
       return { unsubscribe };
     });
+  }
+
+  // ── Payout Requests ──
+  async requestPayout(artistId: string, artistName: string, amount: number, method: string, account: string) {
+    const ref = collection(this.firestore, 'payoutRequests');
+    const docRef = doc(ref);
+    return setDoc(docRef, {
+      id: docRef.id,
+      artistId,
+      artistName,
+      amount,
+      method,
+      account,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+  }
+
+  getAllPayoutRequestsRealtime(): Observable<any[]> {
+    return new Observable<any[]>(subscriber => {
+      const ref = collection(this.firestore, 'payoutRequests');
+      const unsubscribe = onSnapshot(ref, (snap) => {
+        const payouts = snap.docs.map(d => d.data());
+        subscriber.next(payouts);
+      }, (error) => {
+        subscriber.error(error);
+      });
+      return { unsubscribe };
+    });
+  }
+
+  async updatePayoutStatus(id: string, status: 'approved' | 'rejected' | 'processed') {
+    const docRef = doc(this.firestore, `payoutRequests/${id}`);
+    return updateDoc(docRef, { status, updatedAt: serverTimestamp() });
   }
 }

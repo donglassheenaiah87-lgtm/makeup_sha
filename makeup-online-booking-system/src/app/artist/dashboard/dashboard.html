@@ -201,8 +201,8 @@
                         </div>
                         <div class="mini-reviews">
                             <div class="mini-review" *ngFor="let r of reviews.slice(0,2)">
-                                <div class="review-stars">{{ getStars(r.rating) }}</div>
-                                <p class="review-text">"{{ r.comment }}"</p>
+                                <div class="review-stars">{{ getStars(r.starRating) }}</div>
+                                <p class="review-text">"{{ r.reviewMessage }}"</p>
                                 <p class="review-author">— {{ r.clientName }}</p>
                             </div>
                         </div>
@@ -344,7 +344,10 @@
                         <div class="conv-item" *ngFor="let conv of filteredConversations"
                             [class.active]="activeConversation?.clientId === conv.clientId"
                             (click)="selectConversation(conv)">
-                            <div class="conv-avatar">{{ conv.clientName[0] }}</div>
+                            <div class="conv-avatar">
+                                <img *ngIf="conv.clientImage" [src]="conv.clientImage" class="conv-avatar-img" />
+                                <span *ngIf="!conv.clientImage">{{ conv.clientName[0] }}</span>
+                            </div>
                             <div class="conv-info">
                                 <div class="conv-top">
                                     <p class="conv-name">{{ conv.clientName }}</p>
@@ -360,17 +363,20 @@
                 <!-- Chat Panel -->
                 <div class="chat-panel" *ngIf="activeConversation">
                     <div class="chat-header">
-                        <div class="conv-avatar">{{ activeConversation.clientName[0] }}</div>
+                        <div class="conv-avatar">
+                            <img *ngIf="activeConversation.clientImage" [src]="activeConversation.clientImage" class="conv-avatar-img" />
+                            <span *ngIf="!activeConversation.clientImage">{{ activeConversation.clientName[0] }}</span>
+                        </div>
                         <div>
                             <p class="chat-name">{{ activeConversation.clientName }}</p>
                             <p class="chat-status">🟢 Active</p>
                         </div>
                     </div>
                     <div class="chat-messages" #chatBox>
-                        <div class="chat-msg" *ngFor="let msg of activeConversation.messages"
-                            [class.sent]="msg.sender==='artist'" [class.received]="msg.sender==='client'">
+                        <div class="chat-msg" *ngFor="let msg of activeMessages"
+                            [class.sent]="msg.senderId === (auth.currentUser?.uid)" [class.received]="msg.senderId !== (auth.currentUser?.uid)">
                             <div class="msg-bubble">{{ msg.text }}</div>
-                            <p class="msg-time">{{ msg.time }}</p>
+                            <p class="msg-time">{{ msg.timestamp?.toDate() | date:'shortTime' }}</p>
                         </div>
                     </div>
                     <div class="chat-input-row">
@@ -829,9 +835,9 @@
                             <p class="review-name">{{ r.clientName }}</p>
                             <p class="review-date">{{ r.date }}</p>
                         </div>
-                        <div class="review-stars-big">{{ getStars(r.rating) }}</div>
+                        <div class="review-stars-big">{{ getStars(r.starRating) }}</div>
                     </div>
-                    <p class="review-comment">"{{ r.comment }}"</p>
+                    <p class="review-comment">"{{ r.reviewMessage }}"</p>
                     <p class="review-service">{{ r.service }}</p>
                 </div>
             </div>

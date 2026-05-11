@@ -9,7 +9,10 @@ import { BookingService } from '../../core/booking.service';
 import { ChatService, Conversation, Message } from '../../core/chat.service';
 import { PayoutService, Payout } from '../../core/payout.service';
 import { ReviewService, Review } from '../../core/review.service';
+import { EmergencyService, ArtistExcuse } from '../../core/emergency.service';
+import { ArtistAvailabilityService, ArtistAvailability } from '../../core/artist-availability.service';
 import { Subscription } from 'rxjs';
+import { serverTimestamp } from '@angular/fire/firestore';
 
 export interface Booking {
   id: string;
@@ -153,6 +156,9 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
   private reviewsSub?: Subscription;
   private payoutsSub?: Subscription;
   private chatSub?: Subscription;
+  private msgsSub?: Subscription;
+
+  activeMessages: Message[] = [];
 
   // ── Portfolio ──
   portfolioItems: PortfolioItem[] = [];
@@ -200,12 +206,15 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       this.blockedDates.push(d.trim()); 
       this.buildCalendar(); 
       const user = this.auth.currentUser;
-      if (user) await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
+      if (user) {
+        await this.artistAvailabilityService.setAvailability(user.uid, { blockedDates: this.blockedDates });
+        await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
+      }
     }
   }
 
   constructor(
-    private auth: Auth,
+    public auth: Auth,
     private authService: AuthService,
     private userService: UserService,
     private router: Router,
@@ -213,6 +222,8 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private payoutService: PayoutService,
     private reviewService: ReviewService,
+    private emergencyService: EmergencyService,
+    private artistAvailabilityService: ArtistAvailabilityService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -278,6 +289,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     if (this.reviewsSub) this.reviewsSub.unsubscribe();
     if (this.payoutsSub) this.payoutsSub.unsubscribe();
     if (this.chatSub) this.chatSub.unsubscribe();
+    if (this.msgsSub) this.msgsSub.unsubscribe();
   }
 
   computeStats() {
@@ -297,7 +309,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     this.stats.totalEarnings = this.stats.earnings;
     this.stats.avgEarning = validBookings.length > 0 ? Math.round(this.stats.earnings / validBookings.length) : 0;
 
-    const totalRating = this.reviews.reduce((s, r) => s + r.rating, 0);
+    const totalRating = this.reviews.reduce((s, r) => s + r.starRating, 0);
     this.stats.avgRating = this.reviews.length > 0 ? (totalRating / this.reviews.length).toFixed(1) : '0.0';
 
     this.stats.totalMessages = this.conversations.length;
@@ -383,47 +395,70 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   openMessage(b: Booking) {
     this.setTab('messages');
+    const user = this.auth.currentUser;
+    if (!user) return;
+
     const existing = this.conversations.find(c => c.clientId === b.clientId);
     if (existing) {
       this.activeConversation = existing;
     } else {
       const newConv: Conversation = {
-        id: '', artistId: '', artistName: '',
-        clientId: b.clientId, clientName: b.clientName,
-        lastMessage: '', lastTime: 'Now', unreadArtist: 0, unreadClient: 0, messages: []
+        id: `${user.uid}_${b.clientId}`, // Consistent ID format
+        artistId: user.uid, 
+        artistName: this.artistName,
+        clientId: b.clientId, 
+        clientName: b.clientName || 'Lumière Client',
+        clientImage: (b as any).clientImage || '',
+        artistImage: this.profilePicture || '',
+        lastMessage: '', 
+        lastTime: new Date(), 
+        unreadArtist: 0, 
+        unreadClient: 0
       };
       this.conversations.unshift(newConv);
       this.activeConversation = newConv;
+      
+      // Also initialize in Firebase
+      this.chatService.initializeConversation(newConv.id, {
+        artistId: newConv.artistId,
+        clientId: newConv.clientId,
+        artistName: newConv.artistName,
+        clientName: newConv.clientName,
+        artistImage: newConv.artistImage,
+        clientImage: newConv.clientImage,
+        lastMessage: 'Started chat',
+        lastTime: serverTimestamp(),
+        unreadArtist: 0,
+        unreadClient: 0
+      });
     }
   }
 
   // ── Messages ──
   selectConversation(conv: Conversation) {
     this.activeConversation = conv;
-    conv.unreadArtist = 0;
-    setTimeout(() => this.scrollToBottom(), 100);
+    this.chatService.markAsRead(conv.id, 'artist');
+    
+    if (this.msgsSub) this.msgsSub.unsubscribe();
+    this.msgsSub = this.chatService.getMessages(conv.id).subscribe(msgs => {
+      this.activeMessages = msgs;
+      setTimeout(() => this.scrollToBottom(), 100);
+      this.cdr.detectChanges();
+    });
   }
 
   async sendMessage() {
     if (!this.newMessage.trim() || !this.activeConversation) return;
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const text = this.newMessage.trim();
     const user = this.auth.currentUser;
     if (!user) return;
     
-    // Support dummy data locally if id is missing, else send to Firebase
-    const convId = (this.activeConversation as any).id || `${user.uid}_${this.activeConversation.clientId}`;
+    const convId = this.activeConversation.id;
+    const receiverId = this.activeConversation.clientId;
     
-    await this.chatService.sendMessage(
-      convId,
-      { sender: 'artist', text, time: now, timestamp: Date.now() },
-      0,
-      this.activeConversation.unreadClient + 1 || 1,
-      text,
-      now
-    );
+    await this.chatService.sendMessage(convId, user.uid, receiverId, text, 'artist');
     this.newMessage = '';
-    setTimeout(() => this.scrollToBottom(), 50);
+    this.cdr.detectChanges();
   }
 
   scrollToBottom() {
@@ -573,7 +608,10 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     this.blockedDates.splice(i, 1);
     this.buildCalendar();
     const user = this.auth.currentUser;
-    if (user) await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
+    if (user) {
+      await this.artistAvailabilityService.setAvailability(user.uid, { blockedDates: this.blockedDates });
+      await this.userService.updateUser(user.uid, { blockedDates: this.blockedDates });
+    }
   }
 
   // ── Emergency Mini Calendar ──
@@ -639,7 +677,13 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   async saveSchedule() {
     const user = this.auth.currentUser;
-    if (user) await this.userService.updateUser(user.uid, { weekDays: this.weekDays });
+    if (user) {
+      await this.artistAvailabilityService.setAvailability(user.uid, {
+        artistName: this.artistName,
+        weekDays: this.weekDays
+      });
+      await this.userService.updateUser(user.uid, { weekDays: this.weekDays });
+    }
     this.scheduleSaved = true;
     this.showToast('success', '✅ Schedule Saved', 'Your availability has been updated.');
     setTimeout(() => this.scheduleSaved = false, 3000);
@@ -647,7 +691,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
 
   // ── Reviews Helpers ──
   getStars(rating: number): string { return '⭐'.repeat(rating); }
-  getRatingCount(star: number): number { return this.reviews.filter(r => r.rating === star).length; }
+  getRatingCount(star: number): number { return this.reviews.filter(r => r.starRating === star).length; }
   getRatingPercent(star: number): number {
     if (!this.reviews.length) return 0;
     return Math.round((this.getRatingCount(star) / this.reviews.length) * 100);
@@ -737,7 +781,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     return map[method] || method;
   }
 
-  requestPayout() {
+  async requestPayout() {
     this.payoutError = '';
     const { amount, method, accountNumber, accountName } = this.payoutForm;
     if (!amount || amount < 100) { this.payoutError = 'Minimum payout is ₱100.'; return; }
@@ -747,7 +791,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     if (!accountName) { this.payoutError = 'Please enter your account name.'; return; }
 
     this.isPayoutLoading = true;
-    setTimeout(async () => {
+    try {
       const today = new Date();
       const eta = new Date(today); eta.setDate(eta.getDate() + 2);
       const fmt = (d: Date) => d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -766,9 +810,14 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
       }
 
       this.payoutForm = { amount: 0, method: '', accountNumber: '', accountName: '' };
-      this.isPayoutLoading = false;
       this.showPayoutSuccess = true;
-    }, 1800);
+    } catch (e) {
+      this.payoutError = 'Failed to submit payout request. Please try again.';
+      console.error(e);
+    } finally {
+      this.isPayoutLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   callSupport() { this.showToast('info', '📞 GlowBook Support', 'Hotline: 1800-GLOWBOOK · Open daily 8AM – 8PM'); }
@@ -799,7 +848,7 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     else this.emergencyForm.affectedBookingIds.push(b.id);
   }
 
-  declareEmergency() {
+  async declareEmergency() {
     this.emergencyError = '';
     if (!this.emergencyForm.reason) {
       this.emergencyError = 'Please select a reason for your emergency.'; return;
@@ -809,25 +858,41 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     }
     const affected = this.autoAffectedBookings;
     const now = new Date().toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const user = this.auth.currentUser;
+    if (!user) return;
 
-    this.activeEmergency = {
+    const emergencyData: Omit<ArtistExcuse, 'id'> = {
+      artistId: user.uid,
+      artistName: this.artistName,
       reason: this.emergencyForm.reason,
       details: this.emergencyForm.details,
-      affectedBookings: affected,
-      declaredAt: now,
+      leaveStart: this.emergencyForm.leaveStart.toISOString(),
+      leaveEnd: this.emergencyForm.leaveEnd.toISOString(),
+      affectedBookingIds: affected.map(b => b.id),
       status: 'active',
-      leaveStart: this.emergencyForm.leaveStart,
-      leaveEnd: this.emergencyForm.leaveEnd
+      declaredAt: now,
+      createdAt: new Date()
     };
 
-    // Mark bookings as cancelled
-    affected.forEach(b => b.status = 'cancelled');
+    await this.emergencyService.declareEmergency(emergencyData);
+
+    this.activeEmergency = {
+      ...emergencyData,
+      affectedBookings: affected
+    };
+
+    // Mark bookings as emergency_affected
+    for (const b of affected) {
+      await this.bookingService.updateBookingStatus(b.id, 'pending');
+    }
+
     this.computeStats();
 
     // Reset form
     this.emergencyForm = { reason: '', details: '', affectedBookingIds: [], leaveStart: null, leaveEnd: null };
     this.emgSuccessData = { affectedCount: affected.length, reason: this.activeEmergency.reason };
     this.showEmgSuccessModal = true;
+    this.cdr.detectChanges();
   }
 
   resolveEmergency() {
@@ -858,29 +923,37 @@ export class ArtistDashboardComponent implements OnInit, OnDestroy {
     return this.activeEmergency?.affectedBookings.find((b: Booking) => b.id === this.handoffForm.bookingId);
   }
 
-  sendHandoffRequest() {
+  async sendHandoffRequest() {
     if (!this.handoffForm.bookingId) { this.showToast('error', 'Required', 'Please select a booking.'); return; }
     if (!this.handoffForm.message) { this.showToast('error', 'Required', 'Please add a message to the artist.'); return; }
     const booking = this.getHandoffBooking();
+    if (!booking) return;
+
+    // Call EmergencyService to reassign
+    await this.emergencyService.reassignBooking(booking.id, this.selectedArtist.id, this.selectedArtist.name);
+
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     this.handoffRequests.push({
       artistName: this.selectedArtist.name,
       artistId: this.selectedArtist.id,
       booking,
       message: this.handoffForm.message,
-      status: 'pending',
+      status: 'accepted', // Auto-accepted for this simulation/logic
       sentAt: now
     });
+    
     this.showHandoffModal = false;
     this.showHandoffSuccess = true;
+    
     // Auto-advance to next unhandled client
     const bookings = this.activeEmergency?.affectedBookings || [];
     const nextIdx = bookings.findIndex((b: Booking, i: number) =>
       i > this.handoffWizardStep && !this.isBookingHandedOff(b.id)
     );
     if (nextIdx >= 0) {
-      setTimeout(() => { this.handoffWizardStep = nextIdx; this.showHandoffSuccess = false; }, 1800);
+      setTimeout(() => { this.handoffWizardStep = nextIdx; this.showHandoffSuccess = false; this.cdr.detectChanges(); }, 1800);
     }
+    this.cdr.detectChanges();
   }
 
   // ── Handoff Wizard ──

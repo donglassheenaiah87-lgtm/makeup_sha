@@ -6,6 +6,7 @@ import { BookingService } from '../../core/booking.service';
 import { AuthService } from '../../core/auth.service';
 import { UserService, UserData } from '../../core/user.service';
 import { ServiceItemService } from '../../core/service-item.service';
+import { ArtistAvailabilityService } from '../../core/artist-availability.service';
 import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-homepage',
@@ -22,9 +23,6 @@ export class HomepageComponent implements OnInit, OnDestroy {
   isProfileDropdownOpen = false;
   currentAnnouncement = 0;
   openFaqIndex: number | null = null;
-  isChatOpen = false;
-  chatMessage = '';
-  autoReplyIndex = 0;
   bookingSubmitted = false;
   isBookingLoading = false;
 
@@ -61,13 +59,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
     'Davao City · Nationwide Home Service Available ✦'
   ];
 
-  chatMessages: { text: string; isUser: boolean; time: string }[] = [];
-  autoReplies = [
-    'Thank you! Our team will reach out to you shortly. 💄',
-    'For bridal packages, we recommend booking 3 months in advance!',
-    'We offer free consultations — would you like to schedule one?',
-    'Our studio is in Davao City and we offer nationwide home service!'
-  ];
+
 
   bookingForm = {
     // Step 1: Personal
@@ -126,6 +118,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userService: UserService,
     private serviceItemService: ServiceItemService,
+    private artistAvailabilityService: ArtistAvailabilityService,
     private cdr: ChangeDetectorRef,
     private elRef: ElementRef
   ) {}
@@ -135,7 +128,6 @@ export class HomepageComponent implements OnInit, OnDestroy {
     this.startAnnouncementRotation();
     this.setupScrollReveal();
     this.setGreeting();
-    this.chatMessages.push({ text: 'Hello! Welcome to Lumière Beauty Studio ✨ How can I help you today?', isUser: false, time: this.getTime() });
 
     const loadFallbackServices = () => {
       this.services = [
@@ -237,10 +229,26 @@ export class HomepageComponent implements OnInit, OnDestroy {
         this.isLoggedIn = true;
         this.currentUser = await this.userService.getUser(user.uid);
         this.bookings = await this.bookingService.getBookingsByClient(user.uid) || [];
+        
+        // Pre-fill full booking form for registered users
+        if (this.currentUser) {
+          this.bookingForm.firstName = this.currentUser.firstName || this.currentUser.name?.split(' ')[0] || '';
+          this.bookingForm.lastName = this.currentUser.lastName || this.currentUser.name?.split(' ').slice(1).join(' ') || '';
+          this.bookingForm.email = this.currentUser.email || '';
+          this.bookingForm.contactNumber = this.currentUser.phone || '';
+        }
       } else {
         this.isLoggedIn = false;
         this.currentUser = null;
         this.bookings = [];
+        // Reset form for guests
+        this.bookingForm = {
+          firstName: '', lastName: '', fullName: '', contactNumber: '', email: '', venue: '', age: null, gender: '',
+          service: '', eventType: '', preferredArtist: '', message: '',
+          allergies: '', skinSensitivity: '', medicalConcerns: '', eventDate: '',
+          time: '', package: '',
+          paymentMethod: '', bookingRef: '', amount: 'TBD'
+        };
       }
     });
   }
@@ -265,7 +273,6 @@ export class HomepageComponent implements OnInit, OnDestroy {
   }
 
   toggleFaq(i: number) { this.openFaqIndex = this.openFaqIndex === i ? null : i; }
-  toggleChat() { this.isChatOpen = !this.isChatOpen; }
   toggleMobileMenu() { this.isMobileMenuOpen = !this.isMobileMenuOpen; }
   toggleProfileDropdown() { this.isProfileDropdownOpen = !this.isProfileDropdownOpen; }
 
@@ -343,13 +350,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
     this.isMobileMenuOpen = false;
   }
 
-  sendQuickMessage(msg: string) {
-    this.chatMessages.push({ text: msg, isUser: true, time: this.getTime() });
-    setTimeout(() => {
-      this.chatMessages.push({ text: this.autoReplies[this.autoReplyIndex % this.autoReplies.length], isUser: false, time: this.getTime() });
-      this.autoReplyIndex++;
-    }, 900);
-  }
+
 
   // ═══════════════════════════════════════
   // ── QUICK BOOKING METHODS ──
@@ -381,9 +382,31 @@ export class HomepageComponent implements OnInit, OnDestroy {
     this.isQuickBookingModalOpen = true;
   }
 
+  openQuickBooking() {
+    if (!this.isLoggedIn) {
+      this.scrollTo('booking');
+      return;
+    }
+    this.selectedService = null;
+    this.selectedArtist = null;
+    this.quickBookingStep = 'service';
+    this.prepareQuickForm();
+    this.isQuickBookingModalOpen = true;
+  }
+
+  onMobileBookClick() {
+    if (this.isLoggedIn) {
+      this.openQuickBooking();
+    } else {
+      this.scrollTo('booking');
+    }
+    this.toggleMobileMenu();
+  }
+
   private prepareQuickForm() {
     if (this.currentUser) {
-      this.quickBookingForm.fullName = this.currentUser.name || '';
+      this.quickBookingForm.fullName = this.currentUser.name || 
+        `${this.currentUser.firstName || ''} ${this.currentUser.lastName || ''}`.trim() || 'Valued Client';
       this.quickBookingForm.email = this.currentUser.email || '';
       this.quickBookingForm.uid = this.currentUser.uid;
     }
@@ -405,8 +428,18 @@ export class HomepageComponent implements OnInit, OnDestroy {
 
     this.isQuickBookingLoading = true;
     try {
-      const artistName = this.selectedArtist ? this.selectedArtist.name : (this.selectedService?.preferredArtist || 'No Preference');
       const artistId = this.selectedArtist ? this.selectedArtist.uid : null;
+      if (artistId) {
+        const isAvail = await this.artistAvailabilityService.isArtistAvailable(artistId, this.quickBookingForm.date, this.quickBookingForm.time);
+        if (!isAvail) {
+          alert('Sorry, this artist is not available at the selected date and time.');
+          this.isQuickBookingLoading = false;
+          return;
+        }
+      }
+
+      const artistName = this.selectedArtist ? this.selectedArtist.name : (this.selectedService?.preferredArtist || 'No Preference');
+      // artistId is already declared at 410
       const serviceName = this.quickBookingForm.specialty;
       const amount = this.selectedService ? this.selectedService.price : 'TBD';
 
@@ -436,15 +469,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
     }
   }
 
-  sendChatMessage() {
-    if (!this.chatMessage.trim()) return;
-    this.chatMessages.push({ text: this.chatMessage, isUser: true, time: this.getTime() });
-    this.chatMessage = '';
-    setTimeout(() => {
-      this.chatMessages.push({ text: this.autoReplies[this.autoReplyIndex % this.autoReplies.length], isUser: false, time: this.getTime() });
-      this.autoReplyIndex++;
-    }, 900);
-  }
+
 
   // ── GUEST WIZARD METHODS ──
   nextStep() {
@@ -510,7 +535,17 @@ export class HomepageComponent implements OnInit, OnDestroy {
     const artistId = selectedArtistObj ? selectedArtistObj.uid : '';
 
     try {
+      if (artistId) {
+        const isAvail = await this.artistAvailabilityService.isArtistAvailable(artistId, this.bookingForm.eventDate, this.bookingForm.time);
+        if (!isAvail) {
+          alert('Sorry, the selected artist is not available for this date/time. Please choose another slot or artist.');
+          this.isBookingLoading = false;
+          return;
+        }
+      }
+
       await this.bookingService.addBooking({
+        clientId: this.currentUser?.uid || '', // Key fix: associate with user if logged in
         firstName: this.bookingForm.firstName,
         lastName: this.bookingForm.lastName,
         clientName: `${this.bookingForm.firstName} ${this.bookingForm.lastName}`,

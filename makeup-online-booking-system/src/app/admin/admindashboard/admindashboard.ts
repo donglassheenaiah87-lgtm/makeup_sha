@@ -8,6 +8,10 @@ import { UserService, UserData } from '../../core/user.service';
 import { BookingService, BookingData } from '../../core/booking.service';
 import { ServiceItemService, ServiceData } from '../../core/service-item.service';
 import { PaymentService } from '../../core/payment.service';
+import { ReviewService, Review as ReviewData } from '../../core/review.service';
+import { ReportService, IncidentReport } from '../../core/report.service';
+import { EmergencyService, ArtistExcuse } from '../../core/emergency.service';
+import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
 
 interface Booking {
   id: string | number;
@@ -89,7 +93,7 @@ interface CalendarDay {
 }
 
 interface Review {
-  id: number;
+  id: string;
   client: string;
   artist: string;
   service: string;
@@ -167,7 +171,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       overview: 'Dashboard Overview', bookings: 'Bookings',
       clients: 'Clients', artists: 'Artists', services: 'Services',
       reports: 'Reports', notifications: 'Notifications',
-      reviews: 'Client Reviews', settings: 'Settings',
+      reviews: 'Client Reviews', support: 'Support & Emergencies',
+      settings: 'Settings',
     };
     return titles[this.activeTab] || 'Dashboard';
   }
@@ -182,6 +187,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       reports: 'Analytics and revenue overview.',
       notifications: 'Stay on top of all alerts and updates.',
       reviews: 'Manage client feedback and artist ratings.',
+      support: 'Monitor incident reports and artist emergencies.',
       settings: 'Configure your system preferences.',
     };
     return subs[this.activeTab] || '';
@@ -216,6 +222,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   artistsList: Artist[] = [];
   services: Service[] = [];
 
+  incidentReports: IncidentReport[] = [];
+  excuseRequests: ArtistExcuse[] = [];
+  payoutRequests: any[] = [];
+
   isLoading = true;
   dataLoadedCount = 0;
 
@@ -226,6 +236,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private bookingService: BookingService,
     private serviceItemService: ServiceItemService,
     private paymentService: PaymentService,
+    private reviewService: ReviewService,
+    private reportService: ReportService,
+    private emergencyService: EmergencyService,
+    private firestore: Firestore,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -346,13 +360,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         }));
         this.stats[0].value = this.allBookings.length.toString();
         this.recentBookings = [...this.allBookings].sort((a, b) => {
-          // Sort by date (assuming ISO or similar, otherwise fallback to simple reverse)
           return new Date(b.date).getTime() - new Date(a.date).getTime();
         }).slice(0, 5);
         if (this.recentBookings.length === 0) this.recentBookings = [...this.allBookings].reverse().slice(0, 5);
         
         this.buildCalendar();
-        
         this.recalculateAggregates();
         this.checkIfLoaded();
         this.cdr.detectChanges();
@@ -363,12 +375,78 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     }));
+
+    // 5. Reviews Real-time
+    this.subs.push(this.reviewService.getAllReviewsRealtime().subscribe({
+      next: (data) => {
+        this.reviews = data.map(r => ({
+          id: r.reviewId,
+          client: r.clientName || 'Anonymous',
+          artist: r.artistName || 'Unknown Artist',
+          service: r.service || 'General Service',
+          rating: r.starRating,
+          comment: r.reviewMessage,
+          date: r.date || 'Today',
+          status: (r as any).status || 'published',
+          reply: (r as any).reply || ''
+        }));
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Reviews sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
+
+    // 6. Incident Reports Real-time
+    this.subs.push(this.reportService.getAllReportsRealtime().subscribe({
+      next: (data) => {
+        this.incidentReports = data;
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Reports sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
+
+    // 7. Excuse Requests Real-time
+    this.subs.push(this.emergencyService.getAllEmergenciesRealtime().subscribe({
+      next: (data) => {
+        this.excuseRequests = data;
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Excuses sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
+
+    // 8. Payout Requests Real-time
+    this.subs.push(this.paymentService.getAllPayoutRequestsRealtime().subscribe({
+      next: (data) => {
+        this.payoutRequests = data;
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Payouts sync error:', err);
+        this.checkIfLoaded();
+        this.cdr.detectChanges();
+      }
+    }));
   }
 
   checkIfLoaded() {
     if (this.isLoading) {
       this.dataLoadedCount++;
-      if (this.dataLoadedCount >= 4) {
+      if (this.dataLoadedCount >= 8) {
         this.isLoading = false;
       }
     }
@@ -451,21 +529,42 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showConfirmDialog = true;
   }
 
-  async toggleArtistStatus(artist: Artist) {
-    const newStatus = artist.status === 'active' ? 'inactive' : 'active';
-    if (artist.uid) {
-      await this.userService.updateUser(artist.uid, { status: newStatus });
-    }
-    artist.status = newStatus;
-    this.showToast(`${artist.name} status updated`, 'success');
-  }
-
   async approveArtist(artist: Artist) {
     if (artist.uid) {
-      await this.userService.updateUser(artist.uid, { status: 'active' });
+      await this.userService.updateUser(artist.uid, { status: 'approved' });
+      // Also update the dedicated 'artists' collection if it exists
+      try {
+        const artistRef = doc(this.firestore, `artists/${artist.uid}`);
+        await updateDoc(artistRef, { status: 'approved' });
+      } catch (e) {}
     }
-    artist.status = 'active';
+    artist.status = 'approved';
     this.showToast(`${artist.name} approved!`, 'success');
+  }
+
+  async rejectArtist(artist: Artist) {
+    if (artist.uid) {
+      await this.userService.updateUser(artist.uid, { status: 'rejected' });
+      try {
+        const artistRef = doc(this.firestore, `artists/${artist.uid}`);
+        await updateDoc(artistRef, { status: 'rejected' });
+      } catch (e) {}
+    }
+    artist.status = 'rejected';
+    this.showToast(`${artist.name} application rejected.`, 'error');
+  }
+
+  async toggleArtistStatus(artist: Artist) {
+    const newStatus = artist.status === 'approved' ? 'inactive' : 'approved';
+    if (artist.uid) {
+      await this.userService.updateUser(artist.uid, { status: newStatus });
+      try {
+        const artistRef = doc(this.firestore, `artists/${artist.uid}`);
+        await updateDoc(artistRef, { status: newStatus });
+      } catch (e) {}
+    }
+    artist.status = newStatus;
+    this.showToast(`${artist.name} status updated to ${newStatus}`, 'success');
   }
 
   viewArtistDetail(artist: Artist): void {
@@ -796,17 +895,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.showModal = true;
   }
 
-  saveReviewReply(): void {
+  async saveReviewReply() {
     if (this.selectedReview) {
       this.selectedReview.reply = this.reviewReplyText;
-      this.showToast('Reply saved!', 'success');
+      await this.reviewService.updateReviewReply(this.selectedReview.id, this.reviewReplyText);
+      this.showToast('Reply saved to Firebase!', 'success');
     }
     this.closeModal();
   }
 
-  updateReviewStatus(review: Review, status: 'published' | 'pending' | 'flagged'): void {
+  async updateReviewStatus(review: Review, status: 'published' | 'pending' | 'flagged') {
     review.status = status;
-    this.showToast(`Review ${status}`, 'success');
+    await this.reviewService.updateReviewStatus(review.id, status);
+    this.showToast(`Review ${status} in Firebase`, 'success');
   }
 
   deleteReview(review: Review): void {
@@ -977,6 +1078,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         if (target.id) await this.serviceItemService.deleteService(target.id.toString());
         this.showToast('Service deleted from Firebase', 'success');
       }
+      if (this.confirmAction === 'deleteReview' && this.confirmTarget) {
+        const target = this.confirmTarget as unknown as Review;
+        if (target.id) await this.reviewService.deleteReview(target.id);
+        this.showToast('Review deleted from Firebase', 'success');
+      }
     } catch (e) {
       this.showToast('Error deleting item', 'error');
     }
@@ -1002,6 +1108,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const now = new Date();
     this.currentTime = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
     this.currentDate = now.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  // ── Support & Emergencies ──
+  async updateReportStatus(report: IncidentReport, status: 'open' | 'investigating' | 'resolved' | 'closed') {
+    report.status = status;
+    await this.reportService.updateReportStatus(report.id, status);
+    this.showToast(`Report #${report.id.slice(0, 6)} marked as ${status}`, 'success');
+  }
+
+  async resolveExcuse(excuse: ArtistExcuse) {
+    excuse.status = 'resolved';
+    await this.emergencyService.resolveEmergency(excuse.id);
+    this.showToast(`Emergency for ${excuse.artistName} resolved`, 'success');
+  }
+
+  async processPayout(payout: any, status: 'approved' | 'rejected' | 'processed') {
+    payout.status = status;
+    await this.paymentService.updatePayoutStatus(payout.id, status);
+    this.showToast(`Payout for ${payout.artistName} ${status}`, 'success');
   }
 
   async logout(): Promise<void> {
